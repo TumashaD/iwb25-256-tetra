@@ -2,13 +2,15 @@ import ballerina/http;
 import ballerina/jwt;
 import ballerina/log;
 import ballerina/time;
+import ballerina/sql;
+import competition_service.competitions;
 
 // Configuration for Supabase JWT
 configurable string supabaseJwtSecret = ?;
 configurable string supabaseUrl = ?;
-configurable int serverPort = 8080;
+configurable int serverPort = ?;
 
-// CORS configuration
+// CORS configuration with interceptor
 @http:ServiceConfig {
     cors: {
         allowOrigins: ["http://localhost:3000", "https://your-domain.com"],
@@ -17,9 +19,13 @@ configurable int serverPort = 8080;
         allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
     }
 }
-service /api on new http:Listener(serverPort) {
+service http:InterceptableService /api on new http:Listener(serverPort) {
 
-    // Health check endpoint
+    public function createInterceptors() returns http:Interceptor[] {
+        return [new AuthInterceptor(supabaseUrl, supabaseJwtSecret)];
+    }
+
+    // Health check endpoint (no auth required)
     resource function get health() returns json {
         return {
             "status": "healthy",
@@ -28,89 +34,36 @@ service /api on new http:Listener(serverPort) {
         };
     }
 
-    // Protected endpoint - requires authentication
-    resource function get user(http:Request req) returns json|http:Unauthorized|http:InternalServerError {
-        (jwt:Payload & readonly)|(http:Unauthorized & readonly)|(http:InternalServerError & readonly) authResult = authenticateUser(req);
-        if authResult is http:Unauthorized || authResult is http:InternalServerError {
-            return authResult;
-        }
-        
-        json userPayload = <json>authResult;
+    // Protected endpoint - authentication handled by interceptor
+    resource function get user(http:RequestContext ctx) returns json {
+        jwt:Payload userPayload = <jwt:Payload>ctx.get("user");
         return {
             "message": "User authenticated successfully",
-            "user": userPayload,
+            "user": userPayload.toJson(),
             "timestamp": time:utcNow()
         };
     }
 
-    // get competitions endpoint with dummy data
-    resource function get competitions(http:Request req) returns json|http:Unauthorized|http:InternalServerError {
-        (jwt:Payload & readonly)|(http:Unauthorized & readonly)|(http:InternalServerError & readonly) authResult = authenticateUser(req);
-        if authResult is http:Unauthorized || authResult is http:InternalServerError {
-            return authResult;
+    // Get competitions endpoint - authentication handled by interceptor
+    isolated resource function get competitions(http:RequestContext ctx) returns json|http:InternalServerError {
+        // User is already authenticated by interceptor
+        stream<competitions:Competition, sql:Error?>|error competitionsResult = competitions:getCompetitions();
+        if competitionsResult is error {
+            log:printError("Failed to get competitions", competitionsResult);
+            return http:INTERNAL_SERVER_ERROR;
         }
 
-        // Dummy data for competitions
-        json competitionsData = [
-            {
-                "id": 1,
-                "name": "Competition A",
-                "description": "Description for Competition A",
-                "startDate": "2023-10-01",
-                "endDate": "2023-10-31"
-            },
-            {
-                "id": 2,
-                "name": "Competition B",
-                "description": "Description for Competition B",
-                "startDate": "2023-11-01",
-                "endDate": "2023-11-30"
-            }
-        ];
+        competitions:Competition[]|error competitions = from competitions:Competition competition in competitionsResult
+                                              select competition;
+        
+        if competitions is error {
+            log:printError("Failed to process competitions", competitions);
+            return http:INTERNAL_SERVER_ERROR;
+        }
 
         return {
-            "message": "Competitions retrieved successfully",
-            "competitions": competitionsData,
+            "competitions": competitions,
             "timestamp": time:utcNow()
-        };
+        }.toJson();
     }
-
 }
-
-// Authentication function
-function authenticateUser(http:Request req) returns jwt:Payload & readonly|http:Unauthorized & readonly|http:InternalServerError & readonly {
-    string|http:HeaderNotFoundError authHeader = req.getHeader("Authorization");
-    
-    if authHeader is http:HeaderNotFoundError {
-        log:printError("Authorization header not found");
-        return http:UNAUTHORIZED;
-    }
-
-    // Extract Bearer token
-    if !authHeader.startsWith("Bearer ") {
-        log:printError("Invalid authorization header format");
-        return http:UNAUTHORIZED;
-    }
-
-    string token = authHeader.substring(7);
-
-    // Verify JWT token with Supabase secret (HMAC-based)
-    jwt:ValidatorConfig validatorConfig = {
-        issuer: supabaseUrl,
-        audience: "authenticated",
-        clockSkew: 60,
-        signatureConfig: {
-            secret: supabaseJwtSecret
-        }
-    };
-
-    jwt:Payload|jwt:Error jwtPayload = jwt:validate(token, validatorConfig);
-
-    if jwtPayload is jwt:Error {
-        log:printError("JWT validation failed", jwtPayload);
-        return http:UNAUTHORIZED;
-    }
-
-    return jwtPayload.cloneReadOnly();
-}
-

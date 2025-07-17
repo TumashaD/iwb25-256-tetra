@@ -114,5 +114,7 @@ Server/Ballerina.lock
 *.class
 *.jar
 
+!Server/lib/postgresql-*.jar
+
 # Mac specific
 .DS_Store
