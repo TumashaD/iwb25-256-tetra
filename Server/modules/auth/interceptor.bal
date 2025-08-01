@@ -2,16 +2,31 @@ import ballerina/http;
 import ballerina/jwt;
 import ballerina/log;
 
+public final AuthInterceptor AUTH_INTERCEPTOR = new;
+public final http:CorsConfig CORS_CONFIG = {
+    allowCredentials: true,
+    allowHeaders: ["Content-Type", "Authorization"],
+    allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowOrigins: ["http://localhost:3000"]
+};
+
 // Authentication interceptor
 public isolated service class AuthInterceptor {
     *http:RequestInterceptor;
 
-    private final string supabaseUrl;
-    private final string supabaseJwtSecret;
+    private string supabaseUrl;
+    private string supabaseJwtSecret;
 
-    public isolated function init(string supabaseUrl, string supabaseJwtSecret) {
-        self.supabaseUrl = supabaseUrl;
-        self.supabaseJwtSecret = supabaseJwtSecret;
+    public isolated function init() {
+        self.supabaseUrl = "";
+        self.supabaseJwtSecret = "";
+    }
+
+    public isolated function configure(string supabaseUrl, string supabaseJwtSecret) {
+        lock {
+            self.supabaseUrl = supabaseUrl;
+            self.supabaseJwtSecret = supabaseJwtSecret;
+        }
     }
 
     isolated resource function 'default [string... path](http:RequestContext ctx, http:Request req) 
@@ -43,14 +58,17 @@ public isolated service class AuthInterceptor {
 
         string token = authHeader.substring(7);
 
-        jwt:ValidatorConfig validatorConfig = {
-            issuer: self.supabaseUrl,
-            audience: "authenticated",
-            clockSkew: 60,
-            signatureConfig: {
-                secret: self.supabaseJwtSecret
-            }
-        };
+        jwt:ValidatorConfig validatorConfig;
+        lock {
+            validatorConfig = {
+                issuer: self.supabaseUrl,
+                audience: "authenticated",
+                clockSkew: 60,
+                signatureConfig: {
+                    secret: self.supabaseJwtSecret
+                }
+            };
+        }
 
         jwt:Payload|jwt:Error jwtPayload = jwt:validate(token, validatorConfig);
 
@@ -64,3 +82,4 @@ public isolated service class AuthInterceptor {
         return ctx.next();
     }
 }
+

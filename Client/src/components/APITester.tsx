@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { api } from '@/lib/api'
+import { CompetitionsService } from '@/services/competitionService'
 import { useAuth } from '@/contexts/SupabaseAuthContext'
 
 export default function APITester() {
@@ -68,24 +68,9 @@ export default function APITester() {
       
       {/* Test Buttons */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <button
-          onClick={() => testEndpoint('health', api.health)}
-          disabled={loading.health}
-          className="bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white px-4 py-2 rounded-md transition-colors"
-        >
-          {loading.health ? 'Testing...' : 'Test Health'}
-        </button>
         
         <button
-          onClick={() => testEndpoint('user', api.getUser)}
-          disabled={loading.user}
-          className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-4 py-2 rounded-md transition-colors"
-        >
-          {loading.user ? 'Testing...' : 'Test User Auth'}
-        </button>
-        
-        <button
-          onClick={() => testEndpoint('competitions', api.getCompetitions)}
+          onClick={() => testEndpoint('competitions', CompetitionsService.getCompetitions)}
           disabled={loading.competitions}
           className="bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 text-white px-4 py-2 rounded-md transition-colors"
         >

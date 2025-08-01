@@ -1,6 +1,6 @@
 [package]
-org = "tumashadeshan"
-name = "competition_service"
+org = "tetra"
+name = "vinnova"
 version = "0.1.0"
 distribution = "2201.12.7"
 

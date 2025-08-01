@@ -1,7 +1,7 @@
 // API utility functions for communicating with Ballerina backend
 import { createClient } from './supabase/client'
 
-const API_BASE_URL = 'http://localhost:8080/api'
+const API_BASE_URL = 'http://localhost:8080'
 
 // Get the current user's JWT token
 async function getAuthToken(): Promise<string | null> {
@@ -43,21 +43,4 @@ async function apiCall(endpoint: string, options: RequestInit = {}): Promise<any
   return response.json()
 }
 
-// API functions
-export const api = {
-  // Health check
-  health: () => fetch(`${API_BASE_URL}/health`).then(res => res.json()),
-  
-  // Get authenticated user info
-  getUser: () => apiCall('/user'),
-  
-  // Get competitions
-  getCompetitions: () => apiCall('/competitions'),
-  
-  // Create competition
-  createCompetition: (competition: { name: string; description: string; startDate?: string; endDate?: string }) =>
-    apiCall('/competitions', {
-      method: 'POST',
-      body: JSON.stringify(competition),
-    }),
-}
+export {apiCall}
