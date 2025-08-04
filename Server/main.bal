@@ -12,6 +12,7 @@ listener http:Listener ln = new (serverPort);
 public function main() returns error? {
     auth:AUTH_INTERCEPTOR.configure(supabaseUrl, supabaseJwtSecret);
     check ln.attach(services:competitionService, "/competitions");
+    check ln.attach(services:userService, "/users");
     check ln.'start();
     log:printInfo("Competition service started on port " + serverPort.toString());
     return;
