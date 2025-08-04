@@ -358,7 +358,6 @@ dependencies = [
 modules = [
 	{org = "tetra", packageName = "vinnova", moduleName = "vinnova"},
 	{org = "tetra", packageName = "vinnova", moduleName = "vinnova.auth"},
-	{org = "tetra", packageName = "vinnova", moduleName = "vinnova.competitions"},
 	{org = "tetra", packageName = "vinnova", moduleName = "vinnova.db"},
 	{org = "tetra", packageName = "vinnova", moduleName = "vinnova.services"}
 ]
