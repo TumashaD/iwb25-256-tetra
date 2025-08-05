@@ -37,13 +37,13 @@ export async function middleware(request: NextRequest) {
 
   if (
     !user &&
-    !request.nextUrl.pathname.startsWith('/login') &&
+    !request.nextUrl.pathname.startsWith('/signup') &&
     !request.nextUrl.pathname.startsWith('/auth') &&
     request.nextUrl.pathname !== '/'
   ) {
-    // no user, potentially respond by redirecting the user to the login page
+    // no user, potentially respond by redirecting the user to the sign-in page
     const url = request.nextUrl.clone()
-    url.pathname = '/login'
+    url.pathname = '/signup'
     return NextResponse.redirect(url)
   }
 
