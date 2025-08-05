@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import {useAuth} from '@/contexts/AuthContext';
 import { Avatar, AvatarFallback, AvatarImage } from './avatar';
+import { AvatarDropdown } from './avatar-dropdown';
 
 const AnimatedNavLink = ({ href, children }: { href: string; children: React.ReactNode }) => {
   const defaultTextColor = 'text-gray-300';
@@ -109,12 +110,14 @@ export function Navbar() {
 
         <div className="hidden sm:flex items-center gap-2 sm:gap-3">
           {authUser ? (
-            <Avatar className="w-8 h-8">
-              <AvatarImage src={authUser.user_metadata.avatar_url || '/default-avatar.png'} alt="User Avatar" />
-              <AvatarFallback className="bg-gray-300 text-gray-700">
-                {authUser.email?.charAt(0).toUpperCase() || 'U'}
-              </AvatarFallback>
-            </Avatar>
+            <AvatarDropdown>
+              <Avatar className="w-8 h-8 cursor-pointer">
+                <AvatarImage src={authUser.user_metadata.avatar_url || '/default-avatar.png'} alt="User Avatar" />
+                <AvatarFallback className="bg-gray-300 text-gray-700">
+                  {authUser.email?.charAt(0).toUpperCase() || 'U'}
+                </AvatarFallback>
+              </Avatar>
+            </AvatarDropdown>
           ) : (
             signupButtonElement
           )}
@@ -139,7 +142,20 @@ export function Navbar() {
           ))}
         </nav>
         <div className="flex flex-col items-center space-y-4 mt-4 w-full">
-          {signupButtonElement}
+          {authUser ? (
+            <div className="flex flex-col items-center space-y-3 w-full">
+              <AvatarDropdown className="relative">
+                <Avatar className="w-10 h-10 cursor-pointer">
+                  <AvatarImage src={authUser.user_metadata.avatar_url || '/default-avatar.png'} alt="User Avatar" />
+                  <AvatarFallback className="bg-gray-300 text-gray-700">
+                    {authUser.email?.charAt(0).toUpperCase() || 'U'}
+                  </AvatarFallback>
+                </Avatar>
+              </AvatarDropdown>
+            </div>
+          ) : (
+            signupButtonElement
+          )}
         </div>
       </div>
     </header>
