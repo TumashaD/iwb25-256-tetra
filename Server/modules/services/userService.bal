@@ -66,4 +66,27 @@ public http:Service userService = @http:ServiceConfig{cors : auth:CORS_CONFIG} i
             "timestamp": time:utcNow()
         }.toJson();
     }
+
+    isolated resource function get [string id](http:RequestContext ctx) returns json|http:InternalServerError|http:NotFound|error {
+        postgresql:Client db = check db:getDbClient();
+
+        // Fetch user by ID
+        sql:ParameterizedQuery selectQuery = `SELECT * FROM users WHERE id = ${id}::uuid`;
+        stream<User, sql:Error?> userResult = db->query(selectQuery, User);
+        User[]|error userArr = from User u in userResult
+                                select u;
+
+        if userArr is error {
+            log:printError("Failed to fetch user", 'error = userArr);
+            return http:INTERNAL_SERVER_ERROR;
+        }
+        if userArr.length() == 0 {
+            return http:NOT_FOUND;
+        }
+
+        return {
+            "user": userArr[0],
+            "timestamp": time:utcNow()
+        }.toJson();
+    }
 };
