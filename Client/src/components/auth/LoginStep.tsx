@@ -4,11 +4,11 @@ import Link from 'next/link'
 import { GlassButton, GlassFilter } from '@/components/ui/glass'
 
 interface LoginStepProps {
-  onGoogleSignIn: () => void
+  onGoogleSignUp: () => void
   isSubmitting?: boolean
 }
 
-export function LoginStep({ onGoogleSignIn, isSubmitting = false }: LoginStepProps) {
+export function LoginStep({ onGoogleSignUp, isSubmitting = false }: LoginStepProps) {
   return (
     <motion.div 
       key="login-step"
@@ -30,13 +30,13 @@ export function LoginStep({ onGoogleSignIn, isSubmitting = false }: LoginStepPro
         <GlassFilter />
         <GlassButton 
           className="w-2/3" 
-          onClick={onGoogleSignIn}
+          onClick={onGoogleSignUp}
           disabled={isSubmitting}
         >
           <div className="flex items-center justify-center">
             <img src="/google.svg" alt="Google Logo" className="h-4 mr-2" />
             <p className="text-gray-800">
-              {isSubmitting ? 'Signing in...' : 'Continue with Google'}
+              {isSubmitting ? 'Signing up...' : 'Continue with Google'}
             </p>
           </div>
         </GlassButton>

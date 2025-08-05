@@ -36,10 +36,10 @@ export default function AuthCodeErrorPage() {
           </ul>
           <div className="space-y-3">
             <Link
-              href="/signin"
+              href="/signup"
               className="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 transition-colors"
             >
-              Try Signing In Again
+              Try Signing Up Again
             </Link>
             <Link
               href="/"

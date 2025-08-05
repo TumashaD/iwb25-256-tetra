@@ -2,8 +2,7 @@
 
 import React, { useEffect, useCallback } from 'react'
 import { AnimatePresence } from 'framer-motion'
-import { useAuth } from '@/contexts/SupabaseAuthContext'
-import { useUser } from '@/contexts/UserContext'
+import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 
@@ -16,35 +15,19 @@ import { LoadingStep } from '@/components/auth/LoadingStep'
 import { ErrorBoundary } from '@/components/auth/ErrorBoundary'
 import { useSingleCall } from '@/hooks/useCallProtection'
 
-export default function SignInPage() {
-  const { user, loading: authLoading, signInWithGoogle } = useAuth()
-  const { userProfile, loading: userLoading, createUserProfile, error: userError } = useUser()
+export default function SignUpPage() {
+  const { 
+    authUser, 
+    user: userProfile, 
+    loading,
+    signUpWithGoogle, 
+    createUserProfile, 
+    error: userError 
+  } = useAuth()
   const router = useRouter()
   const [step, setStep] = React.useState<'login' | 'role' | 'details' | 'success'>('login')
   const [role, setRole] = React.useState<string | null>(null)
-  const [isSubmitting, setIsSubmitting] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
-  const [redirecting, setRedirecting] = React.useState(false)
-  const [loadingTimeout, setLoadingTimeout] = React.useState(false)
-
-  // Add a timeout to prevent infinite loading
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (authLoading || userLoading) {
-        setLoadingTimeout(true)
-        setError('Loading is taking longer than expected. Please refresh the page.')
-      }
-    }, 15000) // 15 seconds timeout
-
-    return () => clearTimeout(timer)
-  }, [authLoading, userLoading])
-
-  // Clear timeout when loading completes
-  useEffect(() => {
-    if (!authLoading && !userLoading) {
-      setLoadingTimeout(false)
-    }
-  }, [authLoading, userLoading])
 
   // Handle user context errors
   useEffect(() => {
@@ -53,45 +36,41 @@ export default function SignInPage() {
     }
   }, [userError])
 
-  // Clear errors when step changes (but not user, as that might clear valid errors)
+  // Clear errors when step changes
   useEffect(() => {
     setError(null)
   }, [step])
 
-  // Optimized redirect logic with proper router usage
+  // Redirect to home when user is fully authenticated
   const handleRedirectToHome = useCallback(() => {
-    if (redirecting) return
-    setRedirecting(true)
     router.push('/')
-  }, [router, redirecting])
+  }, [router])
 
   // Handle authentication state changes
   useEffect(() => {
-    // Skip if still loading or already redirecting
-    if (authLoading || userLoading || redirecting) return
+    // Skip if still loading
+    if (loading) return
 
-    console.log('Auth state - User:', !!user, 'Profile:', !!userProfile)
-    
     // If user is authenticated and has profile, redirect to home
-    if (user && userProfile) {
+    if (authUser && userProfile) {
       handleRedirectToHome()
       return
     }
     
     // If user is authenticated but no profile, move to role selection
-    if (user && !userProfile && step === 'login') {
+    if (authUser && !userProfile && step === 'login') {
       setStep('role')
     }
-  }, [user, userProfile, authLoading, userLoading, step, handleRedirectToHome, redirecting])
+  }, [authUser, userProfile, loading, step, handleRedirectToHome])
 
-  const handleGoogleSignIn = async () => {
+  const handleGoogleSignUp = async () => {
     try {
       setError(null)
-      await signInWithGoogle()
+      await signUpWithGoogle()
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Failed to sign in"
+      const errorMessage = error instanceof Error ? error.message : "Failed to sign up"
       setError(errorMessage)
-      console.error('Sign in error:', error)
+      console.error('Sign up error:', error)
     }
   }
 
@@ -124,11 +103,8 @@ export default function SignInPage() {
   }
 
   // Apply single call protection to prevent rapid successive calls
-  const [protectedGoogleSignIn, isSigningIn] = useSingleCall(handleGoogleSignIn)
+  const [protectedGoogleSignUp, isSigningUp] = useSingleCall(handleGoogleSignUp)
   const [protectedProfileSubmission, isSubmittingProfile] = useSingleCall(handleProfileSubmission)
-
-  // Update isSubmitting to reflect protected call states
-  const actualIsSubmitting = isSubmitting || isSigningIn || isSubmittingProfile
 
   const handleRoleSelection = (selectedRole: string) => {
     setRole(selectedRole)
@@ -138,22 +114,16 @@ export default function SignInPage() {
 
   const retryOperation = () => {
     setError(null)
-    setIsSubmitting(false)
   }
 
   const renderCurrentStep = () => {
-    // Show loading if redirecting
-    if (redirecting) {
-      return <LoadingStep />
-    }
-    
-    // Show loading during auth/user data fetch (with timeout check)
-    if ((authLoading || userLoading) && !loadingTimeout) {
+    // Show loading during auth/user data fetch
+    if (loading) {
       return <LoadingStep />
     }
     
     // If user is authenticated and has profile, they shouldn't be here
-    if (user && userProfile && !redirecting) {
+    if (authUser && userProfile) {
       return <LoadingStep />
     }
 
@@ -179,8 +149,8 @@ export default function SignInPage() {
       case 'login':
         return (
           <LoginStep 
-            onGoogleSignIn={protectedGoogleSignIn} 
-            isSubmitting={actualIsSubmitting}
+            onGoogleSignUp={protectedGoogleSignUp} 
+            isSubmitting={isSigningUp}
           />
         )
       
@@ -192,14 +162,14 @@ export default function SignInPage() {
         )
       
       case 'details':
-        if (!user) return <LoadingStep />
+        if (!authUser) return <LoadingStep />
         return (
           <DetailsStep 
-            user={user}
+            user={authUser}
             role={role || ''}
             onSubmit={protectedProfileSubmission}
             onBack={() => setStep('role')}
-            isSubmitting={actualIsSubmitting}
+            isSubmitting={isSubmittingProfile}
           />
         )
       
@@ -207,7 +177,6 @@ export default function SignInPage() {
         return (
           <SuccessStep 
             onContinue={handleRedirectToHome}
-            isRedirecting={redirecting}
           />
         )
       

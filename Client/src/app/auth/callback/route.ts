@@ -4,8 +4,8 @@ import { NextResponse } from 'next/server'
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
-  // Default redirect to signin page where the flow continues
-  const next = searchParams.get('next') ?? '/signin'
+  // Default redirect to signup page where the flow continues
+  const next = searchParams.get('next') ?? '/signup'
 
   if (code) {
     const supabase = await createClient()
