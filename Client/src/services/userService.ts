@@ -1,7 +1,7 @@
 // Create a user to manage user-related operations
 import { apiCall } from '@/lib/api'
 
-export interface User {
+export interface Profile {
   id: string
   email: string
   name: string
@@ -12,7 +12,7 @@ export interface User {
 
 export class UserService {
   // Create a new user
-  static async createUser(data: User): Promise<User> {
+  static async createUser(data: Profile): Promise<Profile> {
     try {
       console.log('UserService.createUser called with data:', data)
       
@@ -58,18 +58,13 @@ export class UserService {
   }
 
   // Get user by ID
-  static async getUser(userId: string): Promise<User | null> {
+  static async getUser(userId: string): Promise<Profile | null> {
     try {
       const result = await apiCall(`/users/${userId}`, {
         method: 'GET',
-      })
-      
-      // Check if user data is valid and complete
-      if (result && result.user && result.user.id && result.user.name && result.user.email) {
-        return result.user as User
-      }
-      
-      return null
+      }) as Profile
+
+      return result
     } catch (error) {
       // If it's a 404 (user not found), return null instead of throwing
       if (error instanceof Error && (
@@ -81,6 +76,20 @@ export class UserService {
       }
       
       console.error('Failed to get user:', error)
+      throw error
+    }
+  }
+
+  static async updateUser(userId: string, data: Partial<Profile>): Promise<Profile> {
+    try {
+      const result = await apiCall(`/users/update/${userId}`, {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      }) as Profile
+
+      return result
+    } catch (error) {
+      console.error('Failed to update user:', error)
       throw error
     }
   }

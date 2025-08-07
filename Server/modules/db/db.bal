@@ -1,24 +1,20 @@
 import ballerinax/postgresql;
 import ballerina/sql;
 
-configurable string dbHost = ?;
-configurable int dbPort = ?;
-configurable string dbUser = ?;
-configurable string dbPassword = ?;
-configurable string dbName = ?;
+public isolated class DatabaseClient {
+    private final postgresql:Client|sql:Error dbClient;
 
-public final postgresql:Client | sql:Error dbClient = new (
-    host = dbHost,
-    port = dbPort,
-    username = dbUser,
-    password = dbPassword,
-    database = dbName
-);
+    public isolated function init(string host, int port, string user, string password, string database) {
+        self.dbClient = new postgresql:Client(
+            host = host,
+            port = port,
+            username = user,
+            password = password,
+            database = database
+        );
+    }
 
-public isolated function getDbClient() returns postgresql:Client|sql:Error {
-    if dbClient is postgresql:Client {
-        return dbClient;
-    } else {
-        return error("Database client not initialized");
+    public isolated function getClient() returns postgresql:Client|sql:Error {
+        return self.dbClient;
     }
 }

@@ -14,7 +14,7 @@ interface AvatarDropdownProps {
 export function AvatarDropdown({ children, className }: AvatarDropdownProps) {
   const [isOpen, setIsOpen] = React.useState(false)
   const dropdownRef = React.useRef<HTMLDivElement>(null)
-  const { authUser, signOut } = useAuth()
+  const { user, signOut } = useAuth()
   const router = useRouter()
 
   // Close dropdown when clicking outside
@@ -75,7 +75,7 @@ export function AvatarDropdown({ children, className }: AvatarDropdownProps) {
   ]
 
   return (
-    <div className={cn("relative", className)} ref={dropdownRef}>
+    <div className={cn("relative inline-flex", className)} ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="focus:outline-none focus:ring-2 focus:ring-white/20 rounded-full transition-all duration-200"
@@ -111,10 +111,10 @@ export function AvatarDropdown({ children, className }: AvatarDropdownProps) {
             {/* User info header */}
             <div className="px-3 py-2 mb-2 border-b border-white/10">
               <p className="text-sm font-medium text-white/90 truncate">
-                {authUser?.user_metadata?.full_name || authUser?.email || 'User'}
+                {user?.profile?.name || user?.email || 'User'}
               </p>
               <p className="text-xs text-white/60 truncate">
-                {authUser?.email}
+                {user?.email}
               </p>
             </div>
 

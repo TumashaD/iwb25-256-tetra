@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
 import { GlassButton } from '@/components/ui/glass'
-import type { User } from '@supabase/supabase-js'
+import { User } from '@/types/user'
 
 interface DetailsStepProps {
   user: User

@@ -2,26 +2,20 @@
 
 import { createContext, useContext, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { UserService, type User } from '@/services/userService'
+import { UserService } from '@/services/userService'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
+import type { User } from '@/types/user'
+import type { Profile } from '@/services/userService'
+
 
 type AuthContextType = {
-  // Supabase auth user (contains basic auth info like id, email)
-  authUser: SupabaseUser | null
-  // Full user profile from your database
   user: User | null
-  // Loading states
-  authLoading: boolean
-  userLoading: boolean
-  loading: boolean // Combined loading state
-  // Error state
+  loading: boolean
   error: string | null
-  // Auth methods
   signOut: () => Promise<void>
   signUpWithGoogle: () => Promise<{ provider: string; url: string; }>
-  // User profile methods
-  createUserProfile: (userData: Omit<User, 'id' | 'createdAt'>) => Promise<void>
-  updateUserProfile: (userData: Partial<User>) => Promise<void>
+  createUserProfile: (userData: Omit<Profile, 'id' | 'createdAt'>) => Promise<void>
+  updateUserProfile: (userData: Partial<Profile>) => Promise<void>
   refreshUserProfile: () => Promise<void>
 }
 
@@ -36,15 +30,11 @@ export const useAuth = () => {
 }
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  // Supabase auth state
+  // Internal states
   const [authUser, setAuthUser] = useState<SupabaseUser | null>(null)
+  const [userProfile, setUserProfile] = useState<Profile | null>(null)
   const [authLoading, setAuthLoading] = useState(true)
-  
-  // User profile state
-  const [user, setUser] = useState<User | null>(null)
   const [userLoading, setUserLoading] = useState(false)
-  
-  // Error state
   const [error, setError] = useState<string | null>(null)
   
   const supabase = createClient()
@@ -55,11 +45,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUserLoading(true)
       setError(null)
       const profile = await UserService.getUser(userId)
-      setUser(profile) // This will be null if user doesn't exist yet
+      setUserProfile(profile)
     } catch (err) {
       // If it's a 404 or "user not found" error, that's expected for new users
       // Set user to null but don't set an error
-      setUser(null)
+      setUserProfile(null)
       // Only set error for actual API/network failures
       if (err instanceof Error && !err.message.includes('not found') && !err.message.includes('404')) {
         setError(err.message)
@@ -94,7 +84,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     if (authUser?.id) {
       fetchUserProfile(authUser.id)
     } else {
-      setUser(null)
+      setUserProfile(null)
       setUserLoading(false)
     }
   }, [authUser?.id])
@@ -102,7 +92,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   // Auth methods
   const signOut = async () => {
     await supabase.auth.signOut()
-    setUser(null) // Clear user profile when signing out
+    setUserProfile(null) // Clear user profile when signing out
   }
 
   const signUpWithGoogle = async () => {
@@ -121,7 +111,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }
 
   // User profile methods
-  const createUserProfile = async (userData: Omit<User, 'id' | 'createdAt'>) => {
+  const createUserProfile = async (userData: Omit<Profile, 'id' | 'createdAt'>) => {
     if (!authUser?.id) {
       throw new Error('User must be authenticated to create profile')
     }
@@ -145,7 +135,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
       // Handle the Ballerina API response structure which returns { user: User, message: string, timestamp: string }
       const newUser = (response as any).user || response
-      setUser(newUser)
+      setUserProfile(newUser)
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to create user profile'
       setError(errorMessage)
@@ -155,8 +145,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }
 
-  const updateUserProfile = async (userData: Partial<User>) => {
-    if (!authUser?.id || !user) {
+  const updateUserProfile = async (userData: Partial<Profile>) => {
+    if (!authUser?.id || !userProfile) {
       throw new Error('User must be authenticated and have existing profile to update')
     }
 
@@ -164,14 +154,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUserLoading(true)
       setError(null)
       
-      // You'll need to implement updateUser in UserService
-      const updatedUser = await UserService.createUser({
-        ...user,
-        ...userData,
-        id: authUser.id,
-      })
-      
-      setUser(updatedUser)
+      // Use the updateUser method instead of createUser
+      const updatedUser = await UserService.updateUser(authUser.id, userData)
+
+      setUserProfile(updatedUser)
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to update user profile'
       setError(errorMessage)
@@ -187,14 +173,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }
 
-  // Combined loading state for convenience
+  // Merge authUser and user profile into a single currentUser
+  let currentUser: User | null = null;
+  if (authUser) {
+    currentUser = {
+      id: authUser.id,
+      email: authUser.email ?? '',
+      isAuthenticated: !!authUser,
+      profile: userProfile ,
+      avatarUrl: authUser.user_metadata?.avatar_url || '',
+    }
+  }
+
   const loading = authLoading || userLoading
 
   const value: AuthContextType = {
-    authUser,
-    user,
-    authLoading,
-    userLoading,
+    user: currentUser,
     loading,
     error,
     signOut,
