@@ -1,23 +1,26 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {useAuth} from '@/contexts/AuthContext';
 import { Avatar, AvatarFallback, AvatarImage } from './avatar';
 import { AvatarDropdown } from './avatar-dropdown';
 
-const AnimatedNavLink = ({ href, children }: { href: string; children: React.ReactNode }) => {
-  const defaultTextColor = 'text-gray-300';
+const AnimatedNavLink = ({ children, isActive, onClick }: { children: React.ReactNode; isActive: boolean; onClick: () => void }) => {
+  const defaultTextColor = isActive ? 'text-white font-semibold' : 'text-gray-300 hover:text-white transition-colors';
   const hoverTextColor = 'text-white';
   const textSizeClass = 'text-sm';
 
   return (
-    <a href={href} className={`group relative inline-block overflow-hidden h-5 items-center ${textSizeClass}`}>
+    <button 
+      onClick={onClick}
+      className={`group relative inline-block overflow-hidden h-5 items-center hover:cursor-pointer ${textSizeClass}`}
+    >
       <div className="flex flex-col transition-transform duration-400 ease-out transform group-hover:-translate-y-1/2">
         <span className={defaultTextColor}>{children}</span>
         <span className={hoverTextColor}>{children}</span>
       </div>
-    </a>
+    </button>
   );
 };
 
@@ -26,7 +29,13 @@ export function Navbar() {
   const [headerShapeClass, setHeaderShapeClass] = useState('rounded-full');
   const shapeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const router = useRouter();
-  const { authUser } = useAuth();
+  const pathname = usePathname();
+  const { user, loading } = useAuth();
+
+  const handleNavClick = (href: string) => {
+    router.push(href);
+    setIsOpen(false); // Close mobile menu if open
+  };
 
   const toggleMenu = () => {
     setIsOpen(!isOpen);
@@ -49,7 +58,7 @@ export function Navbar() {
       }, 300);
     }
 
-    return () => {
+    return () => {``
       if (shapeTimeoutRef.current) {
         clearTimeout(shapeTimeoutRef.current);
       }
@@ -66,9 +75,9 @@ export function Navbar() {
   );
 
   const navLinksData = [
-    { label: 'Manifesto', href: '#1' },
-    { label: 'Careers', href: '#2' },
-    { label: 'Discover', href: '#3' },
+    { label: 'Home', href: '/' },
+    { label: 'Explore', href: '/explore' },
+    { label: 'Services', href: '/services' },
   ];
 
   const signupButtonElement = (
@@ -102,19 +111,22 @@ export function Navbar() {
 
         <nav className="hidden sm:flex items-center space-x-4 sm:space-x-6 text-sm">
           {navLinksData.map((link) => (
-            <AnimatedNavLink key={link.href} href={link.href}>
+            <AnimatedNavLink key={link.href} isActive={pathname === link.href} onClick={() => handleNavClick(link.href)}>
               {link.label}
             </AnimatedNavLink>
           ))}
         </nav>
-
+        
+        {/* Avatar Desktop */}
         <div className="hidden sm:flex items-center gap-2 sm:gap-3">
-          {authUser ? (
-            <AvatarDropdown>
+          {loading ? (
+            <div className="w-8 h-8 rounded-full bg-gray-600 animate-pulse"></div>
+          ) : user ? (
+            <AvatarDropdown >
               <Avatar className="w-8 h-8 cursor-pointer">
-                <AvatarImage src={authUser.user_metadata.avatar_url || '/default-avatar.png'} alt="User Avatar" />
+                <AvatarImage src={user.avatarUrl || '/default-avatar.png'} alt="User Avatar" />
                 <AvatarFallback className="bg-gray-300 text-gray-700">
-                  {authUser.email?.charAt(0).toUpperCase() || 'U'}
+                  {user.email?.charAt(0).toUpperCase() || 'U'}
                 </AvatarFallback>
               </Avatar>
             </AvatarDropdown>
@@ -136,19 +148,27 @@ export function Navbar() {
                        ${isOpen ? 'max-h-[1000px] opacity-100 pt-4' : 'max-h-0 opacity-0 pt-0 pointer-events-none'}`}>
         <nav className="flex flex-col items-center space-y-4 text-base w-full">
           {navLinksData.map((link) => (
-            <a key={link.href} href={link.href} className="text-gray-300 hover:text-white transition-colors w-full text-center">
+            <button 
+              key={link.href} 
+              onClick={() => handleNavClick(link.href)}
+              className={`${pathname === link.href ? 'text-white font-semibold' : 'text-gray-300'} hover:text-white transition-colors w-full text-center`}
+            >
               {link.label}
-            </a>
+            </button>
           ))}
         </nav>
         <div className="flex flex-col items-center space-y-4 mt-4 w-full">
-          {authUser ? (
+          { loading? (
+            <div className="w-8 h-8 rounded-full bg-gray-600 animate-pulse"></div>
+          ) : user ? (
             <div className="flex flex-col items-center space-y-3 w-full">
               <AvatarDropdown className="relative">
                 <Avatar className="w-10 h-10 cursor-pointer">
-                  <AvatarImage src={authUser.user_metadata.avatar_url || '/default-avatar.png'} alt="User Avatar" />
+                  <AvatarImage src={user.avatarUrl || '/default-avatar.png'}
+                    alt="User Avatar"
+                  />
                   <AvatarFallback className="bg-gray-300 text-gray-700">
-                    {authUser.email?.charAt(0).toUpperCase() || 'U'}
+                    {user.email?.charAt(0).toUpperCase() || 'U'}
                   </AvatarFallback>
                 </Avatar>
               </AvatarDropdown>

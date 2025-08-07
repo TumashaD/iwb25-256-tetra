@@ -17,8 +17,7 @@ import { useSingleCall } from '@/hooks/useCallProtection'
 
 export default function SignUpPage() {
   const { 
-    authUser, 
-    user: userProfile, 
+    user, 
     loading,
     signUpWithGoogle, 
     createUserProfile, 
@@ -52,16 +51,16 @@ export default function SignUpPage() {
     if (loading) return
 
     // If user is authenticated and has profile, redirect to home
-    if (authUser && userProfile) {
+    if (user?.isAuthenticated && user.profile) {
       handleRedirectToHome()
       return
     }
     
     // If user is authenticated but no profile, move to role selection
-    if (authUser && !userProfile && step === 'login') {
+    if (user && !user.isAuthenticated && step === 'login') {
       setStep('role')
     }
-  }, [authUser, userProfile, loading, step, handleRedirectToHome])
+  }, [user, loading, step, handleRedirectToHome])
 
   const handleGoogleSignUp = async () => {
     try {
@@ -123,7 +122,7 @@ export default function SignUpPage() {
     }
     
     // If user is authenticated and has profile, they shouldn't be here
-    if (authUser && userProfile) {
+    if (user?.isAuthenticated && user.profile) {
       return <LoadingStep />
     }
 
@@ -162,10 +161,10 @@ export default function SignUpPage() {
         )
       
       case 'details':
-        if (!authUser) return <LoadingStep />
+        if (!user) return <LoadingStep />
         return (
           <DetailsStep 
-            user={authUser}
+            user={user}
             role={role || ''}
             onSubmit={protectedProfileSubmission}
             onBack={() => setStep('role')}
