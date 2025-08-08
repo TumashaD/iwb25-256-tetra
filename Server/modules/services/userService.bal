@@ -11,21 +11,18 @@ public type User record {
     string name;
     string email;
     string role;
-    string about;
-    string created_at;
+    string? about?;  // Made optional - users can add this later
+    string? created_at?;  // Made optional so frontend doesn't need to send it
 };
 
-public type UserCreate record {
-    string id;     // Auth user ID from Google Auth
-    string name;
-    string email;
-    string role;
-    string about;
-};
 
 public http:Service userService = @http:ServiceConfig{cors : auth:CORS_CONFIG} isolated service object {
 
-    isolated resource function post create(http:RequestContext ctx, @http:Payload UserCreate newUser) returns json|http:InternalServerError|http:BadRequest|error {
+    public function createInterceptors() returns http:Interceptor {
+        return auth:AUTH_INTERCEPTOR;
+    }
+
+    isolated resource function post create(http:RequestContext ctx, @http:Payload User newUser) returns json|http:InternalServerError|http:BadRequest|error {
         postgresql:Client db = check db:getDbClient();
 
         // Validate required fields
@@ -37,7 +34,7 @@ public http:Service userService = @http:ServiceConfig{cors : auth:CORS_CONFIG} i
         // Insert new user with the provided auth ID
         sql:ExecutionResult|error result = db->execute(`
             INSERT INTO users (id, name, email, role, about, created_at) 
-            VALUES (${newUser.id}::uuid, ${newUser.name}, ${newUser.email}, ${newUser.role}, ${newUser.about}, NOW())
+            VALUES (${newUser.id}::uuid, ${newUser.name}, ${newUser.email}, ${newUser.role}, ${newUser?.about}, NOW())
         `);
 
         if result is error {

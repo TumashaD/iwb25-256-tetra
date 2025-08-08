@@ -40,9 +40,9 @@ public type CompetitionCreate record {
 
 
 public http:Service competitionService = @http:ServiceConfig{cors : auth:CORS_CONFIG} isolated service object {
-    // public function createInterceptors() returns http:Interceptor {
-    //     return auth:AUTH_INTERCEPTOR;
-    // }
+    public function createInterceptors() returns http:Interceptor {
+        return auth:AUTH_INTERCEPTOR;
+    }
 
     isolated resource function get .(http:RequestContext ctx) returns json|http:InternalServerError|error {
         postgresql:Client db = check db:getDbClient();

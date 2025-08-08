@@ -98,7 +98,7 @@ export const SignInPage = ({ className }: SignInPageProps) => {
       const userData = {
         id: user.id,
         email: user.email,
-        full_name: formData.fullName,
+        name: formData.fullName,
         role: formData.role,
       };
       const result = await UserService.createUserProfile(userData);
