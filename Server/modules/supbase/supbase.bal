@@ -35,7 +35,7 @@ public isolated class StorageClient {
         return self.storageClient;
     }
 
-    public isolated function uploadFile(http:Request req,string bucketName,string fileName) returns http:InternalServerError & readonly|http:Unauthorized & readonly|http:BadRequest & readonly|json|error{
+    public isolated function uploadFile(http:Request req,string bucketName,string fileName,boolean overwrite=false) returns http:InternalServerError & readonly|http:Unauthorized & readonly|http:BadRequest & readonly|json|error{
         mime:Entity entity = check req.getEntity();
 
         string contentType = entity.getContentType();
@@ -78,6 +78,9 @@ public isolated class StorageClient {
         uploadReq.setHeader("Content-Type", contentType);
         uploadReq.setHeader("apikey", self.supabaseAnonKey);
         uploadReq.setHeader("Authorization", "Bearer " + token);
+        if overwrite {
+            uploadReq.setHeader("x-upsert", "true");
+        }
 
         log:printInfo("Uploading file to Supabase Storage", 'fileName = fileName, 'bucketName = bucketName, 'fileContentLength = fileContent.length(), 'uploadUrl = uploadUrl);
 
@@ -87,6 +90,7 @@ public isolated class StorageClient {
         if responseJson is json {
             return responseJson;
         } else {
+            log:printError("Failed to upload file", 'error = responseJson);
             return http:INTERNAL_SERVER_ERROR;
         }
     }

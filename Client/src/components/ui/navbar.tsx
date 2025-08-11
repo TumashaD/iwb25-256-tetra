@@ -78,6 +78,7 @@ export function Navbar() {
     { label: 'Home', href: '/' },
     { label: 'Explore', href: '/explore' },
     { label: 'Services', href: '/services' },
+    ...(user?.profile?.role === 'organizer' ? [{ label: 'Dashboard', href: '/dashboard' }] : []),
   ];
 
   const signupButtonElement = (

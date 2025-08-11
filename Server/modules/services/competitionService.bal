@@ -14,6 +14,7 @@ public type Competition record {
     string end_date;
     string category;
     string status;
+    string? banner_url?;
     string created_at;
     string updated_at;
 };
@@ -247,9 +248,9 @@ public function createCompetitionService(postgresql:Client dbClient,supbase:Stor
         }.toJson();
     }
 
-    isolated resource function post uploadBanner(http:Request req,string competitionId) returns http:Unauthorized & readonly|http:InternalServerError|http:BadRequest & readonly|error |json {
-        string fileName = competitionId + "/banner";
-        http:InternalServerError|http:Unauthorized|http:BadRequest|json|error uploadResult = self.storage.uploadFile(req, self.bucketName, fileName);
+    isolated resource function post uploadBanner/[int competitionId](http:Request req) returns http:Unauthorized & readonly|http:InternalServerError|http:BadRequest & readonly|error |json {
+        string fileName = competitionId.toString() + "/banner";
+        http:InternalServerError|http:Unauthorized|http:BadRequest|json|error uploadResult = self.storage.uploadFile(req, self.bucketName, fileName,true);
         if uploadResult is http:InternalServerError {
             log:printError("Failed to upload banner");
             return uploadResult;
@@ -261,12 +262,29 @@ public function createCompetitionService(postgresql:Client dbClient,supbase:Stor
             log:printError("Unexpected error during banner upload", uploadResult);
             return uploadResult;
         } else if uploadResult is json {
-            return uploadResult;
+            log:printInfo("Banner uploaded successfully", fileName = fileName , uploadResult = uploadResult);
+            string bannerUrl = uploadResult.toString();
+            sql:ExecutionResult|error executionResult = check self.db->execute(`
+                UPDATE competitions 
+                SET banner_url = ${bannerUrl}, updated_at = NOW() 
+                WHERE id = ${competitionId}
+            `);
+            if executionResult is error {
+                log:printError("Failed to update competition banner URL", executionResult);
+                return http:INTERNAL_SERVER_ERROR;
+            }
+            return {
+                "upload": uploadResult,
+                "database": executionResult,
+                "message": "Banner uploaded successfully",
+                "timestamp": time:utcNow()
+            }.toJson();
         }
     }
 
-    isolated resource function get getBanner(string competitionId) returns http:InternalServerError|http:Response {
-        string fileName = competitionId + "/banner";
+
+    isolated resource function get getBanner/[int competitionId]() returns http:InternalServerError|http:Response {
+        string fileName = competitionId.toString() + "/banner";
         http:Response|http:BadRequest|error downloadResult = self.storage.downloadFile(self.bucketName, fileName);
 
         if downloadResult is http:Response {
@@ -275,6 +293,5 @@ public function createCompetitionService(postgresql:Client dbClient,supbase:Stor
             return http:INTERNAL_SERVER_ERROR;
         }
     }
-
-};
+    };
 }
