@@ -28,7 +28,7 @@ export default function Home() {
       <div className="container mx-auto px-4 pt-24">
         <div className="text-center mb-12">
           <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
-            Welcome to Competitions Hub
+            Welcome to Vinnova
           </h1>
           <p className="text-xl text-gray-300 max-w-2xl mx-auto">
             Discover exciting competitions, showcase your skills, and connect with innovators worldwide
