@@ -5,14 +5,14 @@ import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 
 export default function SettingsPage() {
-  const { authUser, loading } = useAuth()
+  const { user, loading } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
-    if (!loading && !authUser) {
+    if (!loading && !user) {
       router.push('/')
     }
-  }, [authUser, loading, router])
+  }, [user, loading, router])
 
   if (loading) {
     return (
@@ -22,7 +22,7 @@ export default function SettingsPage() {
     )
   }
 
-  if (!authUser) {
+  if (!user) {
     return null
   }
 
