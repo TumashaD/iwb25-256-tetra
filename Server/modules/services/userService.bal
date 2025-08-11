@@ -21,7 +21,7 @@ public function createUserService(postgresql:Client dbClient, http:CorsConfig co
 
     private final postgresql:Client db = dbClient;
 
-    isolated resource function post create(http:RequestContext ctx, @http:Payload User newUser) returns User|http:InternalServerError|http:BadRequest|error {
+    isolated resource function post create(http:Request req, @http:Payload User newUser) returns User|http:InternalServerError|http:BadRequest|error {
         // Validate required fields
         if newUser.id.trim() == "" || newUser.name.trim() == "" || 
            newUser.email.trim() == "" || newUser.role.trim() == "" {
@@ -57,7 +57,7 @@ public function createUserService(postgresql:Client dbClient, http:CorsConfig co
         return createdUserArr[0];
     }
 
-    isolated resource function get [string id](http:RequestContext ctx) returns User|http:InternalServerError|http:NotFound|error {
+    isolated resource function get [string id](http:Request req) returns User|http:InternalServerError|http:NotFound|error {
         // Fetch user by ID
         sql:ParameterizedQuery selectQuery = `SELECT * FROM users WHERE id = ${id}::uuid`;
         stream<User, sql:Error?> userResult = self.db->query(selectQuery, User);
@@ -75,7 +75,7 @@ public function createUserService(postgresql:Client dbClient, http:CorsConfig co
         return userArr[0];
     }
 
-    isolated resource function patch update/[string id](http:RequestContext ctx, @http:Payload json updateData) returns User|http:InternalServerError|http:NotFound|http:BadRequest|error {
+    isolated resource function patch update/[string id](http:Request req, @http:Payload json updateData) returns User|http:InternalServerError|http:NotFound|http:BadRequest|error {
         // Get existing user
         sql:ParameterizedQuery selectQuery = `SELECT * FROM users WHERE id = ${id}::uuid`;
         stream<User, sql:Error?> userResult = self.db->query(selectQuery, User);

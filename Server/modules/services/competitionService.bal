@@ -3,6 +3,7 @@ import ballerina/sql;
 import ballerina/http;
 import ballerina/log;
 import ballerina/time;
+import vinnova.supbase;
 
 public type Competition record {
     int id;
@@ -17,10 +18,16 @@ public type Competition record {
     string updated_at;
 };
 
-public function createCompetitionService(postgresql:Client dbClient, http:CorsConfig corsConfig) returns http:Service {
+public function createCompetitionService(postgresql:Client dbClient,supbase:StorageClient storageClient, http:CorsConfig corsConfig,http:Interceptor authInterceptor) returns http:Service {
     return @http:ServiceConfig{cors : corsConfig} isolated service object {
 
+    //         public function createInterceptors() returns http:Interceptor {
+    //     return authInterceptor; 
+    // }
+
         private final postgresql:Client db = dbClient;
+        private final supbase:StorageClient storage = storageClient;
+        private final string bucketName = "competitions";
 
     isolated resource function get .(http:RequestContext ctx) returns json|http:InternalServerError|error {
             sql:ParameterizedQuery query = `SELECT * FROM competitions`;
@@ -238,6 +245,35 @@ public function createCompetitionService(postgresql:Client dbClient, http:CorsCo
             "message": "Competition deleted successfully",
             "timestamp": time:utcNow()
         }.toJson();
+    }
+
+    isolated resource function post uploadBanner(http:Request req,string competitionId) returns http:Unauthorized & readonly|http:InternalServerError|http:BadRequest & readonly|error |json {
+        string fileName = competitionId + "/banner";
+        http:InternalServerError|http:Unauthorized|http:BadRequest|json|error uploadResult = self.storage.uploadFile(req, self.bucketName, fileName);
+        if uploadResult is http:InternalServerError {
+            log:printError("Failed to upload banner");
+            return uploadResult;
+        } else if uploadResult is http:Unauthorized {
+            return http:UNAUTHORIZED;
+        } else if uploadResult is http:BadRequest {
+            return http:BAD_REQUEST;
+        } else if uploadResult is error {
+            log:printError("Unexpected error during banner upload", uploadResult);
+            return uploadResult;
+        } else if uploadResult is json {
+            return uploadResult;
+        }
+    }
+
+    isolated resource function get getBanner(string competitionId) returns http:InternalServerError|http:Response {
+        string fileName = competitionId + "/banner";
+        http:Response|http:BadRequest|error downloadResult = self.storage.downloadFile(self.bucketName, fileName);
+
+        if downloadResult is http:Response {
+            return downloadResult;
+        } else {
+            return http:INTERNAL_SERVER_ERROR;
+        }
     }
 
 };

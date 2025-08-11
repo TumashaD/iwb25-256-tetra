@@ -2,17 +2,21 @@ import vinnova.services;
 import ballerina/http;
 import ballerina/log;
 import vinnova.auth;
-import vinnova.db;
+import vinnova.supbase;
 import ballerinax/postgresql;
 
 configurable string supabaseUrl = ?;
 configurable string supabaseJwtSecret = ?;
 configurable int serverPort = ?;
+
 configurable string dbHost = ?;
 configurable int dbPort = ?;
 configurable string dbUser = ?;
 configurable string dbPassword = ?;
 configurable string dbName = ?;
+
+configurable string supabaseStorageUrl = ?;
+configurable string supabaseAnonKey = ?;
 
 listener http:Listener ln = new (serverPort);
 
@@ -23,12 +27,16 @@ public final http:CorsConfig CORS_CONFIG = {
     allowOrigins: ["http://localhost:3000"]
 };
 
+
 public function main() returns error? {
     auth:AuthInterceptor authInterceptor = new(supabaseUrl, supabaseJwtSecret);
-    db:DatabaseClient dbClient = new (dbHost, dbPort, dbUser, dbPassword, dbName);
+
+    supbase:DatabaseClient dbClient = new (dbHost, dbPort, dbUser, dbPassword, dbName);
     postgresql:Client db = check dbClient.getClient();
 
-    http:Service competitionService = services:createCompetitionService(db, CORS_CONFIG);
+    supbase:StorageClient storageClient = check new (supabaseStorageUrl, supabaseAnonKey);
+
+    http:Service competitionService = services:createCompetitionService(db, storageClient, CORS_CONFIG,authInterceptor);
     http:Service userService = services:createUserService(db, CORS_CONFIG, authInterceptor);
     http:Service teamService = services:createTeamService(db, CORS_CONFIG);
     http:Service enrollmentService = services:createEnrollmentService(db, CORS_CONFIG);
