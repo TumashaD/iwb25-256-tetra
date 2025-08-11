@@ -230,6 +230,9 @@ dependencies = [
 	{org = "ballerina", name = "lang.int"},
 	{org = "ballerina", name = "log"}
 ]
+modules = [
+	{org = "ballerina", packageName = "mime", moduleName = "mime"}
+]
 
 [[package]]
 org = "ballerina"
@@ -350,6 +353,7 @@ dependencies = [
 	{org = "ballerina", name = "http"},
 	{org = "ballerina", name = "jwt"},
 	{org = "ballerina", name = "log"},
+	{org = "ballerina", name = "mime"},
 	{org = "ballerina", name = "sql"},
 	{org = "ballerina", name = "time"},
 	{org = "ballerinai", name = "observe"},
@@ -358,7 +362,7 @@ dependencies = [
 modules = [
 	{org = "tetra", packageName = "vinnova", moduleName = "vinnova"},
 	{org = "tetra", packageName = "vinnova", moduleName = "vinnova.auth"},
-	{org = "tetra", packageName = "vinnova", moduleName = "vinnova.db"},
-	{org = "tetra", packageName = "vinnova", moduleName = "vinnova.services"}
+	{org = "tetra", packageName = "vinnova", moduleName = "vinnova.services"},
+	{org = "tetra", packageName = "vinnova", moduleName = "vinnova.supbase"}
 ]
 
