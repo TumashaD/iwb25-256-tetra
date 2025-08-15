@@ -57,7 +57,7 @@ export default function SignUpPage() {
     }
     
     // If user is authenticated but no profile, move to role selection
-    if (user && !user.isAuthenticated && step === 'login') {
+    if (user?.isAuthenticated && !user.profile && step === 'login') {
       setStep('role')
     }
   }, [user, loading, step, handleRedirectToHome])
@@ -194,12 +194,17 @@ export default function SignUpPage() {
             muted
             loop
             playsInline
+            disablePictureInPicture
+            style={{ userSelect: 'none' }}
+            preload="auto"
             className="w-full h-full object-cover"
           >
             <source src="/background.mp4" type="video/mp4" />
             <source src="/background.webm" type="video/webm" />
             Your browser does not support the video tag.
           </video>
+          {/* Fallback image */}
+          <img src="/background.png" alt="Fallback" className="absolute inset-0 w-full h-full object-cover" />
           {/* Overlay for better text readability */}
           <div className="absolute inset-0 bg-black/20" />
         </div>

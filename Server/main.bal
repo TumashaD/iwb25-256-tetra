@@ -38,7 +38,7 @@ public function main() returns error? {
 
     http:Service competitionService = services:createCompetitionService(db, storageClient, CORS_CONFIG,authInterceptor);
     http:Service userService = services:createUserService(db, CORS_CONFIG, authInterceptor);
-    http:Service teamService = services:createTeamService(db, CORS_CONFIG);
+    http:Service teamService = services:createTeamService(db, CORS_CONFIG, authInterceptor);
     http:Service enrollmentService = services:createEnrollmentService(db, CORS_CONFIG);
 
     check ln.attach(competitionService, "/competitions");
