@@ -17,7 +17,7 @@ interface TeamMemberWithProfile {
 }
 
 export default function CompetitorDashboard() {
-  const { user, loading: authLoading } = useAuth()
+  const { user, loading } = useAuth()
   const router = useRouter()
   const [teams, setTeams] = useState<Team[]>([])
   const [selectedTeam, setSelectedTeam] = useState<TeamWithMembers | null>(null)
@@ -35,17 +35,17 @@ export default function CompetitorDashboard() {
   })
   const [searchEmail, setSearchEmail] = useState('')
   const [searchResults, setSearchResults] = useState<UserSearchResult[]>([])
-  const [loading, setLoading] = useState(false)
+  const [pageLoading, setPageLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isCurrentUserLeader, setIsCurrentUserLeader] = useState(false)
   const [teamCreatorProfile, setTeamCreatorProfile] = useState<Profile | null>(null)
 
   // Redirect if not competitor
   useEffect(() => {
-    if (!authLoading && (!user || user.profile?.role !== 'competitor')) {
+    if (!loading && (!user || user.profile?.role !== 'competitor')) {
       router.push('/')
     }
-  }, [user, authLoading, router])
+  }, [user, loading, router])
 
   // Set user ID when user is loaded
   useEffect(() => {
@@ -63,7 +63,7 @@ export default function CompetitorDashboard() {
 
   const fetchMyTeams = async () => {
     try {
-      setLoading(true)
+      setPageLoading(true)
       setError(null)
       if (user?.id) {
         const userTeams = await TeamService.getAllUserTeams(user.id)
@@ -73,7 +73,7 @@ export default function CompetitorDashboard() {
       console.error('Failed to fetch teams:', error)
       setError('Failed to fetch teams. Please try again.')
     } finally {
-      setLoading(false)
+      setPageLoading(false)
     }
   }
 
@@ -152,7 +152,7 @@ export default function CompetitorDashboard() {
   const handleTeamSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
-      setLoading(true)
+      setPageLoading(true)
       setError(null)
       
       await TeamService.createTeam(teamFormData)
@@ -164,7 +164,7 @@ export default function CompetitorDashboard() {
       console.error('Failed to create team:', error)
       setError('Failed to create team. Please try again.')
     } finally {
-      setLoading(false)
+      setPageLoading(false)
     }
   }
 
@@ -173,7 +173,7 @@ export default function CompetitorDashboard() {
     if (!selectedTeam) return
     
     try {
-      setLoading(true)
+      setPageLoading(true)
       setError(null)
       
       await TeamService.addTeamMember(selectedTeam.id, memberFormData)
@@ -185,7 +185,7 @@ export default function CompetitorDashboard() {
       console.error('Failed to add team member:', error)
       setError('Failed to add team member. Please try again.')
     } finally {
-      setLoading(false)
+      setPageLoading(false)
     }
   }
 
@@ -204,7 +204,7 @@ export default function CompetitorDashboard() {
   const handleDeleteTeam = async (teamId: number) => {
     if (confirm('Are you sure you want to delete this team? This action cannot be undone and will remove all team members.')) {
       try {
-        setLoading(true)
+        setPageLoading(true)
         setError(null)
         
         await TeamService.deleteTeam(teamId)
@@ -216,7 +216,7 @@ export default function CompetitorDashboard() {
         console.error('Failed to delete team:', error)
         setError('Failed to delete team. Please try again.')
       } finally {
-        setLoading(false)
+        setPageLoading(false)
       }
     }
   }
@@ -253,7 +253,7 @@ export default function CompetitorDashboard() {
     setSearchResults([])
   }
 
-  if (authLoading || loading) {
+  if (loading || pageLoading) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <div className="text-white text-center">

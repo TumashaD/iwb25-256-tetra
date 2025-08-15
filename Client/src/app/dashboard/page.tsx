@@ -5,11 +5,11 @@ import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 
 export default function Dashboard() {
-  const { user, loading: authLoading } = useAuth()
+  const { user, loading } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
-    if (!authLoading) {
+    if (!loading) {
       if (!user) {
         // Not logged in, redirect to home
         router.push('/')
@@ -26,7 +26,7 @@ export default function Dashboard() {
         router.push('/')
       }
     }
-  }, [user, authLoading, router])
+  }, [user, loading, router])
 
   // Show loading while redirecting
   return (

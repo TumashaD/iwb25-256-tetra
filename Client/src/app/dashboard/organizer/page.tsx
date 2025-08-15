@@ -5,9 +5,10 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { CompetitionsService, Competition } from '@/services/competitionService'
 import { Navbar } from '@/components/ui/navbar'
+import { OrganizerService } from '@/services/organizerService'
 
 export default function OrganizerDashboard() {
-  const { user, loading: authLoading } = useAuth()
+  const { user, loading } = useAuth()
   const router = useRouter()
   const [competitions, setCompetitions] = useState<Competition[]>([])
   const [showCreateForm, setShowCreateForm] = useState(false)
@@ -23,15 +24,16 @@ export default function OrganizerDashboard() {
   })
   const [bannerFile, setBannerFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState<number | null>(null)
-  const [loading, setLoading] = useState(false)
+  const [pageLoading, setPageLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [uploadedBanners, setUploadedBanners] = useState<Record<number, string>>({})
 
   // Redirect if not organizer
   useEffect(() => {
-    if (!authLoading && (!user || user.profile?.role !== 'organizer')) {
+    if (!loading && (!user || user.profile?.role !== 'organizer')) {
       router.push('/')
     }
-  }, [user, authLoading, router])
+  }, [user, loading, router])
 
   // Set organizer_id when user is loaded
   useEffect(() => {
@@ -49,7 +51,7 @@ export default function OrganizerDashboard() {
 
   const fetchMyCompetitions = async () => {
     try {
-      setLoading(true)
+      setPageLoading(true)
       setError(null)
       const allCompetitions = await CompetitionsService.getCompetitions()
       // Filter competitions by organizer_id
@@ -59,14 +61,14 @@ export default function OrganizerDashboard() {
       console.error('Failed to fetch competitions:', error)
       setError('Failed to fetch competitions. Please try again.')
     } finally {
-      setLoading(false)
+      setPageLoading(false)
     }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
-      setLoading(true)
+      setPageLoading(true)
       setError(null)
       
       if (editingCompetition) {
@@ -79,10 +81,10 @@ export default function OrganizerDashboard() {
           category: formData.category,
           status: formData.status
         }
-        await CompetitionsService.updateCompetition(editingCompetition.id, updateData)
+        await OrganizerService.updateCompetition(editingCompetition.id, updateData)
       } else {
         // Create new competition
-        await CompetitionsService.createCompetition(formData)
+        await OrganizerService.createCompetition(formData)
       }
       
       // Reset form and refresh competitions
@@ -92,14 +94,14 @@ export default function OrganizerDashboard() {
       console.error('Failed to save competition:', error)
       setError('Failed to save competition. Please try again.')
     } finally {
-      setLoading(false)
+      setPageLoading(false)
     }
   }
 
   const handleDelete = async (id: number) => {
     if (confirm('Are you sure you want to delete this competition?')) {
       try {
-        await CompetitionsService.deleteCompetition(id)
+        await OrganizerService.deleteCompetition(id)
         fetchMyCompetitions()
       } catch (error) {
         console.error('Failed to delete competition:', error)
@@ -125,12 +127,19 @@ export default function OrganizerDashboard() {
   const handleBannerUpload = async (competitionId: number, file: File) => {
     try {
       setUploading(competitionId)
-      await CompetitionsService.uploadBanner(competitionId, file)
+      setUploadedBanners(prev => ({ ...prev, [competitionId]: URL.createObjectURL(file) }))
+      await OrganizerService.uploadBanner(competitionId, file)
       fetchMyCompetitions() // Refresh to get updated banner URL
       alert('Banner uploaded successfully!')
     } catch (error) {
       console.error('Failed to upload banner:', error)
       alert('Failed to upload banner. Please try again.')
+      // Remove Preview on error
+      setUploadedBanners(prev => {
+        const newState = { ...prev }
+        delete newState[competitionId]
+        return newState
+      })
     } finally {
       setUploading(null)
     }
@@ -151,7 +160,7 @@ export default function OrganizerDashboard() {
     setBannerFile(null)
   }
 
-  if (authLoading || loading) {
+  if (loading || pageLoading) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <div className="text-white text-center">
@@ -349,7 +358,7 @@ export default function OrganizerDashboard() {
                   {/* Banner Preview */}
                   <div className="mt-2">
                     <img
-                      src={CompetitionsService.getBannerUrl(competition.id)}
+                      src={uploadedBanners[competition.id] || `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/competitions/${competition.id}/banner?t=${new Date(competitions.find(c => c.id === competition.id)?.updated_at || Date.now()).getTime()}`}
                       alt="Competition Banner"
                       className="w-32 h-20 object-cover rounded border border-gray-600"
                       onError={(e) => {

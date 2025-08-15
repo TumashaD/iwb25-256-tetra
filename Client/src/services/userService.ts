@@ -10,9 +10,9 @@ export interface Profile {
   createdAt?: string
 }
 
-export class UserService {
+export const UserService = {
   // Create a new user
-  static async createUser(data: Profile): Promise<Profile> {
+  async createUser(data: Profile): Promise<Profile> {
     try {
       console.log('UserService.createUser called with data:', data)
       
@@ -55,10 +55,10 @@ export class UserService {
       
       throw new Error('Failed to create user profile. Please try again.')
     }
-  }
+  },
 
   // Get user by ID
-  static async getUser(userId: string): Promise<Profile | null> {
+  async getUser(userId: string): Promise<Profile | null> {
     try {
       const result = await apiCall(`/users/${userId}`, {
         method: 'GET',
@@ -78,9 +78,9 @@ export class UserService {
       console.error('Failed to get user:', error)
       throw error
     }
-  }
+  },
 
-  static async updateUser(userId: string, data: Partial<Profile>): Promise<Profile> {
+  async updateUser(userId: string, data: Partial<Profile>): Promise<Profile> {
     try {
       const result = await apiCall(`/users/update/${userId}`, {
         method: 'PATCH',

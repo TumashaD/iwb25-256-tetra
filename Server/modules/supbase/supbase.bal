@@ -100,6 +100,5 @@ public isolated class StorageClient {
         string downloadUrl = string `/object/public/${bucketName}/${fileName}`;
         http:Response downloadRes = check self.storageClient->get(downloadUrl);
         return downloadRes;
-}
-
+    }
 }

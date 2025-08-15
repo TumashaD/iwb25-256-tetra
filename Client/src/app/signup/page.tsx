@@ -3,7 +3,7 @@
 import React, { useEffect, useCallback } from 'react'
 import { AnimatePresence } from 'framer-motion'
 import { useAuth } from '@/contexts/AuthContext'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { cn } from '@/lib/utils'
 
 // Import step components
@@ -24,6 +24,7 @@ export default function SignUpPage() {
     error: userError 
   } = useAuth()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [step, setStep] = React.useState<'login' | 'role' | 'details' | 'success'>('login')
   const [role, setRole] = React.useState<string | null>(null)
   const [error, setError] = React.useState<string | null>(null)
@@ -42,7 +43,10 @@ export default function SignUpPage() {
 
   // Redirect to home when user is fully authenticated
   const handleRedirectToHome = useCallback(() => {
-    router.push('/')
+    if (user?.isAuthenticated && user.profile) {
+      const redirectTo = searchParams.get('redirectTo') || '/'
+      router.push(redirectTo)
+    }
   }, [router])
 
   // Handle authentication state changes

@@ -21,6 +21,10 @@ export default function Home() {
     fetchCompetitions();
   }, []);
 
+  const getBannerUrl = (competitionId: number) => {
+    return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/competitions/${competitionId}/banner?t=${new Date(competitions.find(c => c.id === competitionId)?.updated_at || Date.now()).getTime()}`;
+  };
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white">
       <Navbar />
@@ -46,7 +50,7 @@ export default function Home() {
               <div 
                 className="absolute inset-0 bg-cover bg-center bg-gray-700"
                 style={{
-                  backgroundImage: `url(${CompetitionsService.getBannerUrl(competition.id)})`,
+                  backgroundImage: `url(${getBannerUrl(competition.id)})`,
                 }}
                 onError={(e) => {
                   // Fallback to gradient if banner fails to load
