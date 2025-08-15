@@ -11,6 +11,11 @@ export interface Competition {
   status: string
   created_at: string
   updated_at: string
+  landing_page_content?: string
+  landing_page_theme?: 'default' | 'modern' | 'minimal' | 'gaming'
+  rules?: string
+  prizes?: string
+  contact_info?: string
 }
 
 
@@ -26,6 +31,19 @@ export const CompetitionsService = {
     } catch (error) {
       console.error('Failed to fetch competitions:', error);
       throw new Error('Failed to fetch competitions. Please try again later.');
+    }
+  },
+
+  // Fetch a single competition by ID
+  async getCompetition(id: number): Promise<Competition> {
+    try {
+      const result = await apiCall(`/competitions/${id}`, {
+        method: 'GET',
+      }, false);
+      return result.competition || result;
+    } catch (error) {
+      console.error('Failed to fetch competition:', error);
+      throw new Error('Failed to fetch competition. Please try again later.');
     }
   },
 }

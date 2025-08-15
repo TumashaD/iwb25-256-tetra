@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { CompetitionsService, Competition } from '@/services/competitionService'
+import { EnrollmentService, EnrollmentWithDetails } from '@/services/enrollmentService'
 import { Navbar } from '@/components/ui/navbar'
 import { OrganizerService } from '@/services/organizerService'
 
@@ -11,7 +12,10 @@ export default function OrganizerDashboard() {
   const { user, loading } = useAuth()
   const router = useRouter()
   const [competitions, setCompetitions] = useState<Competition[]>([])
+  const [selectedCompetition, setSelectedCompetition] = useState<Competition | null>(null)
+  const [competitionEnrollments, setCompetitionEnrollments] = useState<EnrollmentWithDetails[]>([])
   const [showCreateForm, setShowCreateForm] = useState(false)
+  const [showEnrollmentModal, setShowEnrollmentModal] = useState(false)
   const [editingCompetition, setEditingCompetition] = useState<Competition | null>(null)
   const [formData, setFormData] = useState<Partial<Competition>>({
     title: '',
@@ -20,14 +24,19 @@ export default function OrganizerDashboard() {
     start_date: '',
     end_date: '',
     category: '',
-    status: 'upcoming'
+    status: 'upcoming',
+    landing_page_content: '',
+    landing_page_theme: 'default',
+    rules: '',
+    prizes: '',
+    contact_info: ''
   })
   const [bannerFile, setBannerFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState<number | null>(null)
   const [pageLoading, setPageLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [uploadedBanners, setUploadedBanners] = useState<Record<number, string>>({})
-
+  const [showAdvancedOptions, setShowAdvancedOptions] = useState(false)
   // Redirect if not organizer
   useEffect(() => {
     if (!loading && (!user || user.profile?.role !== 'organizer')) {
@@ -65,6 +74,19 @@ export default function OrganizerDashboard() {
     }
   }
 
+  const fetchCompetitionEnrollments = async (competition: Competition) => {
+    try {
+      setSelectedCompetition(competition)
+      setError(null)
+      const enrollments = await EnrollmentService.getCompetitionEnrollments(competition.id)
+      setCompetitionEnrollments(enrollments)
+      setShowEnrollmentModal(true)
+    } catch (error) {
+      console.error('Failed to fetch competition enrollments:', error)
+      setError('Failed to fetch enrollments. Please try again.')
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
@@ -79,7 +101,12 @@ export default function OrganizerDashboard() {
           start_date: formData.start_date,
           end_date: formData.end_date,
           category: formData.category,
-          status: formData.status
+          status: formData.status,
+          landing_page_content: formData.landing_page_content,
+          landing_page_theme: formData.landing_page_theme,
+          rules: formData.rules,
+          prizes: formData.prizes,
+          contact_info: formData.contact_info
         }
         await OrganizerService.updateCompetition(editingCompetition.id, updateData)
       } else {
@@ -119,7 +146,12 @@ export default function OrganizerDashboard() {
       start_date: competition.start_date.split('T')[0], // Format for date input
       end_date: competition.end_date.split('T')[0],
       category: competition.category,
-      status: competition.status
+      status: competition.status,
+      landing_page_content: competition.landing_page_content || '',
+      landing_page_theme: competition.landing_page_theme || 'default',
+      rules: competition.rules || '',
+      prizes: competition.prizes || '',
+      contact_info: competition.contact_info || ''
     })
     setShowCreateForm(true)
   }
@@ -153,11 +185,17 @@ export default function OrganizerDashboard() {
       start_date: '',
       end_date: '',
       category: '',
-      status: 'upcoming'
+      status: 'upcoming',
+      landing_page_content: '',
+      landing_page_theme: 'default',
+      rules: '',
+      prizes: '',
+      contact_info: ''
     })
     setShowCreateForm(false)
     setEditingCompetition(null)
     setBannerFile(null)
+    setShowAdvancedOptions(false)
   }
 
   if (loading || pageLoading) {
@@ -269,6 +307,84 @@ export default function OrganizerDashboard() {
                   <option value="completed">Completed</option>
                   <option value="cancelled">Cancelled</option>
                 </select>
+
+                {/* Landing Page Customization Toggle */}
+                <div className="border-t border-gray-600 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
+                    className="w-full flex items-center justify-between p-3 bg-gray-600 hover:bg-gray-500 rounded-lg transition-colors"
+                  >
+                    <span>Landing Page Customization</span>
+                    <span className={`transition-transform ${showAdvancedOptions ? 'rotate-180' : ''}`}>
+                      ▼
+                    </span>
+                  </button>
+                </div>
+
+                {/* Advanced Options */}
+                {showAdvancedOptions && (
+                  <div className="space-y-4 bg-gray-700/50 p-4 rounded-lg">
+                    {/* Theme Selection */}
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Landing Page Theme</label>
+                      <select
+                        value={formData.landing_page_theme}
+                        onChange={(e) => setFormData({ ...formData, landing_page_theme: e.target.value as Competition['landing_page_theme'] })}
+                        className="w-full p-3 bg-gray-700 rounded-lg"
+                      >
+                        <option value="default">Default (Blue)</option>
+                        <option value="modern">Modern (Purple)</option>
+                        <option value="minimal">Minimal (Light)</option>
+                        <option value="gaming">Gaming (Green)</option>
+                      </select>
+                    </div>
+
+                    {/* Landing Page Content */}
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Custom Landing Page Content</label>
+                      <textarea
+                        placeholder="Customize your competition's landing page with rich content (HTML supported)..."
+                        value={formData.landing_page_content}
+                        onChange={(e) => setFormData({ ...formData, landing_page_content: e.target.value })}
+                        className="w-full p-3 bg-gray-700 rounded-lg h-32"
+                      />
+                    </div>
+
+                    {/* Rules */}
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Rules & Guidelines</label>
+                      <textarea
+                        placeholder="Competition rules and guidelines (HTML supported)..."
+                        value={formData.rules}
+                        onChange={(e) => setFormData({ ...formData, rules: e.target.value })}
+                        className="w-full p-3 bg-gray-700 rounded-lg h-24"
+                      />
+                    </div>
+
+                    {/* Prizes */}
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Prizes & Rewards</label>
+                      <textarea
+                        placeholder="Prize information and rewards (HTML supported)..."
+                        value={formData.prizes}
+                        onChange={(e) => setFormData({ ...formData, prizes: e.target.value })}
+                        className="w-full p-3 bg-gray-700 rounded-lg h-24"
+                      />
+                    </div>
+
+                    {/* Contact Info */}
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Contact Information</label>
+                      <textarea
+                        placeholder="Contact details for participants (HTML supported)..."
+                        value={formData.contact_info}
+                        onChange={(e) => setFormData({ ...formData, contact_info: e.target.value })}
+                        className="w-full p-3 bg-gray-700 rounded-lg h-20"
+                      />
+                    </div>
+                  </div>
+                )}
                 
                 <div className="flex gap-2">
                   <button
@@ -319,6 +435,18 @@ export default function OrganizerDashboard() {
                   </div>
                   
                   <div className="flex flex-col gap-2 ml-4">
+                    <button
+                      onClick={() => router.push(`/competition/${competition.id}`)}
+                      className="bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded text-sm transition-colors"
+                    >
+                      View Landing Page
+                    </button>
+                    <button
+                      onClick={() => fetchCompetitionEnrollments(competition)}
+                      className="bg-green-600 hover:bg-green-700 px-3 py-1 rounded text-sm transition-colors"
+                    >
+                      View Enrollments
+                    </button>
                     <button
                       onClick={() => handleEdit(competition)}
                       className="bg-yellow-600 hover:bg-yellow-700 px-3 py-1 rounded text-sm transition-colors"
@@ -371,6 +499,128 @@ export default function OrganizerDashboard() {
             ))
           )}
         </div>
+
+        {/* Enrollment Modal */}
+        {showEnrollmentModal && selectedCompetition && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-gray-800 p-6 rounded-lg w-full max-w-4xl mx-4 max-h-[80vh] overflow-y-auto">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-white">
+                  Enrollments for "{selectedCompetition.title}"
+                </h2>
+                <button
+                  onClick={() => {
+                    setShowEnrollmentModal(false)
+                    setSelectedCompetition(null)
+                    setCompetitionEnrollments([])
+                  }}
+                  className="text-gray-400 hover:text-white text-2xl"
+                >
+                  ×
+                </button>
+              </div>
+
+              {competitionEnrollments.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-gray-400 text-lg mb-2">No enrollments yet</p>
+                  <p className="text-gray-500 text-sm">
+                    Teams haven't enrolled in this competition yet.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="text-sm text-gray-400 mb-4">
+                    Total Enrollments: {competitionEnrollments.length}
+                  </div>
+                  
+                  {competitionEnrollments.map((enrollment) => (
+                    <div key={enrollment.enrollment_id} className="bg-gray-700 p-4 rounded-lg">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <h3 className="text-lg font-semibold text-white mb-2">
+                            {enrollment.team_name}
+                          </h3>
+                          <div className="grid md:grid-cols-2 gap-4 text-sm">
+                            <div>
+                              <span className="text-gray-400">Status: </span>
+                              <span className={`font-medium ${
+                                enrollment.status === 'enrolled' ? 'text-green-400' :
+                                enrollment.status === 'pending' ? 'text-yellow-400' :
+                                'text-red-400'
+                              }`}>
+                                {enrollment.status.charAt(0).toUpperCase() + enrollment.status.slice(1)}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="text-gray-400">Enrolled: </span>
+                              <span className="text-gray-300">
+                                {enrollment.created_at ? new Date(enrollment.created_at).toLocaleString() : 'N/A'}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="flex gap-2 ml-4">
+                          {enrollment.status === 'pending' && (
+                            <>
+                              <button
+                                onClick={async () => {
+                                  try {
+                                    await EnrollmentService.updateEnrollmentStatus(enrollment.enrollment_id, 'enrolled')
+                                    // Refresh enrollments
+                                    fetchCompetitionEnrollments(selectedCompetition)
+                                  } catch (error) {
+                                    console.error('Failed to approve enrollment:', error)
+                                    setError('Failed to approve enrollment')
+                                  }
+                                }}
+                                className="bg-green-600 hover:bg-green-700 px-3 py-1 rounded text-sm transition-colors"
+                              >
+                                Approve
+                              </button>
+                              <button
+                                onClick={async () => {
+                                  try {
+                                    await EnrollmentService.updateEnrollmentStatus(enrollment.enrollment_id, 'rejected')
+                                    // Refresh enrollments
+                                    fetchCompetitionEnrollments(selectedCompetition)
+                                  } catch (error) {
+                                    console.error('Failed to reject enrollment:', error)
+                                    setError('Failed to reject enrollment')
+                                  }
+                                }}
+                                className="bg-red-600 hover:bg-red-700 px-3 py-1 rounded text-sm transition-colors"
+                              >
+                                Reject
+                              </button>
+                            </>
+                          )}
+                          <button
+                            onClick={async () => {
+                              if (confirm('Are you sure you want to remove this enrollment?')) {
+                                try {
+                                  await EnrollmentService.deleteEnrollment(enrollment.enrollment_id)
+                                  // Refresh enrollments
+                                  fetchCompetitionEnrollments(selectedCompetition)
+                                } catch (error) {
+                                  console.error('Failed to delete enrollment:', error)
+                                  setError('Failed to delete enrollment')
+                                }
+                              }
+                            }}
+                            className="bg-gray-600 hover:bg-gray-700 px-3 py-1 rounded text-sm transition-colors"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

@@ -16,6 +16,11 @@ public type Competition record {
     string status;
     string created_at;
     string updated_at;
+    string? landing_page_content?;
+    string? landing_page_theme?;
+    string? rules?;
+    string? prizes?;
+    string? contact_info?;
 };
 
 public function createCompetitionService(postgresql:Client dbClient,supbase:StorageClient storageClient, http:CorsConfig corsConfig) returns http:Service {
@@ -35,6 +40,27 @@ public function createCompetitionService(postgresql:Client dbClient,supbase:Stor
         }
         return {
             "competitions": competitions,
+            "timestamp": time:utcNow()
+        }.toJson();
+    }
+
+    isolated resource function get [int id](http:RequestContext ctx) returns json|http:InternalServerError|http:NotFound|error {
+        sql:ParameterizedQuery query = `SELECT * FROM competitions WHERE id = ${id}`;
+        stream<Competition, sql:Error?> competitionResult = self.db->query(query, Competition);
+        Competition[]|error competitionArr = from Competition competition in competitionResult
+                                             select competition;
+        
+        if competitionArr is error {
+            log:printError("Failed to fetch competition", competitionArr);
+            return http:INTERNAL_SERVER_ERROR;
+        }
+        
+        if competitionArr.length() == 0 {
+            return http:NOT_FOUND;
+        }
+        
+        return {
+            "competition": competitionArr[0],
             "timestamp": time:utcNow()
         }.toJson();
     }

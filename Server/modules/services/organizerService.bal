@@ -27,6 +27,13 @@ public function createOrganizerService(postgresql:Client dbClient,supbase:Storag
         json|error categoryJson = competitionData.category;
         json|error statusJson = competitionData.status;
 
+        // Extract optional landing page fields
+        json|error landingPageContentJson = competitionData.landing_page_content;
+        json|error landingPageThemeJson = competitionData.landing_page_theme;
+        json|error rulesJson = competitionData.rules;
+        json|error prizesJson = competitionData.prizes;
+        json|error contactInfoJson = competitionData.contact_info;
+
         if titleJson is error || organizerIdJson is error ||  startDateJson is error || endDateJson is error || categoryJson is error || statusJson is error {
             log:printError("Missing required fields in request payload");
             return http:BAD_REQUEST;
@@ -41,18 +48,28 @@ public function createOrganizerService(postgresql:Client dbClient,supbase:Storag
         string category = categoryJson.toString();
         string status = statusJson.toString();
 
+        // Cast optional fields
+        string? landing_page_content = landingPageContentJson is error ? () : landingPageContentJson.toString();
+        string landing_page_theme = landingPageThemeJson is error ? "default" : landingPageThemeJson.toString();
+        string? rules = rulesJson is error ? () : rulesJson.toString();
+        string? prizes = prizesJson is error ? () : prizesJson.toString();
+        string? contact_info = contactInfoJson is error ? () : contactInfoJson.toString();
+
         // Validate required fields
         if title.trim() == "" || organizer_id.trim() == "" || start_date.trim() == "" || 
            end_date.trim() == "" || category.trim() == "" {
             return http:BAD_REQUEST;
         }
         
-        // Insert new competition
+        // Insert new competition with all fields
         sql:ExecutionResult|error result = self.db->execute(`
-            INSERT INTO competitions (title, description, organizer_id, start_date, end_date, category, status, created_at, updated_at) 
+            INSERT INTO competitions (title, description, organizer_id, start_date, end_date, category, status, 
+                                    landing_page_content, landing_page_theme, rules, prizes, contact_info, 
+                                    created_at, updated_at) 
             VALUES (${title}, ${description}, ${organizer_id}::uuid, 
-                    ${start_date}::date, ${end_date}::date, ${category}, 
-                    ${status}, NOW(), NOW())
+                    ${start_date}::date, ${end_date}::date, ${category}, ${status},
+                    ${landing_page_content}, ${landing_page_theme}, ${rules}, ${prizes}, ${contact_info},
+                    NOW(), NOW())
         `);
         
         if result is error {
@@ -129,6 +146,13 @@ public function createOrganizerService(postgresql:Client dbClient,supbase:Storag
         json|error categoryJson = updateData.category;
         json|error statusJson = updateData.status;
 
+        // Extract optional landing page fields
+        json|error landingPageContentJson = updateData.landing_page_content;
+        json|error landingPageThemeJson = updateData.landing_page_theme;
+        json|error rulesJson = updateData.rules;
+        json|error prizesJson = updateData.prizes;
+        json|error contactInfoJson = updateData.contact_info;
+
         string title = titleJson !is error ? titleJson.toString() : existingCompetition.title;
         string description = descriptionJson !is error ? descriptionJson.toString() : existingCompetition.description;
         string start_date = startDateJson !is error ? startDateJson.toString() : existingCompetition.start_date;
@@ -136,10 +160,19 @@ public function createOrganizerService(postgresql:Client dbClient,supbase:Storag
         string category = categoryJson !is error ? categoryJson.toString() : existingCompetition.category;
         string status = statusJson !is error ? statusJson.toString() : existingCompetition.status;
 
+        // Handle optional fields with proper null handling
+        string? landing_page_content = landingPageContentJson !is error ? landingPageContentJson.toString() : existingCompetition?.landing_page_content;
+        string landing_page_theme = landingPageThemeJson !is error ? landingPageThemeJson.toString() : (existingCompetition?.landing_page_theme ?: "default");
+        string? rules = rulesJson !is error ? rulesJson.toString() : existingCompetition?.rules;
+        string? prizes = prizesJson !is error ? prizesJson.toString() : existingCompetition?.prizes;
+        string? contact_info = contactInfoJson !is error ? contactInfoJson.toString() : existingCompetition?.contact_info;
+
         // Check if at least one field is provided for update (optional)
         if titleJson is error && descriptionJson is error && 
            startDateJson is error && endDateJson is error && 
-           categoryJson is error && statusJson is error {
+           categoryJson is error && statusJson is error &&
+           landingPageContentJson is error && landingPageThemeJson is error &&
+           rulesJson is error && prizesJson is error && contactInfoJson is error {
             log:printError("No valid fields provided for update");
             return http:BAD_REQUEST;
         }
@@ -148,7 +181,9 @@ public function createOrganizerService(postgresql:Client dbClient,supbase:Storag
         sql:ExecutionResult|error result = self.db->execute(`
             UPDATE competitions 
             SET title = ${title}, description = ${description}, start_date = ${start_date}::date, 
-                end_date = ${end_date}::date, category = ${category}, status = ${status}, updated_at = NOW()
+                end_date = ${end_date}::date, category = ${category}, status = ${status},
+                landing_page_content = ${landing_page_content}, landing_page_theme = ${landing_page_theme},
+                rules = ${rules}, prizes = ${prizes}, contact_info = ${contact_info}, updated_at = NOW()
             WHERE id = ${id}
         `);
 
