@@ -9,7 +9,7 @@ public type User record {
     string email;
     string role;
     string about;
-    string? created_at;
+    string? created_at?;
 };
 
 public function createUserService(postgresql:Client dbClient, http:CorsConfig corsConfig,http:Interceptor authInterceptor) returns http:InterceptableService {

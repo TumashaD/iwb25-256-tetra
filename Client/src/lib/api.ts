@@ -29,19 +29,32 @@ async function getAuthToken(): Promise<string | null> {
 }
 
 // Generic API call function with authentication
-async function apiCall(endpoint: string, options: RequestInit = {}): Promise<any> {
+async function apiCall(endpoint: string, options: RequestInit = {}, authentication: boolean = true): Promise<any> {
   const token = await getAuthToken()
-  
-  if (!token) {
+
+  if (!token && authentication) {
     throw new ApiError('No authentication token available', 401, 'Unauthorized')
+  }
+
+  // Set default headers
+  const defaultHeaders: Record<string, string> = {}
+
+  // Add authorization header if token exists
+  if (token) {
+    defaultHeaders['Authorization'] = `Bearer ${token}`
+  }
+
+  // Only set Content-Type to application/json if body is not FormData
+  if (options.body && !(options.body instanceof FormData)) {
+    defaultHeaders['Content-Type'] = 'application/json'
   }
 
   try {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       ...options,
       headers: {
-        'Authorization': `Bearer ${token}`,
-        ...options.headers,
+        ...defaultHeaders,
+        ...options.headers, // This will override defaults if provided
       },
     })
 
