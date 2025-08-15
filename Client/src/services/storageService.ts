@@ -6,9 +6,9 @@ export interface UploadFile {
     name: string;
 }
 
-export class StorageService {
+export const StorageService = {
     // Upload a file to the storage service
-    static async uploadFile(data: UploadFile): Promise<string> {
+    async uploadFile(data: UploadFile): Promise<string> {
         try {
             console.log('StorageService.uploadFile called with data:', data);
             

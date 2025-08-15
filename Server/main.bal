@@ -36,12 +36,14 @@ public function main() returns error? {
 
     supbase:StorageClient storageClient = check new (supabaseStorageUrl, supabaseAnonKey);
 
-    http:Service competitionService = services:createCompetitionService(db, storageClient, CORS_CONFIG,authInterceptor);
+    http:Service competitionService = services:createCompetitionService(db, storageClient, CORS_CONFIG);
+    http:Service organizerService = services:createOrganizerService(db, storageClient, CORS_CONFIG,authInterceptor);
     http:Service userService = services:createUserService(db, CORS_CONFIG, authInterceptor);
     http:Service teamService = services:createTeamService(db, CORS_CONFIG, authInterceptor);
-    http:Service enrollmentService = services:createEnrollmentService(db, CORS_CONFIG);
+    http:Service enrollmentService = services:createEnrollmentService(db, CORS_CONFIG, authInterceptor);
 
     check ln.attach(competitionService, "/competitions");
+    check ln.attach(organizerService, "/organizer");
     check ln.attach(userService, "/users");
     check ln.attach(teamService, "/teams");
     check ln.attach(enrollmentService, "/enrollments");

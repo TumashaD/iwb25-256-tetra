@@ -178,17 +178,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   // Merge authUser and user profile into a single currentUser
   let currentUser: User | null = null;
-  if (authUser) {
+  if (authUser && userProfile) {
     currentUser = {
       id: authUser.id,
       email: authUser.email ?? '',
       isAuthenticated: !!authUser,
-      profile: userProfile ,
+      profile: userProfile,
       avatarUrl: authUser.user_metadata?.avatar_url || '',
     }
   }
 
-  const loading = authLoading || userLoading
+  // Loading is true if either auth is loading OR if we have an auth user but no profile yet
+  const loading = authLoading || userLoading || (!!authUser && !userProfile)
 
   const value: AuthContextType = {
     user: currentUser,

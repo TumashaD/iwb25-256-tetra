@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { TeamService, Team, TeamWithMembers, UserSearchResult, CreateTeamData, AddMemberData } from '@/services/teamService'
 import { UserService, Profile } from '@/services/userService'
+import { EnrollmentService, EnrollmentWithDetails } from '@/services/enrollmentService'
 import { Navbar } from '@/components/ui/navbar'
 
 interface TeamMemberWithProfile {
@@ -17,11 +18,12 @@ interface TeamMemberWithProfile {
 }
 
 export default function CompetitorDashboard() {
-  const { user, loading: authLoading } = useAuth()
+  const { user, loading } = useAuth()
   const router = useRouter()
   const [teams, setTeams] = useState<Team[]>([])
   const [selectedTeam, setSelectedTeam] = useState<TeamWithMembers | null>(null)
   const [teamMembers, setTeamMembers] = useState<TeamMemberWithProfile[]>([])
+  const [enrollments, setEnrollments] = useState<EnrollmentWithDetails[]>([])
   const [showTeamForm, setShowTeamForm] = useState(false)
   const [showAddMemberForm, setShowAddMemberForm] = useState(false)
   const [teamFormData, setTeamFormData] = useState<CreateTeamData>({
@@ -35,17 +37,17 @@ export default function CompetitorDashboard() {
   })
   const [searchEmail, setSearchEmail] = useState('')
   const [searchResults, setSearchResults] = useState<UserSearchResult[]>([])
-  const [loading, setLoading] = useState(false)
+  const [pageLoading, setPageLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isCurrentUserLeader, setIsCurrentUserLeader] = useState(false)
   const [teamCreatorProfile, setTeamCreatorProfile] = useState<Profile | null>(null)
 
   // Redirect if not competitor
   useEffect(() => {
-    if (!authLoading && (!user || user.profile?.role !== 'competitor')) {
+    if (!loading && (!user || user.profile?.role !== 'competitor')) {
       router.push('/')
     }
-  }, [user, authLoading, router])
+  }, [user, loading, router])
 
   // Set user ID when user is loaded
   useEffect(() => {
@@ -54,16 +56,17 @@ export default function CompetitorDashboard() {
     }
   }, [user?.id])
 
-  // Fetch competitor's teams
+  // Fetch competitor's teams and enrollments
   useEffect(() => {
     if (user?.profile?.role === 'competitor') {
       fetchMyTeams()
+      fetchMyEnrollments()
     }
   }, [user])
 
   const fetchMyTeams = async () => {
     try {
-      setLoading(true)
+      setPageLoading(true)
       setError(null)
       if (user?.id) {
         const userTeams = await TeamService.getAllUserTeams(user.id)
@@ -73,7 +76,20 @@ export default function CompetitorDashboard() {
       console.error('Failed to fetch teams:', error)
       setError('Failed to fetch teams. Please try again.')
     } finally {
-      setLoading(false)
+      setPageLoading(false)
+    }
+  }
+
+  const fetchMyEnrollments = async () => {
+    try {
+      setError(null)
+      if (user?.id) {
+        const userEnrollments = await EnrollmentService.getUserEnrollments(user.id)
+        setEnrollments(userEnrollments)
+      }
+    } catch (error) {
+      console.error('Failed to fetch enrollments:', error)
+      setError('Failed to fetch enrollments. Please try again.')
     }
   }
 
@@ -152,7 +168,7 @@ export default function CompetitorDashboard() {
   const handleTeamSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
-      setLoading(true)
+      setPageLoading(true)
       setError(null)
       
       await TeamService.createTeam(teamFormData)
@@ -164,7 +180,7 @@ export default function CompetitorDashboard() {
       console.error('Failed to create team:', error)
       setError('Failed to create team. Please try again.')
     } finally {
-      setLoading(false)
+      setPageLoading(false)
     }
   }
 
@@ -173,7 +189,7 @@ export default function CompetitorDashboard() {
     if (!selectedTeam) return
     
     try {
-      setLoading(true)
+      setPageLoading(true)
       setError(null)
       
       await TeamService.addTeamMember(selectedTeam.id, memberFormData)
@@ -185,7 +201,7 @@ export default function CompetitorDashboard() {
       console.error('Failed to add team member:', error)
       setError('Failed to add team member. Please try again.')
     } finally {
-      setLoading(false)
+      setPageLoading(false)
     }
   }
 
@@ -204,7 +220,7 @@ export default function CompetitorDashboard() {
   const handleDeleteTeam = async (teamId: number) => {
     if (confirm('Are you sure you want to delete this team? This action cannot be undone and will remove all team members.')) {
       try {
-        setLoading(true)
+        setPageLoading(true)
         setError(null)
         
         await TeamService.deleteTeam(teamId)
@@ -216,7 +232,7 @@ export default function CompetitorDashboard() {
         console.error('Failed to delete team:', error)
         setError('Failed to delete team. Please try again.')
       } finally {
-        setLoading(false)
+        setPageLoading(false)
       }
     }
   }
@@ -253,7 +269,7 @@ export default function CompetitorDashboard() {
     setSearchResults([])
   }
 
-  if (authLoading || loading) {
+  if (loading || pageLoading) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <div className="text-white text-center">
@@ -406,6 +422,85 @@ export default function CompetitorDashboard() {
             </div>
           </div>
         )}
+
+        {/* My Enrollments Section */}
+        <div className="mb-8">
+          <h2 className="text-2xl font-semibold mb-4">My Competition Enrollments</h2>
+          <p className="text-sm text-gray-400 mb-4">Competitions you have enrolled in with your teams</p>
+          
+          {enrollments.length === 0 ? (
+            <div className="bg-gray-800 p-6 rounded-lg text-center">
+              <p className="text-gray-400 mb-4">No enrollments yet.</p>
+              <p className="text-sm text-gray-500">
+                Browse competitions and enroll your teams to get started!
+              </p>
+            </div>
+          ) : (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {enrollments.map((enrollment) => (
+                <div key={enrollment.enrollment_id} className="bg-gray-800 p-4 rounded-lg">
+                  <div className="flex justify-between items-start mb-2">
+                    <h3 className="text-lg font-semibold text-blue-400">
+                      {enrollment.competition_title}
+                    </h3>
+                    <span className={`text-xs px-2 py-1 rounded ${
+                      enrollment.competition_status === 'active' ? 'bg-green-600' :
+                      enrollment.competition_status === 'upcoming' ? 'bg-blue-600' :
+                      enrollment.competition_status === 'completed' ? 'bg-gray-600' :
+                      'bg-red-600'
+                    }`}>
+                      {enrollment.competition_status?.toUpperCase()}
+                    </span>
+                  </div>
+                  
+                  <div className="space-y-2 text-sm text-gray-300">
+                    <div>
+                      <span className="text-gray-400">Team: </span>
+                      <span className="font-medium">{enrollment.team_name}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-400">Status: </span>
+                      <span className={`font-medium ${
+                        enrollment.status === 'enrolled' ? 'text-green-400' :
+                        enrollment.status === 'pending' ? 'text-yellow-400' :
+                        'text-red-400'
+                      }`}>
+                        {enrollment.status.charAt(0).toUpperCase() + enrollment.status.slice(1)}
+                      </span>
+                    </div>
+                    {enrollment.competition_start_date && (
+                      <div>
+                        <span className="text-gray-400">Start: </span>
+                        <span>{new Date(enrollment.competition_start_date).toLocaleDateString()}</span>
+                      </div>
+                    )}
+                    {enrollment.competition_end_date && (
+                      <div>
+                        <span className="text-gray-400">End: </span>
+                        <span>{new Date(enrollment.competition_end_date).toLocaleDateString()}</span>
+                      </div>
+                    )}
+                    {enrollment.created_at && (
+                      <div>
+                        <span className="text-gray-400">Enrolled: </span>
+                        <span>{new Date(enrollment.created_at).toLocaleDateString()}</span>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="mt-3">
+                    <button
+                      onClick={() => router.push(`/competition/${enrollment.competition_id}`)}
+                      className="text-blue-400 hover:text-blue-300 text-sm"
+                    >
+                      View Competition →
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
         {/* Teams Management */}
         <div className="grid md:grid-cols-2 gap-6">

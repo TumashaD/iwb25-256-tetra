@@ -3,9 +3,11 @@
 import { Navbar } from '@/components/ui/navbar'
 import { Competition, CompetitionsService } from '@/services/competitionService'
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function Home() {
   const [competitions, setCompetitions] = useState<Competition[]>([]);
+  const router = useRouter();
   
   const fetchCompetitions = async () => {
     try {
@@ -20,6 +22,14 @@ export default function Home() {
   useEffect(() => {
     fetchCompetitions();
   }, []);
+
+  const getBannerUrl = (competitionId: number) => {
+    return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/competitions/${competitionId}/banner?t=${new Date(competitions.find(c => c.id === competitionId)?.updated_at || Date.now()).getTime()}`;
+  };
+
+  const handleCompetitionClick = (competitionId: number) => {
+    router.push(`/competition/${competitionId}`);
+  };
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white">
@@ -40,13 +50,14 @@ export default function Home() {
           {competitions.map((competition) => (
             <div
               key={competition.id}
-              className="group relative overflow-hidden rounded-2xl bg-gray-800 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105"
+              onClick={() => handleCompetitionClick(competition.id)}
+              className="group relative overflow-hidden rounded-2xl bg-gray-800 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 cursor-pointer"
             >
               {/* Banner Background */}
               <div 
                 className="absolute inset-0 bg-cover bg-center bg-gray-700"
                 style={{
-                  backgroundImage: `url(${CompetitionsService.getBannerUrl(competition.id)})`,
+                  backgroundImage: `url(${getBannerUrl(competition.id)})`,
                 }}
                 onError={(e) => {
                   // Fallback to gradient if banner fails to load
@@ -100,7 +111,13 @@ export default function Home() {
                   </div>
                   
                   {/* Action Button */}
-                  <button className="w-full bg-blue-600/90 hover:bg-blue-500 text-white py-2 px-4 rounded-lg transition-all duration-200 transform hover:scale-105 font-semibold">
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleCompetitionClick(competition.id);
+                    }}
+                    className="w-full bg-blue-600/90 hover:bg-blue-500 text-white py-2 px-4 rounded-lg transition-all duration-200 transform hover:scale-105 font-semibold"
+                  >
                     {competition.status === 'active' ? 'Join Competition' :
                      competition.status === 'upcoming' ? 'Register Now' :
                      competition.status === 'completed' ? 'View Results' :

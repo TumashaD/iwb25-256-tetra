@@ -39,10 +39,10 @@ export interface AddMemberData {
   role: string
 }
 
-export class TeamService {
+export const TeamService = {
   // Create a new team
   // Note: The team creator is automatically added as the team leader by the backend
-  static async createTeam(data: CreateTeamData): Promise<Team> {
+  async createTeam(data: CreateTeamData): Promise<Team> {
     try {
       console.log('TeamService.createTeam called with data:', data)
       
@@ -82,10 +82,10 @@ export class TeamService {
       
       throw new Error('Failed to create team. Please try again.')
     }
-  }
+  },
 
   // Get team by ID with members
-  static async getTeam(teamId: number): Promise<TeamWithMembers | null> {
+  async getTeam(teamId: number): Promise<TeamWithMembers | null> {
     try {
       const result = await apiCall(`/teams/${teamId}`, {
         method: 'GET',
@@ -105,10 +105,10 @@ export class TeamService {
       console.error('Failed to get team:', error)
       throw error
     }
-  }
+  },
 
   // Get teams created by a specific user
-  static async getUserTeams(userId: string): Promise<Team[]> {
+  async getUserTeams(userId: string): Promise<Team[]> {
     try {
       const result = await apiCall(`/teams/user/${userId}`, {
         method: 'GET',
@@ -119,10 +119,10 @@ export class TeamService {
       console.error('Failed to get user teams:', error)
       throw new Error('Failed to fetch your teams. Please try again later.')
     }
-  }
+  },
 
   // Get all teams where user is either creator or member
-  static async getAllUserTeams(userId: string): Promise<Team[]> {
+  async getAllUserTeams(userId: string): Promise<Team[]> {
     try {
       const result = await apiCall(`/teams/user/${userId}/all`, {
         method: 'GET',
@@ -133,11 +133,11 @@ export class TeamService {
       console.error('Failed to get all user teams:', error)
       throw new Error('Failed to fetch your teams. Please try again later.')
     }
-  }
+  },
 
   // Add a member to a team
   // Note: All added members have the 'member' role by default. Only team creators are leaders.
-  static async addTeamMember(teamId: number, memberData: AddMemberData): Promise<TeamMember> {
+  async addTeamMember(teamId: number, memberData: AddMemberData): Promise<TeamMember> {
     try {
       console.log('TeamService.addTeamMember called:', { teamId, memberData })
       
@@ -177,10 +177,10 @@ export class TeamService {
       
       throw new Error('Failed to add team member. Please try again.')
     }
-  }
+  },
 
   // Remove a member from a team
-  static async removeTeamMember(teamId: number, memberId: string): Promise<void> {
+  async removeTeamMember(teamId: number, memberId: string): Promise<void> {
     try {
       console.log('TeamService.removeTeamMember called:', { teamId, memberId })
       
@@ -204,10 +204,10 @@ export class TeamService {
       
       throw new Error('Failed to remove team member. Please try again.')
     }
-  }
+  },
 
   // Search users by email for adding to team
-  static async searchUsers(email: string): Promise<UserSearchResult[]> {
+  async searchUsers(email: string): Promise<UserSearchResult[]> {
     try {
       if (!email?.trim()) {
         return []
@@ -224,10 +224,10 @@ export class TeamService {
       // Don't throw for search failures, just return empty array
       return []
     }
-  }
+  },
 
   // Get user details for team members
-  static async getUserDetails(userId: string): Promise<UserSearchResult | null> {
+  async getUserDetails(userId: string): Promise<UserSearchResult | null> {
     try {
       // We can reuse the user service here or create a simpler endpoint
       const result = await apiCall(`/users/${userId}`, {
@@ -247,10 +247,10 @@ export class TeamService {
       console.error('Failed to get user details:', error)
       return null
     }
-  }
+  },
 
   // Delete a team (only team creators or team leaders can delete)
-  static async deleteTeam(teamId: number): Promise<void> {
+  async deleteTeam(teamId: number): Promise<void> {
     try {
       console.log('TeamService.deleteTeam called:', { teamId })
       
