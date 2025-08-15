@@ -85,7 +85,7 @@ export class UserService {
       const result = await apiCall(`/users/update/${userId}`, {
         method: 'PATCH',
         body: JSON.stringify(data),
-      }) as Profile
+      })
 
       return result
     } catch (error) {

@@ -22,7 +22,7 @@ export class CompetitionsService {
     try {
       const result = await apiCall('/competitions', {
         method: 'GET',
-      });
+      }, false);
       return result.competitions || [];
     } catch (error) {
       console.error('Failed to fetch competitions:', error);
@@ -36,9 +36,6 @@ export class CompetitionsService {
       const result = await apiCall('/competitions/create', {
         method: 'POST',
         body: JSON.stringify(data),
-        headers: {
-          'Content-Type': 'application/json',
-        },
       });
       return result.competition || result;
     } catch (error) {
@@ -53,9 +50,6 @@ export class CompetitionsService {
       const result = await apiCall(`/competitions/${id}`, {
         method: 'PATCH',
         body: JSON.stringify(data),
-        headers: {
-          'Content-Type': 'application/json',
-        },
       });
       return result.competition || result;
     } catch (error) {
@@ -69,9 +63,6 @@ export class CompetitionsService {
     try {
       await apiCall(`/competitions/${id}`, {
         method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
       });
     } catch (error) {
       console.error('Failed to delete competition:', error);
