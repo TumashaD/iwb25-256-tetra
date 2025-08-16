@@ -34,7 +34,7 @@ public function main() returns error? {
     supbase:DatabaseClient dbClient = new (dbHost, dbPort, dbUser, dbPassword, dbName);
     postgresql:Client db = check dbClient.getClient();
 
-    supbase:StorageClient storageClient = check new (supabaseStorageUrl, supabaseAnonKey);
+    supbase:StorageClient storageClient = check new (supabaseStorageUrl, supabaseAnonKey,supabaseStorageUrl);
 
     http:Service competitionService = services:createCompetitionService(db, storageClient, CORS_CONFIG);
     http:Service organizerService = services:createOrganizerService(db, storageClient, CORS_CONFIG,authInterceptor);

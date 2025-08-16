@@ -25,10 +25,12 @@ public isolated class DatabaseClient {
 public isolated class StorageClient {
     private final http:Client storageClient;
     private final string supabaseAnonKey;
+    private final string supabaseStorageUrl;
 
-    public isolated function init(string url, string anonKey) returns error? {
+    public isolated function init(string url, string anonKey, string supabaseStorageUrl) returns error? {
         self.storageClient = check new http:Client(url);
         self.supabaseAnonKey = anonKey;
+        self.supabaseStorageUrl = supabaseStorageUrl;
     }
 
     public isolated function getClient() returns http:Client {
@@ -85,8 +87,12 @@ public isolated class StorageClient {
         log:printInfo("Uploading file to Supabase Storage", 'fileName = fileName, 'bucketName = bucketName, 'fileContentLength = fileContent.length(), 'uploadUrl = uploadUrl);
 
         http:Response uploadRes = check self.storageClient->post(uploadUrl, uploadReq);
+        string fileUrl = self.supabaseStorageUrl + "/object/public/" + bucketName + "/" + fileName;
 
-        json|error responseJson = uploadRes.getJsonPayload();
+        json|error responseJson = {
+            "url": fileUrl,
+            "response": check uploadRes.getJsonPayload()
+        };
         if responseJson is json {
             return responseJson;
         } else {

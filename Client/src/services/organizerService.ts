@@ -58,4 +58,23 @@ export const OrganizerService = {
     }
 
   },
+
+  async uploadFile(competitionId: number, file: File): Promise<string> {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      // Ensure fileName is always present
+      const fileName = file.name || 'uploaded_file';
+
+      const result = await apiCall(`/organizer/uploadFile/${competitionId}?fileName=${encodeURIComponent(fileName)}`, {
+        method: 'POST',
+        body: formData,
+      });
+      return result.file.url || '';
+    } catch (error) {
+      console.error('Failed to upload file:', error);
+      throw new Error('Failed to upload file. Please try again later.');
+    }
+  }
 }

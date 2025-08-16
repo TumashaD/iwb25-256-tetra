@@ -252,6 +252,44 @@ public function createOrganizerService(postgresql:Client dbClient,supbase:Storag
             }.toJson();
         }
     }
-    
+
+    isolated resource function post uploadFile/[int competitionId](http:Request req,string fileName) returns http:InternalServerError & readonly|http:Unauthorized & readonly|http:InternalServerError|http:BadRequest & readonly|json|error {
+        string uploadedFileName = competitionId.toString() + "/" + fileName;
+        http:InternalServerError|http:Unauthorized|http:BadRequest|json|error uploadResult = self.storage.uploadFile(req, self.bucketName, uploadedFileName,true);
+        if uploadResult is http:InternalServerError {
+            log:printError("Failed to upload file");
+            return uploadResult;
+        } else if uploadResult is http:Unauthorized {
+            return http:UNAUTHORIZED;
+        } else if uploadResult is http:BadRequest {
+            return http:BAD_REQUEST;
+        } else if uploadResult is error {
+            log:printError("Unexpected error during file upload", uploadResult);
+            return uploadResult;
+        } else if uploadResult is json {
+            log:printInfo("File uploaded successfully", fileName = fileName , uploadResult = uploadResult);
+            sql:ExecutionResult|error executionResult = check self.db->execute(`
+                UPDATE competitions 
+                SET updated_at = NOW() 
+                WHERE id = ${competitionId}
+            `);
+            if executionResult is error {
+                log:printError("Failed to update competition file URL", executionResult);
+                return http:INTERNAL_SERVER_ERROR;
+            }
+            json|error response = {
+                "success": 1,
+                "file": {
+                    "url": check uploadResult.url
+                }
+            };
+            if response is error {
+                log:printError("Failed to create response JSON", response);
+                return http:INTERNAL_SERVER_ERROR;
+            }
+            return response;
+        }
+    }
+
 };
 }
