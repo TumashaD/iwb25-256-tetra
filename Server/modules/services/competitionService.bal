@@ -16,11 +16,6 @@ public type Competition record {
     string status;
     string created_at;
     string updated_at;
-    string? landing_page_content?;
-    string? landing_page_theme?;
-    string? rules?;
-    string? prizes?;
-    string? contact_info?;
 };
 
 public function createCompetitionService(postgresql:Client dbClient,supbase:StorageClient storageClient, http:CorsConfig corsConfig) returns http:Service {

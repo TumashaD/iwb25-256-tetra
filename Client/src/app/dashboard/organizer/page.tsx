@@ -25,18 +25,12 @@ export default function OrganizerDashboard() {
     end_date: '',
     category: '',
     status: 'upcoming',
-    landing_page_content: '',
-    landing_page_theme: 'default',
-    rules: '',
-    prizes: '',
-    contact_info: ''
   })
   const [bannerFile, setBannerFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState<number | null>(null)
   const [pageLoading, setPageLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [uploadedBanners, setUploadedBanners] = useState<Record<number, string>>({})
-  const [showAdvancedOptions, setShowAdvancedOptions] = useState(false)
   // Redirect if not organizer
   useEffect(() => {
     if (!loading && (!user || user.profile?.role !== 'organizer')) {
@@ -102,11 +96,6 @@ export default function OrganizerDashboard() {
           end_date: formData.end_date,
           category: formData.category,
           status: formData.status,
-          landing_page_content: formData.landing_page_content,
-          landing_page_theme: formData.landing_page_theme,
-          rules: formData.rules,
-          prizes: formData.prizes,
-          contact_info: formData.contact_info
         }
         await OrganizerService.updateCompetition(editingCompetition.id, updateData)
       } else {
@@ -147,11 +136,6 @@ export default function OrganizerDashboard() {
       end_date: competition.end_date.split('T')[0],
       category: competition.category,
       status: competition.status,
-      landing_page_content: competition.landing_page_content || '',
-      landing_page_theme: competition.landing_page_theme || 'default',
-      rules: competition.rules || '',
-      prizes: competition.prizes || '',
-      contact_info: competition.contact_info || ''
     })
     setShowCreateForm(true)
   }
@@ -186,16 +170,10 @@ export default function OrganizerDashboard() {
       end_date: '',
       category: '',
       status: 'upcoming',
-      landing_page_content: '',
-      landing_page_theme: 'default',
-      rules: '',
-      prizes: '',
-      contact_info: ''
     })
     setShowCreateForm(false)
     setEditingCompetition(null)
     setBannerFile(null)
-    setShowAdvancedOptions(false)
   }
 
   if (loading || pageLoading) {
@@ -307,84 +285,6 @@ export default function OrganizerDashboard() {
                   <option value="completed">Completed</option>
                   <option value="cancelled">Cancelled</option>
                 </select>
-
-                {/* Landing Page Customization Toggle */}
-                <div className="border-t border-gray-600 pt-4">
-                  <button
-                    type="button"
-                    onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
-                    className="w-full flex items-center justify-between p-3 bg-gray-600 hover:bg-gray-500 rounded-lg transition-colors"
-                  >
-                    <span>Landing Page Customization</span>
-                    <span className={`transition-transform ${showAdvancedOptions ? 'rotate-180' : ''}`}>
-                      ▼
-                    </span>
-                  </button>
-                </div>
-
-                {/* Advanced Options */}
-                {showAdvancedOptions && (
-                  <div className="space-y-4 bg-gray-700/50 p-4 rounded-lg">
-                    {/* Theme Selection */}
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Landing Page Theme</label>
-                      <select
-                        value={formData.landing_page_theme}
-                        onChange={(e) => setFormData({ ...formData, landing_page_theme: e.target.value as Competition['landing_page_theme'] })}
-                        className="w-full p-3 bg-gray-700 rounded-lg"
-                      >
-                        <option value="default">Default (Blue)</option>
-                        <option value="modern">Modern (Purple)</option>
-                        <option value="minimal">Minimal (Light)</option>
-                        <option value="gaming">Gaming (Green)</option>
-                      </select>
-                    </div>
-
-                    {/* Landing Page Content */}
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Custom Landing Page Content</label>
-                      <textarea
-                        placeholder="Customize your competition's landing page with rich content (HTML supported)..."
-                        value={formData.landing_page_content}
-                        onChange={(e) => setFormData({ ...formData, landing_page_content: e.target.value })}
-                        className="w-full p-3 bg-gray-700 rounded-lg h-32"
-                      />
-                    </div>
-
-                    {/* Rules */}
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Rules & Guidelines</label>
-                      <textarea
-                        placeholder="Competition rules and guidelines (HTML supported)..."
-                        value={formData.rules}
-                        onChange={(e) => setFormData({ ...formData, rules: e.target.value })}
-                        className="w-full p-3 bg-gray-700 rounded-lg h-24"
-                      />
-                    </div>
-
-                    {/* Prizes */}
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Prizes & Rewards</label>
-                      <textarea
-                        placeholder="Prize information and rewards (HTML supported)..."
-                        value={formData.prizes}
-                        onChange={(e) => setFormData({ ...formData, prizes: e.target.value })}
-                        className="w-full p-3 bg-gray-700 rounded-lg h-24"
-                      />
-                    </div>
-
-                    {/* Contact Info */}
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Contact Information</label>
-                      <textarea
-                        placeholder="Contact details for participants (HTML supported)..."
-                        value={formData.contact_info}
-                        onChange={(e) => setFormData({ ...formData, contact_info: e.target.value })}
-                        className="w-full p-3 bg-gray-700 rounded-lg h-20"
-                      />
-                    </div>
-                  </div>
-                )}
                 
                 <div className="flex gap-2">
                   <button

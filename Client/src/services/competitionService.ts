@@ -11,11 +11,6 @@ export interface Competition {
   status: string
   created_at: string
   updated_at: string
-  landing_page_content?: string
-  landing_page_theme?: 'default' | 'modern' | 'minimal' | 'gaming'
-  rules?: string
-  prizes?: string
-  contact_info?: string
 }
 
 
