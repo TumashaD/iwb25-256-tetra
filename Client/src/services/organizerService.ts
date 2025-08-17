@@ -1,6 +1,12 @@
 import { apiCall } from "@/lib/api";
 import { Competition } from "./competitionService";
 
+export type OrganizerCompetition = Competition & {
+  landing_data: string;
+  landing_html: string;
+  landing_css: string;
+};
+
 export const OrganizerService = {
     // Create a new competition
   async createCompetition(data: Partial<Competition>): Promise<Competition> {
@@ -27,6 +33,18 @@ export const OrganizerService = {
     } catch (error) {
       console.error('Failed to update competition:', error);
       throw new Error('Failed to update competition. Please try again later.');
+    }
+  },
+
+  async getCompetition(id: number): Promise<OrganizerCompetition> {
+    try {
+      const result = await apiCall(`/organizer/${id}`, {
+        method: 'GET',
+      });
+      return result.competition || result;
+    } catch (error) {
+      console.error('Failed to get competition:', error);
+      throw new Error('Failed to get competition. Please try again later.');
     }
   },
 
@@ -68,18 +86,6 @@ export const OrganizerService = {
     } catch (error) {
       console.error('Failed to save landing page:', error);
       throw new Error('Failed to save landing page. Please try again later.');
-    }
-  },
-
-  async getLandingPage(competitionId: number): Promise<any> {
-    try {
-      const result = await apiCall(`/organizer/getLandingPage/${competitionId}`, {
-        method: 'GET',
-      });
-      return result;
-    } catch (error) {
-      console.error('Failed to get landing page:', error);
-      throw new Error('Failed to get landing page. Please try again later.');
     }
   },
 

@@ -9,6 +9,13 @@ public type LandingData record {|
     json landing_data;
 |};
 
+public type OrganizerCompetition record {|
+    *Competition;
+    string? landing_data?;
+    string? landing_html?;
+    string? landing_css?;
+|};
+
 public function createOrganizerService(postgresql:Client dbClient,supbase:StorageClient storageClient, http:CorsConfig corsConfig,http:Interceptor authInterceptor) returns http:InterceptableService {
     return @http:ServiceConfig{cors : corsConfig} isolated service object {
 
@@ -86,7 +93,7 @@ public function createOrganizerService(postgresql:Client dbClient,supbase:Storag
         }
         
         // Fetch the newly created competition
-        sql:ParameterizedQuery selectQuery = `SELECT * FROM competitions WHERE id = ${competitionId}`;
+        sql:ParameterizedQuery selectQuery = `SELECT id, title, description, organizer_id, start_date, end_date, category, status, created_at, updated_at FROM competitions WHERE id = ${competitionId}`;
         stream<Competition, sql:Error?> newCompetitionResult = self.db->query(selectQuery, Competition);
         Competition[]|error newCompetition = from Competition competition in newCompetitionResult
                                                select competition;
@@ -104,6 +111,27 @@ public function createOrganizerService(postgresql:Client dbClient,supbase:Storag
         return {
             "competition": newCompetition[0],
             "message": "Competition created successfully",
+            "timestamp": time:utcNow()
+        }.toJson();
+    }
+
+    isolated resource function get [int competitionId](http:RequestContext ctx) returns json|http:InternalServerError|http:NotFound|error {
+
+        sql:ParameterizedQuery query = `SELECT * FROM competitions WHERE id = ${competitionId}`;
+        stream<OrganizerCompetition, sql:Error?> competitionResult = self.db->query(query, OrganizerCompetition);
+        OrganizerCompetition[]|error competitionArr = from OrganizerCompetition c in competitionResult select c;
+
+        if competitionArr is error {
+            log:printError("Failed to fetch competition", competitionArr);
+            return http:INTERNAL_SERVER_ERROR;
+        }
+
+        if competitionArr.length() == 0 {
+            return http:NOT_FOUND;
+        }
+
+        return {
+            "competition": competitionArr[0],
             "timestamp": time:utcNow()
         }.toJson();
     }
@@ -353,22 +381,6 @@ public function createOrganizerService(postgresql:Client dbClient,supbase:Storag
             return http:INTERNAL_SERVER_ERROR;
         }
         return { "success": true };
-    }
-
-    isolated resource function get getLandingPage/[int competitionId](http:RequestContext ctx) returns http:InternalServerError & readonly|http:NotFound & readonly|json {
-        // Fetch the landing page content from the database
-        sql:ParameterizedQuery query = `SELECT landing_data FROM competitions WHERE id = ${competitionId}`;
-        stream<LandingData, sql:Error?> resultStream = self.db->query(query, LandingData);
-        LandingData[]|error result = from LandingData page in resultStream select page;
-
-        if result is error {
-            log:printError("Failed to fetch landing page data", result);
-            return http:INTERNAL_SERVER_ERROR;
-        }
-        if result.length() == 0 {
-            return http:NOT_FOUND;
-        }
-        return result[0].landing_data;
     }
 
 };

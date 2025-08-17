@@ -8,55 +8,62 @@ console.error = (...args) => {
 };
 console.log('Suppressing React 19 ref warnings');
 import {InputAssetProps, StudioEditor,} from '@grapesjs/studio-sdk/react';
-import '@grapesjs/studio-sdk/style';
-import { OrganizerService } from '@/services/organizerService';
+import { OrganizerCompetition, OrganizerService } from '@/services/organizerService';
 import { useParams } from 'next/navigation';
+import type { Asset, Editor, ProjectData } from 'grapesjs';
+import { useEffect, useState } from 'react';
+import type { Competition } from '@/services/competitionService';
+import PageEditor  from '@/components/editor/editor';
 
 
 export default function Competition() {
   const param = useParams();
   const competitionId = param.id ? Number(param.id) : undefined;
-  return (
-      <div className="h-screen">
-        <StudioEditor
-          options={{
-        licenseKey: '8fedb98a1263429db09e2ccf5ea68dad71d9b490487a4940b9e6dcd91ca5c14d',
-      theme: 'light',
-      pages:false,
-      project: {
-        type: 'web',
-      },
-      assets: {
-        storageType: 'self',
-        // Provide a custom upload handler for assets
-        onUpload: async ({ files }) => {
-          if (typeof competitionId === 'number') {
-            const result = await OrganizerService.uploadAssets(competitionId, files);
-            console.log('Assets uploaded:', result);
-            // Ensure result is an array of InputAssetProps
-            if (Array.isArray(result)) {
-              return result as InputAssetProps[];
-            } else {
-              // If result is not an array, return an empty array
-              return [];
-            }
-          } else {
-            console.error('Invalid competitionId:', competitionId);
-            return [];
-          }
-        },
-        // Provide a custom handler for deleting assets
-        onDelete: async ({ assets }) => {
-          const assetSrcs: string[] = assets.map(asset => asset.getSrc());
+  const [competition, setCompetition] = useState<OrganizerCompetition | null>(null);
+
+  const fetchCompetition = async () => {
+    if (typeof competitionId === 'number') {
+      const competition = await OrganizerService.getCompetition(competitionId);
+      console.log('Fetched competition:', competition);
+      setCompetition(competition);
+      return competition.landing_data;
+    } else {
+      console.error('Invalid competitionId:', competitionId);
+    }
+  };
+
+  const getExportData = (editor:Editor) => {
+      console.log('Exporting data...' + editor);
+      console.log({ html: editor?.getHtml(), css: editor?.getCss() });
+  };
+
+  const uploadAssets = async (assets: File[]): Promise<InputAssetProps[]> => {
+    if (typeof competitionId === 'number') {
+      const result = await OrganizerService.uploadAssets(competitionId, assets);
+      console.log('Assets uploaded:', result);
+      if (Array.isArray(result)) {
+        return result as InputAssetProps[];
+      } else {
+        return [];
+      }
+    } else {
+      console.error('Invalid competitionId:', competitionId);
+      return [];
+    }
+  };
+
+  const deleteAssets = async (assets: Asset[]) => {
+    const assetSrcs: string[] = assets.map(asset => asset.getSrc());
           console.log('Deleting assets:', assetSrcs);
           if (typeof competitionId === 'number') {
             await OrganizerService.deleteAssets(competitionId, assetSrcs);
           } else {
             console.error('Invalid competitionId:', competitionId);
           }
-        },
-        onLoad: async () => {
-          if (typeof competitionId === 'number') {
+  };
+
+  const getAssets = async () => {
+    if (typeof competitionId === 'number') {
             const assets = await OrganizerService.getAssets(competitionId);
             console.log('Loaded assets:', assets);
             // Ensure assets is an array of InputAssetProps or Asset
@@ -69,34 +76,32 @@ export default function Competition() {
             console.error('Invalid competitionId:', competitionId);
             return [];
           }
-        }
-      },
-      storage: {
-        type: 'self',
-        // Provide a custom handler for saving the project data.
-        onSave: async ({ project }) => {
-          if (typeof competitionId === 'number') {
+  };
+
+  const saveLandingPage = async (project:ProjectData) => {
+    if (typeof competitionId === 'number') {
             OrganizerService.saveLandingPage(competitionId, project);
           } else {
             console.error('Invalid competitionId:', competitionId);
           }
-        },
-        // Provide a custom handler for loading project data.
-        onLoad: async () => {
-          if (typeof competitionId === 'number') {
-            const project = await OrganizerService.getLandingPage(competitionId);
-            return { project };
-          } else {
-            console.error('Invalid competitionId:', competitionId);
-            // Return a default/empty project object to satisfy ProjectDataResult type
-            return { project: {} };
-          }
-        },
-        autosaveChanges: 5,
-        autosaveIntervalMs: 10000
-      }
-      }}
+  };
+
+  useEffect(() => {
+    fetchCompetition();
+  }, [competitionId]);
+
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white">
+      {competition && (
+        <PageEditor
+          getExportData={getExportData}
+          uploadAssets={uploadAssets}
+          deleteAssets={deleteAssets}
+          getAssets={getAssets}
+          saveLandingPage={saveLandingPage}
+          initialProjectData={JSON.parse(competition.landing_data)}
         />
-      </div>
+      )}
+    </div>
   );
 }

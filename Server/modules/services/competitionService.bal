@@ -40,7 +40,7 @@ public function createCompetitionService(postgresql:Client dbClient,supbase:Stor
     }
 
     isolated resource function get [int id](http:RequestContext ctx) returns json|http:InternalServerError|http:NotFound|error {
-        sql:ParameterizedQuery query = `SELECT * FROM competitions WHERE id = ${id}`;
+        sql:ParameterizedQuery query = `SELECT id, title, description, organizer_id, start_date, end_date, category, status, created_at, updated_at FROM competitions WHERE id = ${id}`;
         stream<Competition, sql:Error?> competitionResult = self.db->query(query, Competition);
         Competition[]|error competitionArr = from Competition competition in competitionResult
                                              select competition;
