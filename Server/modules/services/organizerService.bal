@@ -4,6 +4,7 @@ import ballerina/log;
 import ballerina/sql;
 import ballerina/time;
 import vinnova.supbase;
+import ballerina/io;
 
 public type LandingData record {|
     json landing_data;
@@ -26,6 +27,7 @@ public function createOrganizerService(postgresql:Client dbClient,supbase:Storag
     private final postgresql:Client db = dbClient;
     private final supbase:StorageClient storage = storageClient;
     private final string bucketName = "competitions";
+    private final string|io:Error initialLandingCss = io:fileReadString("../lib/landing.css");
 
     isolated resource function post create(http:RequestContext ctx, @http:Payload json competitionData) returns json|http:InternalServerError|http:BadRequest|error {
         
@@ -107,6 +109,8 @@ public function createOrganizerService(postgresql:Client dbClient,supbase:Storag
             log:printError("Created competition not found");
             return http:INTERNAL_SERVER_ERROR;
         }
+
+        _ = start self.setInitialHtmlCss(newCompetition[0].clone());
         
         return {
             "competition": newCompetition[0],
@@ -129,6 +133,8 @@ public function createOrganizerService(postgresql:Client dbClient,supbase:Storag
         if competitionArr.length() == 0 {
             return http:NOT_FOUND;
         }
+
+        competitionArr[0].banner_url = check self.storage.getPublicFileUrl(self.bucketName, string `${competitionId}/banner`);
 
         return {
             "competition": competitionArr[0],
@@ -381,6 +387,156 @@ public function createOrganizerService(postgresql:Client dbClient,supbase:Storag
             return http:INTERNAL_SERVER_ERROR;
         }
         return { "success": true };
+    }
+
+    isolated resource function post publishLandingPage/[int competitionId](http:Request req,@http:Payload json landingData) returns http:InternalServerError & readonly|map<json>|error {
+        string html = (check landingData.html).toString();
+        string css = (check landingData.css).toString();
+        sql:ParameterizedQuery query = `UPDATE competitions SET landing_html = ${html}, landing_css = ${css} WHERE id = ${competitionId}`;
+        // Execute the query and handle the result
+        sql:ExecutionResult|error executionResult = check self.db->execute(query);
+        if executionResult is error {
+            log:printError("Failed to save landing page data", executionResult);
+            return http:INTERNAL_SERVER_ERROR;
+        }
+        return { "success": true };
+    }
+    isolated function setInitialHtmlCss(Competition competition) returns http:InternalServerError|error {
+        string bannerUrl = check self.storage.getPublicFileUrl(self.bucketName, string `${competition.id}/banner`);
+        string html = string `<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>Competition Landing Page</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="index,follow">
+  <meta name="generator" content="GrapesJS Studio">
+</head>
+
+<body>
+  <div class="container"><img src="${bannerUrl}" alt="Competition Banner" class="banner"/>
+    <div class="content">
+      <div class="title">
+        ${competition.title}
+      </div>
+      <div class="description">
+        ${competition.description}
+      </div>
+      <div class="details">
+        <div class="detail"><strong>Category:</strong> ${competition.category}
+        </div>
+        <div class="detail"><strong>Status:</strong> ${competition.status}
+        </div>
+        <div class="detail"><strong>Start Date:</strong> ${competition.start_date}
+        </div>
+        <div class="detail"><strong>End Date:</strong> ${competition.end_date}
+        </div>
+      </div>
+      <div class="cta"><a href="/register" class="cta-btn">Register Now</a></div>
+    </div>
+  </div>
+</body>
+
+</html>`;
+        string css = string `* {
+	box-sizing: border-box;
+}
+
+body {
+	margin: 0;
+}
+
+body {
+	font-family: 'Segoe UI', Arial, sans-serif;
+	background: #f8fafc;
+	margin: 0;
+	padding: 0;
+	color: #222;
+}
+
+.container {
+	max-width: 800px;
+	margin: 40px auto;
+	background: #fff;
+	border-radius: 16px;
+	box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+	overflow: hidden;
+}
+
+.banner {
+	width: 100%;
+	height: 280px;
+	object-fit: cover;
+	background: #e2e8f0;
+	display: block;
+}
+
+.content {
+	padding: 32px;
+}
+
+.title {
+	font-size: 2.5rem;
+	font-weight: 700;
+	margin-bottom: 12px;
+	color: #2563eb;
+}
+
+.description {
+	font-size: 1.2rem;
+	margin-bottom: 24px;
+	color: #374151;
+}
+
+.details {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 24px;
+	margin-bottom: 24px;
+}
+
+.detail {
+	flex: 1 1 200px;
+	background: #f1f5f9;
+	border-radius: 8px;
+	padding: 16px;
+	font-size: 1rem;
+	color: #334155;
+}
+
+.cta {
+	display: block;
+	width: 100%;
+	text-align: center;
+	margin-top: 32px;
+}
+
+.cta-btn {
+	background: #2563eb;
+	color: #fff;
+	padding: 16px 32px;
+	border: none;
+	border-radius: 8px;
+	font-size: 1.2rem;
+	font-weight: 600;
+	cursor: pointer;
+	transition: background 0.2s;
+	text-decoration: none;
+}
+
+.cta-btn:hover {
+	background: #1e40af;
+}`;        
+        sql:ParameterizedQuery query = `UPDATE competitions SET landing_html = ${html}, landing_css = ${css} WHERE id = ${competition.id}`;
+        sql:ExecutionResult|error result = check self.db->execute(query);
+
+        if result is error {
+            log:printError("Failed to update landing page HTML/CSS", result);
+            return http:INTERNAL_SERVER_ERROR;
+        }
+        
+        return {};
     }
 
 };

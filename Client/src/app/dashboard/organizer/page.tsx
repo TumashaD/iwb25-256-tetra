@@ -78,6 +78,7 @@ export default function OrganizerDashboard() {
     } catch (error) {
       console.error('Failed to fetch competition enrollments:', error)
       setError('Failed to fetch enrollments. Please try again.')
+    const [bannerFile, setBannerFile] = useState<File | null>(null)
     }
   }
 
@@ -86,7 +87,7 @@ export default function OrganizerDashboard() {
     try {
       setPageLoading(true)
       setError(null)
-      
+      let competitionId: number | null = null
       if (editingCompetition) {
         // Update existing competition
         const updateData: Partial<Competition> = {
@@ -98,11 +99,16 @@ export default function OrganizerDashboard() {
           status: formData.status,
         }
         await OrganizerService.updateCompetition(editingCompetition.id, updateData)
+        competitionId = editingCompetition.id
       } else {
         // Create new competition
-        await OrganizerService.createCompetition(formData)
+        const created = await OrganizerService.createCompetition(formData)
+        competitionId = created?.id
       }
-      
+      // Banner upload (if file selected)
+      if (bannerFile && competitionId) {
+        await OrganizerService.uploadBanner(competitionId, bannerFile)
+      }
       // Reset form and refresh competitions
       resetForm()
       fetchMyCompetitions()
@@ -137,6 +143,7 @@ export default function OrganizerDashboard() {
       category: competition.category,
       status: competition.status,
     })
+    setBannerFile(null)
     setShowCreateForm(true)
   }
 
@@ -228,7 +235,6 @@ export default function OrganizerDashboard() {
               <h2 className="text-xl font-bold mb-4">
                 {editingCompetition ? 'Edit Competition' : 'Create Competition'}
               </h2>
-              
               <form onSubmit={handleSubmit} className="space-y-4">
                 <input
                   type="text"
@@ -238,7 +244,6 @@ export default function OrganizerDashboard() {
                   className="w-full p-3 bg-gray-700 rounded-lg"
                   required
                 />
-                
                 <textarea
                   placeholder="Description"
                   value={formData.description}
@@ -246,7 +251,6 @@ export default function OrganizerDashboard() {
                   className="w-full p-3 bg-gray-700 rounded-lg h-24"
                   required
                 />
-                
                 <input
                   type="date"
                   placeholder="Start Date"
@@ -255,7 +259,6 @@ export default function OrganizerDashboard() {
                   className="w-full p-3 bg-gray-700 rounded-lg"
                   required
                 />
-                
                 <input
                   type="date"
                   placeholder="End Date"
@@ -264,7 +267,6 @@ export default function OrganizerDashboard() {
                   className="w-full p-3 bg-gray-700 rounded-lg"
                   required
                 />
-                
                 <input
                   type="text"
                   placeholder="Category"
@@ -273,7 +275,6 @@ export default function OrganizerDashboard() {
                   className="w-full p-3 bg-gray-700 rounded-lg"
                   required
                 />
-                
                 <select
                   value={formData.status}
                   onChange={(e) => setFormData({ ...formData, status: e.target.value })}
@@ -285,7 +286,42 @@ export default function OrganizerDashboard() {
                   <option value="completed">Completed</option>
                   <option value="cancelled">Cancelled</option>
                 </select>
-                
+                {/* Banner Upload */}
+                <div>
+                  <label className="block text-sm font-medium mb-2">Competition Banner</label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0]
+                      setBannerFile(file || null)
+                    }}
+                    className="w-full text-sm"
+                  />
+                  {/* Preview selected banner */}
+                  {bannerFile && (
+                    <div className="mt-2">
+                      <img
+                        src={URL.createObjectURL(bannerFile)}
+                        alt="Banner Preview"
+                        className="w-32 h-20 object-cover rounded border border-gray-600"
+                      />
+                    </div>
+                  )}
+                  {/* For edit, show current banner if no new file selected */}
+                  {!bannerFile && editingCompetition && editingCompetition.banner_url && (
+                    <div className="mt-2">
+                      <img
+                        src={editingCompetition.banner_url + "?t=" + new Date(editingCompetition.updated_at).getTime()}
+                        alt="Current Banner"
+                        className="w-32 h-20 object-cover rounded border border-gray-600"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = 'none'
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
                 <div className="flex gap-2">
                   <button
                     type="submit"
@@ -359,40 +395,6 @@ export default function OrganizerDashboard() {
                     >
                       Delete
                     </button>
-                  </div>
-                </div>
-                
-                {/* Banner Upload Section */}
-                <div className="border-t border-gray-700 pt-4">
-                  <h4 className="text-sm font-semibold mb-2">Competition Banner</h4>
-                  <div className="flex items-center gap-4">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0]
-                        if (file) {
-                          handleBannerUpload(competition.id, file)
-                        }
-                      }}
-                      className="text-sm"
-                      disabled={uploading === competition.id}
-                    />
-                    {uploading === competition.id && (
-                      <span className="text-sm text-blue-400">Uploading...</span>
-                    )}
-                  </div>
-                  
-                  {/* Banner Preview */}
-                  <div className="mt-2">
-                    <img
-                      src={uploadedBanners[competition.id] || `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/competitions/${competition.id}/banner?t=${new Date(competitions.find(c => c.id === competition.id)?.updated_at || Date.now()).getTime()}`}
-                      alt="Competition Banner"
-                      className="w-32 h-20 object-cover rounded border border-gray-600"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).style.display = 'none'
-                      }}
-                    />
                   </div>
                 </div>
               </div>

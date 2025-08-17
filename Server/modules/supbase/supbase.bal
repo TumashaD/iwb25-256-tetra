@@ -255,4 +255,10 @@ public isolated class StorageClient {
         http:Response downloadRes = check self.storageClient->get(downloadUrl);
         return downloadRes;
     }
+
+    public isolated function getPublicFileUrl(string bucketName, string fileName) returns string|error {
+        log:printInfo("Get public file URL request received", 'bucketName = bucketName, 'fileName = fileName);
+        string publicUrl = string `${self.supabaseStorageUrl}/object/public/${bucketName}/${fileName}`;
+        return publicUrl;
+    }
 }

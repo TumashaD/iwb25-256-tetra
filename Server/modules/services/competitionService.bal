@@ -16,6 +16,7 @@ public type Competition record {
     string status;
     string created_at;
     string updated_at;
+    string banner_url?;
 };
 
 public function createCompetitionService(postgresql:Client dbClient,supbase:StorageClient storageClient, http:CorsConfig corsConfig) returns http:Service {
@@ -33,6 +34,11 @@ public function createCompetitionService(postgresql:Client dbClient,supbase:Stor
             log:printError("Failed to process competitions", competitions);
             return http:INTERNAL_SERVER_ERROR;
         }
+
+        foreach Competition competition in competitions {
+            competition.banner_url = check self.storage.getPublicFileUrl(self.bucketName, string `${competition.id}/banner`);
+        }
+
         return {
             "competitions": competitions,
             "timestamp": time:utcNow()
@@ -53,6 +59,8 @@ public function createCompetitionService(postgresql:Client dbClient,supbase:Stor
         if competitionArr.length() == 0 {
             return http:NOT_FOUND;
         }
+
+        competitionArr[0].banner_url = check self.storage.getPublicFileUrl(self.bucketName, string `${id}/banner`);
         
         return {
             "competition": competitionArr[0],

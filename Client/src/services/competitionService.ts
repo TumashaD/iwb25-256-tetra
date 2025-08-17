@@ -11,6 +11,7 @@ export interface Competition {
   status: string
   created_at: string
   updated_at: string
+  banner_url?: string
 }
 
 

@@ -77,15 +77,27 @@ export const OrganizerService = {
 
   },
 
-  async saveLandingPage(competitionId: number, data: any): Promise<void> {
+  async saveLandingPage(competitionId: number, projectData: any): Promise<void> {
     try {
       await apiCall(`/organizer/saveLandingPage/${competitionId}`, {
         method: 'POST',
-        body: JSON.stringify(data),
+        body: JSON.stringify(projectData),
       });
     } catch (error) {
       console.error('Failed to save landing page:', error);
       throw new Error('Failed to save landing page. Please try again later.');
+    }
+  },
+
+  async publishLandingPage(competitionId: number, html: string, css: string): Promise<void> {
+    try{
+      await apiCall(`/organizer/publishLandingPage/${competitionId}`, {
+        method: 'POST',
+        body: JSON.stringify({ html, css }),
+      });
+    } catch (error) {
+      console.error('Failed to publish landing page:', error);
+      throw new Error('Failed to publish landing page. Please try again later.');
     }
   },
 
