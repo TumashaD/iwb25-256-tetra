@@ -59,22 +59,71 @@ export const OrganizerService = {
 
   },
 
-  async uploadFile(competitionId: number, file: File): Promise<string> {
+  async saveLandingPage(competitionId: number, data: any): Promise<void> {
+    try {
+      await apiCall(`/organizer/saveLandingPage/${competitionId}`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+    } catch (error) {
+      console.error('Failed to save landing page:', error);
+      throw new Error('Failed to save landing page. Please try again later.');
+    }
+  },
+
+  async getLandingPage(competitionId: number): Promise<any> {
+    try {
+      const result = await apiCall(`/organizer/getLandingPage/${competitionId}`, {
+        method: 'GET',
+      });
+      return result;
+    } catch (error) {
+      console.error('Failed to get landing page:', error);
+      throw new Error('Failed to get landing page. Please try again later.');
+    }
+  },
+
+  async uploadAssets(competitionId: number, files: File[]): Promise<JSON> {
     try {
       const formData = new FormData();
-      formData.append('file', file);
+      files.forEach(file => {
+        formData.append('files', file);
+      });
+      console.log('Uploading assets:', files);
 
-      // Ensure fileName is always present
-      const fileName = file.name || 'uploaded_file';
-
-      const result = await apiCall(`/organizer/uploadFile/${competitionId}?fileName=${encodeURIComponent(fileName)}`, {
+      const result = await apiCall(`/organizer/uploadAssets/${competitionId}`, {
         method: 'POST',
         body: formData,
       });
-      return result.file.url || '';
+      return result;
     } catch (error) {
       console.error('Failed to upload file:', error);
       throw new Error('Failed to upload file. Please try again later.');
+    }
+  },
+
+  async getAssets(competitionId: number): Promise<JSON> {
+    try {
+      const result = await apiCall(`/organizer/getAssets/${competitionId}`, {
+        method: 'GET',
+      });
+      return result;
+    } catch (error) {
+      console.error('Failed to get assets:', error);
+      throw new Error('Failed to get assets. Please try again later.');
+    }
+  },
+
+  async deleteAssets(competitionId: number, assetUrls: string[]): Promise<void> {
+    try {
+      const response = await apiCall(`/organizer/deleteAssets/${competitionId}`, {
+        method: 'DELETE',
+        body: JSON.stringify(assetUrls),
+      });
+      console.log('Delete assets response:', response);
+    } catch (error) {
+      console.error('Failed to delete assets:', error);
+      throw new Error('Failed to delete assets. Please try again later.');
     }
   }
 }

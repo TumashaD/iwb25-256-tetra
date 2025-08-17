@@ -5,6 +5,10 @@ import ballerina/sql;
 import ballerina/time;
 import vinnova.supbase;
 
+public type LandingData record {|
+    json landing_data;
+|};
+
 public function createOrganizerService(postgresql:Client dbClient,supbase:StorageClient storageClient, http:CorsConfig corsConfig,http:Interceptor authInterceptor) returns http:InterceptableService {
     return @http:ServiceConfig{cors : corsConfig} isolated service object {
 
@@ -253,42 +257,118 @@ public function createOrganizerService(postgresql:Client dbClient,supbase:Storag
         }
     }
 
-    isolated resource function post uploadFile/[int competitionId](http:Request req,string fileName) returns http:InternalServerError & readonly|http:Unauthorized & readonly|http:InternalServerError|http:BadRequest & readonly|json|error {
-        string uploadedFileName = competitionId.toString() + "/" + fileName;
-        http:InternalServerError|http:Unauthorized|http:BadRequest|json|error uploadResult = self.storage.uploadFile(req, self.bucketName, uploadedFileName,true);
+    isolated resource function post uploadAssets/[int competitionId](http:Request req) returns http:InternalServerError|http:Unauthorized|http:BadRequest|json|error|error {
+        http:InternalServerError|http:Unauthorized|http:BadRequest|json|error uploadResult = check self.storage.uploadAssets(req, self.bucketName,competitionId.toString());
         if uploadResult is http:InternalServerError {
-            log:printError("Failed to upload file");
+            log:printError("Failed to upload assets");
             return uploadResult;
         } else if uploadResult is http:Unauthorized {
             return http:UNAUTHORIZED;
         } else if uploadResult is http:BadRequest {
             return http:BAD_REQUEST;
         } else if uploadResult is error {
-            log:printError("Unexpected error during file upload", uploadResult);
+            log:printError("Unexpected error during banner upload", uploadResult);
             return uploadResult;
         } else if uploadResult is json {
-            log:printInfo("File uploaded successfully", fileName = fileName , uploadResult = uploadResult);
             sql:ExecutionResult|error executionResult = check self.db->execute(`
                 UPDATE competitions 
                 SET updated_at = NOW() 
                 WHERE id = ${competitionId}
             `);
             if executionResult is error {
-                log:printError("Failed to update competition file URL", executionResult);
+                log:printError("Failed to update competition banner URL", executionResult);
                 return http:INTERNAL_SERVER_ERROR;
             }
-            json|error response = {
-                "success": 1,
-                "file": {
-                    "url": check uploadResult.url
-                }
-            };
-            if response is error {
-                log:printError("Failed to create response JSON", response);
-                return http:INTERNAL_SERVER_ERROR;
-            }
-            return response;
+            return uploadResult;
         }
+    }
+
+    isolated resource function delete deleteAssets/[int competitionId](http:Request req, @http:Payload json assetUrls) returns http:InternalServerError & readonly|http:BadRequest & readonly|http:Ok & readonly|error {
+        string[] assets = [];
+    if assetUrls is json[] {
+        foreach var item in assetUrls {
+            if item is string {
+                assets.push(item);
+            } else {
+                return http:BAD_REQUEST;
+            }
+        }
+    } else {
+        return http:BAD_REQUEST;
+    }
+    if assets.length() == 0 {
+        return http:BAD_REQUEST;
+    }
+
+        // Delete each asset
+        foreach string assetUrl in assets {
+            string[] fileNames = [assetUrl];
+            http:Unauthorized|http:Response|error deleteResult = check self.storage.deleteAssets(req,self.bucketName, fileNames);
+            
+            if deleteResult is http:Unauthorized {
+                log:printError("Unauthorized to delete asset", 'assetUrl = assetUrl);
+                return http:INTERNAL_SERVER_ERROR; // or http:BAD_REQUEST if more appropriate
+            } else if deleteResult is error {
+                log:printError("Unexpected error during asset deletion", deleteResult);
+                return deleteResult;
+            } else if deleteResult is http:Response {
+                log:printInfo("Asset deleted successfully", 'assetUrl = assetUrl);
+            }
+        }
+
+        sql:ExecutionResult|error executionResult = check self.db->execute(`
+            UPDATE competitions 
+            SET updated_at = NOW() 
+            WHERE id = ${competitionId}
+        `);
+        
+        if executionResult is error {
+            log:printError("Failed to update competition after deleting assets", executionResult);
+            return http:INTERNAL_SERVER_ERROR;
+        }
+        return http:OK;
+    }
+
+    isolated resource function get getAssets/[int competitionId](http:Request req) returns json[]|http:Ok & readonly|error|http:Response {
+        json[]|(http:Unauthorized & readonly)|error|http:Response assets = self.storage.getAssets(req,self.bucketName, competitionId.toString());
+        if assets is http:Response {
+            log:printError("Failed to fetch assets", 'assets = check assets.getTextPayload());
+            return assets;
+        } else if assets is json[] {
+            log:printInfo("Assets fetched successfully", 'assets = assets);
+            return assets;
+        } else if assets is error {
+            log:printError("Unexpected error fetching assets", 'error = assets);
+            return assets;
+        }
+        return http:OK;
+    }
+
+    isolated resource function post saveLandingPage/[int competitionId](http:Request req,@http:Payload json landingData) returns http:InternalServerError & readonly|map<json>|error {
+        sql:ParameterizedQuery query = `UPDATE competitions SET landing_data = ${landingData.toString()} WHERE id = ${competitionId}`;
+        // Execute the query and handle the result
+        sql:ExecutionResult|error executionResult = check self.db->execute(query);
+        if executionResult is error {
+            log:printError("Failed to save landing page data", executionResult);
+            return http:INTERNAL_SERVER_ERROR;
+        }
+        return { "success": true };
+    }
+
+    isolated resource function get getLandingPage/[int competitionId](http:RequestContext ctx) returns http:InternalServerError & readonly|http:NotFound & readonly|json {
+        // Fetch the landing page content from the database
+        sql:ParameterizedQuery query = `SELECT landing_data FROM competitions WHERE id = ${competitionId}`;
+        stream<LandingData, sql:Error?> resultStream = self.db->query(query, LandingData);
+        LandingData[]|error result = from LandingData page in resultStream select page;
+
+        if result is error {
+            log:printError("Failed to fetch landing page data", result);
+            return http:INTERNAL_SERVER_ERROR;
+        }
+        if result.length() == 0 {
+            return http:NOT_FOUND;
+        }
+        return result[0].landing_data;
     }
 
 };
