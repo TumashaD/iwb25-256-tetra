@@ -148,7 +148,7 @@ export default function PageEditor({competition,publishLandingPage, uploadAssets
       },
     },
       project: {
-        type: 'web',
+        type: 'react',
         default:{
           pages: [
             { name: 'Home', component: FallbackHTML, id: 'home' },
