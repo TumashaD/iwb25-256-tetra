@@ -25,18 +25,12 @@ export default function OrganizerDashboard() {
     end_date: '',
     category: '',
     status: 'upcoming',
-    landing_page_content: '',
-    landing_page_theme: 'default',
-    rules: '',
-    prizes: '',
-    contact_info: ''
   })
   const [bannerFile, setBannerFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState<number | null>(null)
   const [pageLoading, setPageLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [uploadedBanners, setUploadedBanners] = useState<Record<number, string>>({})
-  const [showAdvancedOptions, setShowAdvancedOptions] = useState(false)
   // Redirect if not organizer
   useEffect(() => {
     if (!loading && (!user || user.profile?.role !== 'organizer')) {
@@ -84,6 +78,7 @@ export default function OrganizerDashboard() {
     } catch (error) {
       console.error('Failed to fetch competition enrollments:', error)
       setError('Failed to fetch enrollments. Please try again.')
+    const [bannerFile, setBannerFile] = useState<File | null>(null)
     }
   }
 
@@ -92,7 +87,7 @@ export default function OrganizerDashboard() {
     try {
       setPageLoading(true)
       setError(null)
-      
+      let competitionId: number | null = null
       if (editingCompetition) {
         // Update existing competition
         const updateData: Partial<Competition> = {
@@ -102,18 +97,18 @@ export default function OrganizerDashboard() {
           end_date: formData.end_date,
           category: formData.category,
           status: formData.status,
-          landing_page_content: formData.landing_page_content,
-          landing_page_theme: formData.landing_page_theme,
-          rules: formData.rules,
-          prizes: formData.prizes,
-          contact_info: formData.contact_info
         }
         await OrganizerService.updateCompetition(editingCompetition.id, updateData)
+        competitionId = editingCompetition.id
       } else {
         // Create new competition
-        await OrganizerService.createCompetition(formData)
+        const created = await OrganizerService.createCompetition(formData)
+        competitionId = created?.id
       }
-      
+      // Banner upload (if file selected)
+      if (bannerFile && competitionId) {
+        await OrganizerService.uploadBanner(competitionId, bannerFile)
+      }
       // Reset form and refresh competitions
       resetForm()
       fetchMyCompetitions()
@@ -147,12 +142,8 @@ export default function OrganizerDashboard() {
       end_date: competition.end_date.split('T')[0],
       category: competition.category,
       status: competition.status,
-      landing_page_content: competition.landing_page_content || '',
-      landing_page_theme: competition.landing_page_theme || 'default',
-      rules: competition.rules || '',
-      prizes: competition.prizes || '',
-      contact_info: competition.contact_info || ''
     })
+    setBannerFile(null)
     setShowCreateForm(true)
   }
 
@@ -186,16 +177,10 @@ export default function OrganizerDashboard() {
       end_date: '',
       category: '',
       status: 'upcoming',
-      landing_page_content: '',
-      landing_page_theme: 'default',
-      rules: '',
-      prizes: '',
-      contact_info: ''
     })
     setShowCreateForm(false)
     setEditingCompetition(null)
     setBannerFile(null)
-    setShowAdvancedOptions(false)
   }
 
   if (loading || pageLoading) {
@@ -250,7 +235,6 @@ export default function OrganizerDashboard() {
               <h2 className="text-xl font-bold mb-4">
                 {editingCompetition ? 'Edit Competition' : 'Create Competition'}
               </h2>
-              
               <form onSubmit={handleSubmit} className="space-y-4">
                 <input
                   type="text"
@@ -260,7 +244,6 @@ export default function OrganizerDashboard() {
                   className="w-full p-3 bg-gray-700 rounded-lg"
                   required
                 />
-                
                 <textarea
                   placeholder="Description"
                   value={formData.description}
@@ -268,7 +251,6 @@ export default function OrganizerDashboard() {
                   className="w-full p-3 bg-gray-700 rounded-lg h-24"
                   required
                 />
-                
                 <input
                   type="date"
                   placeholder="Start Date"
@@ -277,7 +259,6 @@ export default function OrganizerDashboard() {
                   className="w-full p-3 bg-gray-700 rounded-lg"
                   required
                 />
-                
                 <input
                   type="date"
                   placeholder="End Date"
@@ -286,7 +267,6 @@ export default function OrganizerDashboard() {
                   className="w-full p-3 bg-gray-700 rounded-lg"
                   required
                 />
-                
                 <input
                   type="text"
                   placeholder="Category"
@@ -295,7 +275,6 @@ export default function OrganizerDashboard() {
                   className="w-full p-3 bg-gray-700 rounded-lg"
                   required
                 />
-                
                 <select
                   value={formData.status}
                   onChange={(e) => setFormData({ ...formData, status: e.target.value })}
@@ -307,85 +286,42 @@ export default function OrganizerDashboard() {
                   <option value="completed">Completed</option>
                   <option value="cancelled">Cancelled</option>
                 </select>
-
-                {/* Landing Page Customization Toggle */}
-                <div className="border-t border-gray-600 pt-4">
-                  <button
-                    type="button"
-                    onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
-                    className="w-full flex items-center justify-between p-3 bg-gray-600 hover:bg-gray-500 rounded-lg transition-colors"
-                  >
-                    <span>Landing Page Customization</span>
-                    <span className={`transition-transform ${showAdvancedOptions ? 'rotate-180' : ''}`}>
-                      ▼
-                    </span>
-                  </button>
+                {/* Banner Upload */}
+                <div>
+                  <label className="block text-sm font-medium mb-2">Competition Banner</label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0]
+                      setBannerFile(file || null)
+                    }}
+                    className="w-full text-sm"
+                  />
+                  {/* Preview selected banner */}
+                  {bannerFile && (
+                    <div className="mt-2">
+                      <img
+                        src={URL.createObjectURL(bannerFile)}
+                        alt="Banner Preview"
+                        className="w-32 h-20 object-cover rounded border border-gray-600"
+                      />
+                    </div>
+                  )}
+                  {/* For edit, show current banner if no new file selected */}
+                  {!bannerFile && editingCompetition && editingCompetition.banner_url && (
+                    <div className="mt-2">
+                      <img
+                        src={editingCompetition.banner_url + "?t=" + new Date(editingCompetition.updated_at).getTime()}
+                        alt="Current Banner"
+                        className="w-32 h-20 object-cover rounded border border-gray-600"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = 'none'
+                        }}
+                      />
+                    </div>
+                  )}
                 </div>
-
-                {/* Advanced Options */}
-                {showAdvancedOptions && (
-                  <div className="space-y-4 bg-gray-700/50 p-4 rounded-lg">
-                    {/* Theme Selection */}
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Landing Page Theme</label>
-                      <select
-                        value={formData.landing_page_theme}
-                        onChange={(e) => setFormData({ ...formData, landing_page_theme: e.target.value as Competition['landing_page_theme'] })}
-                        className="w-full p-3 bg-gray-700 rounded-lg"
-                      >
-                        <option value="default">Default (Blue)</option>
-                        <option value="modern">Modern (Purple)</option>
-                        <option value="minimal">Minimal (Light)</option>
-                        <option value="gaming">Gaming (Green)</option>
-                      </select>
-                    </div>
-
-                    {/* Landing Page Content */}
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Custom Landing Page Content</label>
-                      <textarea
-                        placeholder="Customize your competition's landing page with rich content (HTML supported)..."
-                        value={formData.landing_page_content}
-                        onChange={(e) => setFormData({ ...formData, landing_page_content: e.target.value })}
-                        className="w-full p-3 bg-gray-700 rounded-lg h-32"
-                      />
-                    </div>
-
-                    {/* Rules */}
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Rules & Guidelines</label>
-                      <textarea
-                        placeholder="Competition rules and guidelines (HTML supported)..."
-                        value={formData.rules}
-                        onChange={(e) => setFormData({ ...formData, rules: e.target.value })}
-                        className="w-full p-3 bg-gray-700 rounded-lg h-24"
-                      />
-                    </div>
-
-                    {/* Prizes */}
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Prizes & Rewards</label>
-                      <textarea
-                        placeholder="Prize information and rewards (HTML supported)..."
-                        value={formData.prizes}
-                        onChange={(e) => setFormData({ ...formData, prizes: e.target.value })}
-                        className="w-full p-3 bg-gray-700 rounded-lg h-24"
-                      />
-                    </div>
-
-                    {/* Contact Info */}
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Contact Information</label>
-                      <textarea
-                        placeholder="Contact details for participants (HTML supported)..."
-                        value={formData.contact_info}
-                        onChange={(e) => setFormData({ ...formData, contact_info: e.target.value })}
-                        className="w-full p-3 bg-gray-700 rounded-lg h-20"
-                      />
-                    </div>
-                  </div>
-                )}
-                
                 <div className="flex gap-2">
                   <button
                     type="submit"
@@ -459,40 +395,6 @@ export default function OrganizerDashboard() {
                     >
                       Delete
                     </button>
-                  </div>
-                </div>
-                
-                {/* Banner Upload Section */}
-                <div className="border-t border-gray-700 pt-4">
-                  <h4 className="text-sm font-semibold mb-2">Competition Banner</h4>
-                  <div className="flex items-center gap-4">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0]
-                        if (file) {
-                          handleBannerUpload(competition.id, file)
-                        }
-                      }}
-                      className="text-sm"
-                      disabled={uploading === competition.id}
-                    />
-                    {uploading === competition.id && (
-                      <span className="text-sm text-blue-400">Uploading...</span>
-                    )}
-                  </div>
-                  
-                  {/* Banner Preview */}
-                  <div className="mt-2">
-                    <img
-                      src={uploadedBanners[competition.id] || `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/competitions/${competition.id}/banner?t=${new Date(competitions.find(c => c.id === competition.id)?.updated_at || Date.now()).getTime()}`}
-                      alt="Competition Banner"
-                      className="w-32 h-20 object-cover rounded border border-gray-600"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).style.display = 'none'
-                      }}
-                    />
                   </div>
                 </div>
               </div>

@@ -16,11 +16,7 @@ public type Competition record {
     string status;
     string created_at;
     string updated_at;
-    string? landing_page_content?;
-    string? landing_page_theme?;
-    string? rules?;
-    string? prizes?;
-    string? contact_info?;
+    string banner_url?;
 };
 
 public function createCompetitionService(postgresql:Client dbClient,supbase:StorageClient storageClient, http:CorsConfig corsConfig) returns http:Service {
@@ -38,6 +34,11 @@ public function createCompetitionService(postgresql:Client dbClient,supbase:Stor
             log:printError("Failed to process competitions", competitions);
             return http:INTERNAL_SERVER_ERROR;
         }
+
+        foreach Competition competition in competitions {
+            competition.banner_url = check self.storage.getPublicFileUrl(self.bucketName, string `${competition.id}/banner`);
+        }
+
         return {
             "competitions": competitions,
             "timestamp": time:utcNow()
@@ -45,7 +46,7 @@ public function createCompetitionService(postgresql:Client dbClient,supbase:Stor
     }
 
     isolated resource function get [int id](http:RequestContext ctx) returns json|http:InternalServerError|http:NotFound|error {
-        sql:ParameterizedQuery query = `SELECT * FROM competitions WHERE id = ${id}`;
+        sql:ParameterizedQuery query = `SELECT id, title, description, organizer_id, start_date, end_date, category, status, created_at, updated_at FROM competitions WHERE id = ${id}`;
         stream<Competition, sql:Error?> competitionResult = self.db->query(query, Competition);
         Competition[]|error competitionArr = from Competition competition in competitionResult
                                              select competition;
@@ -58,6 +59,8 @@ public function createCompetitionService(postgresql:Client dbClient,supbase:Stor
         if competitionArr.length() == 0 {
             return http:NOT_FOUND;
         }
+
+        competitionArr[0].banner_url = check self.storage.getPublicFileUrl(self.bucketName, string `${id}/banner`);
         
         return {
             "competition": competitionArr[0],

@@ -23,10 +23,6 @@ export default function Home() {
     fetchCompetitions();
   }, []);
 
-  const getBannerUrl = (competitionId: number) => {
-    return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/competitions/${competitionId}/banner?t=${new Date(competitions.find(c => c.id === competitionId)?.updated_at || Date.now()).getTime()}`;
-  };
-
   const handleCompetitionClick = (competitionId: number) => {
     router.push(`/competition/${competitionId}`);
   };
@@ -57,7 +53,7 @@ export default function Home() {
               <div 
                 className="absolute inset-0 bg-cover bg-center bg-gray-700"
                 style={{
-                  backgroundImage: `url(${getBannerUrl(competition.id)})`,
+                  backgroundImage: `url(${competition.banner_url + "?t=" + new Date(competition.updated_at).getTime()})`,
                 }}
                 onError={(e) => {
                   // Fallback to gradient if banner fails to load

@@ -4,6 +4,18 @@ import ballerina/log;
 import ballerina/sql;
 import ballerina/time;
 import vinnova.supbase;
+import ballerina/io;
+
+public type LandingData record {|
+    json landing_data;
+|};
+
+public type OrganizerCompetition record {|
+    *Competition;
+    string? landing_data?;
+    string? landing_html?;
+    string? landing_css?;
+|};
 
 public function createOrganizerService(postgresql:Client dbClient,supbase:StorageClient storageClient, http:CorsConfig corsConfig,http:Interceptor authInterceptor) returns http:InterceptableService {
     return @http:ServiceConfig{cors : corsConfig} isolated service object {
@@ -15,6 +27,7 @@ public function createOrganizerService(postgresql:Client dbClient,supbase:Storag
     private final postgresql:Client db = dbClient;
     private final supbase:StorageClient storage = storageClient;
     private final string bucketName = "competitions";
+    private final string|io:Error initialLandingCss = io:fileReadString("../lib/landing.css");
 
     isolated resource function post create(http:RequestContext ctx, @http:Payload json competitionData) returns json|http:InternalServerError|http:BadRequest|error {
         
@@ -26,13 +39,6 @@ public function createOrganizerService(postgresql:Client dbClient,supbase:Storag
         json|error endDateJson = competitionData.end_date;
         json|error categoryJson = competitionData.category;
         json|error statusJson = competitionData.status;
-
-        // Extract optional landing page fields
-        json|error landingPageContentJson = competitionData.landing_page_content;
-        json|error landingPageThemeJson = competitionData.landing_page_theme;
-        json|error rulesJson = competitionData.rules;
-        json|error prizesJson = competitionData.prizes;
-        json|error contactInfoJson = competitionData.contact_info;
 
         if titleJson is error || organizerIdJson is error ||  startDateJson is error || endDateJson is error || categoryJson is error || statusJson is error {
             log:printError("Missing required fields in request payload");
@@ -48,13 +54,6 @@ public function createOrganizerService(postgresql:Client dbClient,supbase:Storag
         string category = categoryJson.toString();
         string status = statusJson.toString();
 
-        // Cast optional fields
-        string? landing_page_content = landingPageContentJson is error ? () : landingPageContentJson.toString();
-        string landing_page_theme = landingPageThemeJson is error ? "default" : landingPageThemeJson.toString();
-        string? rules = rulesJson is error ? () : rulesJson.toString();
-        string? prizes = prizesJson is error ? () : prizesJson.toString();
-        string? contact_info = contactInfoJson is error ? () : contactInfoJson.toString();
-
         // Validate required fields
         if title.trim() == "" || organizer_id.trim() == "" || start_date.trim() == "" || 
            end_date.trim() == "" || category.trim() == "" {
@@ -63,12 +62,10 @@ public function createOrganizerService(postgresql:Client dbClient,supbase:Storag
         
         // Insert new competition with all fields
         sql:ExecutionResult|error result = self.db->execute(`
-            INSERT INTO competitions (title, description, organizer_id, start_date, end_date, category, status, 
-                                    landing_page_content, landing_page_theme, rules, prizes, contact_info, 
+            INSERT INTO competitions (title, description, organizer_id, start_date, end_date, category, status,
                                     created_at, updated_at) 
             VALUES (${title}, ${description}, ${organizer_id}::uuid, 
                     ${start_date}::date, ${end_date}::date, ${category}, ${status},
-                    ${landing_page_content}, ${landing_page_theme}, ${rules}, ${prizes}, ${contact_info},
                     NOW(), NOW())
         `);
         
@@ -98,7 +95,7 @@ public function createOrganizerService(postgresql:Client dbClient,supbase:Storag
         }
         
         // Fetch the newly created competition
-        sql:ParameterizedQuery selectQuery = `SELECT * FROM competitions WHERE id = ${competitionId}`;
+        sql:ParameterizedQuery selectQuery = `SELECT id, title, description, organizer_id, start_date, end_date, category, status, created_at, updated_at FROM competitions WHERE id = ${competitionId}`;
         stream<Competition, sql:Error?> newCompetitionResult = self.db->query(selectQuery, Competition);
         Competition[]|error newCompetition = from Competition competition in newCompetitionResult
                                                select competition;
@@ -112,10 +109,35 @@ public function createOrganizerService(postgresql:Client dbClient,supbase:Storag
             log:printError("Created competition not found");
             return http:INTERNAL_SERVER_ERROR;
         }
+
+        _ = start self.setInitialHtmlCss(newCompetition[0].clone());
         
         return {
             "competition": newCompetition[0],
             "message": "Competition created successfully",
+            "timestamp": time:utcNow()
+        }.toJson();
+    }
+
+    isolated resource function get [int competitionId](http:RequestContext ctx) returns json|http:InternalServerError|http:NotFound|error {
+
+        sql:ParameterizedQuery query = `SELECT * FROM competitions WHERE id = ${competitionId}`;
+        stream<OrganizerCompetition, sql:Error?> competitionResult = self.db->query(query, OrganizerCompetition);
+        OrganizerCompetition[]|error competitionArr = from OrganizerCompetition c in competitionResult select c;
+
+        if competitionArr is error {
+            log:printError("Failed to fetch competition", competitionArr);
+            return http:INTERNAL_SERVER_ERROR;
+        }
+
+        if competitionArr.length() == 0 {
+            return http:NOT_FOUND;
+        }
+
+        competitionArr[0].banner_url = check self.storage.getPublicFileUrl(self.bucketName, string `${competitionId}/banner`);
+
+        return {
+            "competition": competitionArr[0],
             "timestamp": time:utcNow()
         }.toJson();
     }
@@ -146,13 +168,6 @@ public function createOrganizerService(postgresql:Client dbClient,supbase:Storag
         json|error categoryJson = updateData.category;
         json|error statusJson = updateData.status;
 
-        // Extract optional landing page fields
-        json|error landingPageContentJson = updateData.landing_page_content;
-        json|error landingPageThemeJson = updateData.landing_page_theme;
-        json|error rulesJson = updateData.rules;
-        json|error prizesJson = updateData.prizes;
-        json|error contactInfoJson = updateData.contact_info;
-
         string title = titleJson !is error ? titleJson.toString() : existingCompetition.title;
         string description = descriptionJson !is error ? descriptionJson.toString() : existingCompetition.description;
         string start_date = startDateJson !is error ? startDateJson.toString() : existingCompetition.start_date;
@@ -160,19 +175,10 @@ public function createOrganizerService(postgresql:Client dbClient,supbase:Storag
         string category = categoryJson !is error ? categoryJson.toString() : existingCompetition.category;
         string status = statusJson !is error ? statusJson.toString() : existingCompetition.status;
 
-        // Handle optional fields with proper null handling
-        string? landing_page_content = landingPageContentJson !is error ? landingPageContentJson.toString() : existingCompetition?.landing_page_content;
-        string landing_page_theme = landingPageThemeJson !is error ? landingPageThemeJson.toString() : (existingCompetition?.landing_page_theme ?: "default");
-        string? rules = rulesJson !is error ? rulesJson.toString() : existingCompetition?.rules;
-        string? prizes = prizesJson !is error ? prizesJson.toString() : existingCompetition?.prizes;
-        string? contact_info = contactInfoJson !is error ? contactInfoJson.toString() : existingCompetition?.contact_info;
-
         // Check if at least one field is provided for update (optional)
         if titleJson is error && descriptionJson is error && 
            startDateJson is error && endDateJson is error && 
-           categoryJson is error && statusJson is error &&
-           landingPageContentJson is error && landingPageThemeJson is error &&
-           rulesJson is error && prizesJson is error && contactInfoJson is error {
+           categoryJson is error && statusJson is error {
             log:printError("No valid fields provided for update");
             return http:BAD_REQUEST;
         }
@@ -181,9 +187,7 @@ public function createOrganizerService(postgresql:Client dbClient,supbase:Storag
         sql:ExecutionResult|error result = self.db->execute(`
             UPDATE competitions 
             SET title = ${title}, description = ${description}, start_date = ${start_date}::date, 
-                end_date = ${end_date}::date, category = ${category}, status = ${status},
-                landing_page_content = ${landing_page_content}, landing_page_theme = ${landing_page_theme},
-                rules = ${rules}, prizes = ${prizes}, contact_info = ${contact_info}, updated_at = NOW()
+                end_date = ${end_date}::date, category = ${category}, status = ${status}, updated_at = NOW()
             WHERE id = ${id}
         `);
 
@@ -286,6 +290,254 @@ public function createOrganizerService(postgresql:Client dbClient,supbase:Storag
             }.toJson();
         }
     }
-    
+
+    isolated resource function post uploadAssets/[int competitionId](http:Request req) returns http:InternalServerError|http:Unauthorized|http:BadRequest|json|error|error {
+        http:InternalServerError|http:Unauthorized|http:BadRequest|json|error uploadResult = check self.storage.uploadAssets(req, self.bucketName,competitionId.toString());
+        if uploadResult is http:InternalServerError {
+            log:printError("Failed to upload assets");
+            return uploadResult;
+        } else if uploadResult is http:Unauthorized {
+            return http:UNAUTHORIZED;
+        } else if uploadResult is http:BadRequest {
+            return http:BAD_REQUEST;
+        } else if uploadResult is error {
+            log:printError("Unexpected error during banner upload", uploadResult);
+            return uploadResult;
+        } else if uploadResult is json {
+            sql:ExecutionResult|error executionResult = check self.db->execute(`
+                UPDATE competitions 
+                SET updated_at = NOW() 
+                WHERE id = ${competitionId}
+            `);
+            if executionResult is error {
+                log:printError("Failed to update competition banner URL", executionResult);
+                return http:INTERNAL_SERVER_ERROR;
+            }
+            return uploadResult;
+        }
+    }
+
+    isolated resource function delete deleteAssets/[int competitionId](http:Request req, @http:Payload json assetUrls) returns http:InternalServerError & readonly|http:BadRequest & readonly|http:Ok & readonly|error {
+        string[] assets = [];
+    if assetUrls is json[] {
+        foreach var item in assetUrls {
+            if item is string {
+                assets.push(item);
+            } else {
+                return http:BAD_REQUEST;
+            }
+        }
+    } else {
+        return http:BAD_REQUEST;
+    }
+    if assets.length() == 0 {
+        return http:BAD_REQUEST;
+    }
+
+        // Delete each asset
+        foreach string assetUrl in assets {
+            string[] fileNames = [assetUrl];
+            http:Unauthorized|http:Response|error deleteResult = check self.storage.deleteAssets(req,self.bucketName, fileNames);
+            
+            if deleteResult is http:Unauthorized {
+                log:printError("Unauthorized to delete asset", 'assetUrl = assetUrl);
+                return http:INTERNAL_SERVER_ERROR; // or http:BAD_REQUEST if more appropriate
+            } else if deleteResult is error {
+                log:printError("Unexpected error during asset deletion", deleteResult);
+                return deleteResult;
+            } else if deleteResult is http:Response {
+                log:printInfo("Asset deleted successfully", 'assetUrl = assetUrl);
+            }
+        }
+
+        sql:ExecutionResult|error executionResult = check self.db->execute(`
+            UPDATE competitions 
+            SET updated_at = NOW() 
+            WHERE id = ${competitionId}
+        `);
+        
+        if executionResult is error {
+            log:printError("Failed to update competition after deleting assets", executionResult);
+            return http:INTERNAL_SERVER_ERROR;
+        }
+        return http:OK;
+    }
+
+    isolated resource function get getAssets/[int competitionId](http:Request req) returns json[]|http:Ok & readonly|error|http:Response {
+        json[]|(http:Unauthorized & readonly)|error|http:Response assets = self.storage.getAssets(req,self.bucketName, competitionId.toString());
+        if assets is http:Response {
+            log:printError("Failed to fetch assets", 'assets = check assets.getTextPayload());
+            return assets;
+        } else if assets is json[] {
+            log:printInfo("Assets fetched successfully", 'assets = assets);
+            return assets;
+        } else if assets is error {
+            log:printError("Unexpected error fetching assets", 'error = assets);
+            return assets;
+        }
+        return http:OK;
+    }
+
+    isolated resource function post saveLandingPage/[int competitionId](http:Request req,@http:Payload json landingData) returns http:InternalServerError & readonly|map<json>|error {
+        sql:ParameterizedQuery query = `UPDATE competitions SET landing_data = ${landingData.toString()} WHERE id = ${competitionId}`;
+        // Execute the query and handle the result
+        sql:ExecutionResult|error executionResult = check self.db->execute(query);
+        if executionResult is error {
+            log:printError("Failed to save landing page data", executionResult);
+            return http:INTERNAL_SERVER_ERROR;
+        }
+        return { "success": true };
+    }
+
+    isolated resource function post publishLandingPage/[int competitionId](http:Request req,@http:Payload json landingData) returns http:InternalServerError & readonly|map<json>|error {
+        string html = (check landingData.html).toString();
+        string css = (check landingData.css).toString();
+        sql:ParameterizedQuery query = `UPDATE competitions SET landing_html = ${html}, landing_css = ${css} WHERE id = ${competitionId}`;
+        // Execute the query and handle the result
+        sql:ExecutionResult|error executionResult = check self.db->execute(query);
+        if executionResult is error {
+            log:printError("Failed to save landing page data", executionResult);
+            return http:INTERNAL_SERVER_ERROR;
+        }
+        return { "success": true };
+    }
+    isolated function setInitialHtmlCss(Competition competition) returns http:InternalServerError|error {
+        string bannerUrl = check self.storage.getPublicFileUrl(self.bucketName, string `${competition.id}/banner`);
+        string html = string `<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>Competition Landing Page</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="index,follow">
+  <meta name="generator" content="GrapesJS Studio">
+</head>
+
+<body>
+  <div class="container"><img src="${bannerUrl}" alt="Competition Banner" class="banner"/>
+    <div class="content">
+      <div class="title">
+        ${competition.title}
+      </div>
+      <div class="description">
+        ${competition.description}
+      </div>
+      <div class="details">
+        <div class="detail"><strong>Category:</strong> ${competition.category}
+        </div>
+        <div class="detail"><strong>Status:</strong> ${competition.status}
+        </div>
+        <div class="detail"><strong>Start Date:</strong> ${competition.start_date}
+        </div>
+        <div class="detail"><strong>End Date:</strong> ${competition.end_date}
+        </div>
+      </div>
+      <div class="cta"><a href="/register" class="cta-btn">Register Now</a></div>
+    </div>
+  </div>
+</body>
+
+</html>`;
+        string css = string `* {
+	box-sizing: border-box;
+}
+
+body {
+	margin: 0;
+}
+
+body {
+	font-family: 'Segoe UI', Arial, sans-serif;
+	background: #f8fafc;
+	margin: 0;
+	padding: 0;
+	color: #222;
+}
+
+.container {
+	max-width: 800px;
+	margin: 40px auto;
+	background: #fff;
+	border-radius: 16px;
+	box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+	overflow: hidden;
+}
+
+.banner {
+	width: 100%;
+	height: 280px;
+	object-fit: cover;
+	background: #e2e8f0;
+	display: block;
+}
+
+.content {
+	padding: 32px;
+}
+
+.title {
+	font-size: 2.5rem;
+	font-weight: 700;
+	margin-bottom: 12px;
+	color: #2563eb;
+}
+
+.description {
+	font-size: 1.2rem;
+	margin-bottom: 24px;
+	color: #374151;
+}
+
+.details {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 24px;
+	margin-bottom: 24px;
+}
+
+.detail {
+	flex: 1 1 200px;
+	background: #f1f5f9;
+	border-radius: 8px;
+	padding: 16px;
+	font-size: 1rem;
+	color: #334155;
+}
+
+.cta {
+	display: block;
+	width: 100%;
+	text-align: center;
+	margin-top: 32px;
+}
+
+.cta-btn {
+	background: #2563eb;
+	color: #fff;
+	padding: 16px 32px;
+	border: none;
+	border-radius: 8px;
+	font-size: 1.2rem;
+	font-weight: 600;
+	cursor: pointer;
+	transition: background 0.2s;
+	text-decoration: none;
+}
+
+.cta-btn:hover {
+	background: #1e40af;
+}`;        
+        sql:ParameterizedQuery query = `UPDATE competitions SET landing_html = ${html}, landing_css = ${css} WHERE id = ${competition.id}`;
+        sql:ExecutionResult|error result = check self.db->execute(query);
+
+        if result is error {
+            log:printError("Failed to update landing page HTML/CSS", result);
+            return http:INTERNAL_SERVER_ERROR;
+        }
+        
+        return {};
+    }
+
 };
 }
