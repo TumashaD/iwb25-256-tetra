@@ -36,24 +36,40 @@ public function createAIService(postgresql:Client dbClient, string geminiApiKey,
             
             // If competitionId is provided, fetch competition details for context
             json|error competitionIdResult = requestBody.competitionId;
-            if competitionIdResult is json && competitionIdResult is int {
-                int competitionId = <int>competitionIdResult;
-                sql:ParameterizedQuery query = `SELECT title, description, category, start_date, end_date, status FROM competitions WHERE id = ${competitionId}`;
-                stream<record {}, sql:Error?> competitionResult = self.db->query(query);
-                record {}[]|error competitionArr = from record {} competition in competitionResult
-                                                   select competition;
-                
-                if competitionArr is record {}[] && competitionArr.length() > 0 {
-                    record {} comp = competitionArr[0];
-                    context = string `Competition Details:
-                                        Title: ${comp["title"].toString()}
-                                        Description: ${comp["description"].toString()}
-                                        Category: ${comp["category"].toString()}
-                                        Start Date: ${comp["start_date"].toString()}
-                                        End Date: ${comp["end_date"].toString()}
-                                        Status: ${comp["status"].toString()}
-
-                                        `;
+            if competitionIdResult is json {
+                // competitionId field exists in the request
+                if competitionIdResult is int {
+                    // Valid integer ID provided
+                    int competitionId = <int>competitionIdResult;
+                    sql:ParameterizedQuery query = `SELECT title, description, category, start_date, end_date, status FROM competitions WHERE id = ${competitionId}`;
+                    stream<record {}, sql:Error?> competitionResult = self.db->query(query);
+                    record {}[]|error competitionArr = from record {} competition in competitionResult
+                                                       select competition;
+                    
+                    if competitionArr is error {
+                        log:printError("Database error while fetching competition", competitionArr);
+                        return http:INTERNAL_SERVER_ERROR;
+                    } else if competitionArr.length() == 0 {
+                        // Competition ID provided but no competition found - this is a bad request
+                        log:printWarn(string `Competition with ID ${competitionId} not found`);
+                        return http:BAD_REQUEST;
+                    } else {
+                        record {} comp = competitionArr[0];
+                        context = string `Competition Details:
+                                            Title: ${comp["title"].toString()}
+                                            Description: ${comp["description"].toString()}
+                                            Category: ${comp["category"].toString()}
+                                            Start Date: ${comp["start_date"].toString()}
+                                            End Date: ${comp["end_date"].toString()}
+                                            Status: ${comp["status"].toString()}
+                                            `;
+                    }
+                } else {
+                    // competitionId field exists but is not an integer (e.g., "abc")
+                    if(competitionIdResult is string && competitionIdResult.trim() != "") {
+                        log:printWarn(string `Invalid competitionId format: ${competitionIdResult.toString()}`);
+                        return http:BAD_REQUEST;
+                    }
                 }
             }
             
