@@ -9,12 +9,15 @@ import ballerinax/postgresql;
 public type Competition record {
     int id;
     string title;
+    string name;
     string description;
+    string prizePool;
     string organizer_id;
     string start_date;
     string end_date;
+    int teams;
     string category;
-    string status;
+    string status ;
     string created_at;
     string updated_at;
     string banner_url?;
@@ -27,7 +30,7 @@ public function createCompetitionService(postgresql:Client dbClient, supabase:St
         private final string bucketName = "competitions";
 
         isolated resource function get .(http:RequestContext ctx) returns json|http:InternalServerError|error {
-            sql:ParameterizedQuery query = `SELECT id,title,description,organizer_id,start_date,end_date,category,status,created_at,updated_at FROM competitions`;
+            sql:ParameterizedQuery query = `SELECT id,title,name,description,prize_pool,organizer_id,start_date,end_date,teams,category,status,created_at,updated_at FROM competitions`;
             stream<Competition, sql:Error?> competitionsResult = self.db->query(query, Competition);
             Competition[]|error competitions = from Competition competition in competitionsResult
                 select competition;
@@ -47,7 +50,7 @@ public function createCompetitionService(postgresql:Client dbClient, supabase:St
         }
 
         isolated resource function get [int id](http:RequestContext ctx) returns json|http:InternalServerError|http:NotFound|error {
-            sql:ParameterizedQuery query = `SELECT id, title, description, organizer_id, start_date, end_date, category, status, created_at, updated_at FROM competitions WHERE id = ${id}`;
+            sql:ParameterizedQuery query = `SELECT id, title,name, description, prize_pool, organizer_id, start_date, end_date, teams, category, status, created_at, updated_at FROM competitions WHERE id = ${id}`;
             stream<Competition, sql:Error?> competitionResult = self.db->query(query, Competition);
             Competition[]|error competitionArr = from Competition competition in competitionResult
                 select competition;
