@@ -18,6 +18,8 @@ configurable string dbName = ?;
 configurable string supabaseStorageUrl = ?;
 configurable string supabaseAnonKey = ?;
 
+configurable string geminiApiKey = ?;
+
 listener http:Listener ln = new (serverPort);
 
 public final http:CorsConfig CORS_CONFIG = {
@@ -41,12 +43,14 @@ public function main() returns error? {
     http:Service userService = services:createUserService(db, CORS_CONFIG, authInterceptor);
     http:Service teamService = services:createTeamService(db, CORS_CONFIG, authInterceptor);
     http:Service enrollmentService = services:createEnrollmentService(db, CORS_CONFIG, authInterceptor);
+    http:Service aiService = services:createAIService(db, geminiApiKey, CORS_CONFIG);
 
     check ln.attach(competitionService, "/competitions");
     check ln.attach(organizerService, "/organizer");
     check ln.attach(userService, "/users");
     check ln.attach(teamService, "/teams");
     check ln.attach(enrollmentService, "/enrollments");
+    check ln.attach(aiService, "/ai");
 
     check ln.'start();
     log:printInfo("Competition service started on port " + serverPort.toString());
