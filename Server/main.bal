@@ -2,7 +2,7 @@ import vinnova.services;
 import ballerina/http;
 import ballerina/log;
 import vinnova.auth;
-import vinnova.supbase;
+import vinnova.supabase;
 import ballerinax/postgresql;
 
 configurable string supabaseUrl = ?;
@@ -33,10 +33,10 @@ public final http:CorsConfig CORS_CONFIG = {
 public function main() returns error? {
     auth:AuthInterceptor authInterceptor = new(supabaseUrl, supabaseJwtSecret);
 
-    supbase:DatabaseClient dbClient = new (dbHost, dbPort, dbUser, dbPassword, dbName);
+    supabase:DatabaseClient dbClient = new (dbHost, dbPort, dbUser, dbPassword, dbName);
     postgresql:Client db = check dbClient.getClient();
 
-    supbase:StorageClient storageClient = check new (supabaseStorageUrl, supabaseAnonKey,supabaseStorageUrl);
+    supabase:StorageClient storageClient = check new (supabaseStorageUrl, supabaseAnonKey,supabaseStorageUrl);
 
     http:Service competitionService = services:createCompetitionService(db, storageClient, CORS_CONFIG);
     http:Service organizerService = services:createOrganizerService(db, storageClient, CORS_CONFIG,authInterceptor);

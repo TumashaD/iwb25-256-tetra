@@ -3,7 +3,7 @@ import ballerina/http;
 import ballerina/log;
 import ballerina/sql;
 import ballerina/time;
-import vinnova.supbase;
+import vinnova.supabase;
 import ballerina/io;
 
 public type LandingData record {|
@@ -17,7 +17,7 @@ public type OrganizerCompetition record {|
     string? landing_css?;
 |};
 
-public function createOrganizerService(postgresql:Client dbClient,supbase:StorageClient storageClient, http:CorsConfig corsConfig,http:Interceptor authInterceptor) returns http:InterceptableService {
+public function createOrganizerService(postgresql:Client dbClient,supabase:StorageClient storageClient, http:CorsConfig corsConfig,http:Interceptor authInterceptor) returns http:InterceptableService {
     return @http:ServiceConfig{cors : corsConfig} isolated service object {
 
     public function createInterceptors() returns http:Interceptor {
@@ -25,7 +25,7 @@ public function createOrganizerService(postgresql:Client dbClient,supbase:Storag
     }
 
     private final postgresql:Client db = dbClient;
-    private final supbase:StorageClient storage = storageClient;
+    private final supabase:StorageClient storage = storageClient;
     private final string bucketName = "competitions";
     private final string|io:Error initialLandingCss = io:fileReadString("../lib/landing.css");
 

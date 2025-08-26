@@ -1,6 +1,5 @@
 'use client'
 
-import { Navbar } from '@/components/ui/navbar'
 import { Competition, CompetitionsService } from '@/services/competitionService'
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -28,9 +27,7 @@ export default function Home() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white">
-      <Navbar />
-      
+    <div className="bg-white text-black flex flex-1">
       <div className="container mx-auto px-4 pt-24">
         <div className="text-center mb-12">
           <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
@@ -40,6 +37,7 @@ export default function Home() {
             Discover exciting competitions, showcase your skills, and connect with innovators worldwide
           </p>
         </div>
+        
 
         {/* Competitions Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">

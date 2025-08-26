@@ -35,7 +35,7 @@ function AvatarImage({
       className={cn(
         "aspect-square size-full relative z-10",
         "rounded-full object-cover",
-        "mix-blend-overlay opacity-90",
+        "opacity-90",
         className
       )}
       {...props}

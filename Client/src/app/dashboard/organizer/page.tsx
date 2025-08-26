@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { CompetitionsService, Competition } from '@/services/competitionService'
 import { EnrollmentService, EnrollmentWithDetails } from '@/services/enrollmentService'
-import { Navbar } from '@/components/ui/navbar'
 import { OrganizerService } from '@/services/organizerService'
 
 export default function OrganizerDashboard() {
@@ -200,8 +199,6 @@ export default function OrganizerDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-900 text-white">
-      <Navbar />
-      
       <div className="container mx-auto px-4 pt-24">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold">Organizer Dashboard</h1>
