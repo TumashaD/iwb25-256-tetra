@@ -680,12 +680,6 @@ export default function OrganizerDashboard() {
                                   {enrollment.status.charAt(0).toUpperCase() + enrollment.status.slice(1)}
                                 </Badge>
                               </div>
-                              <div className="flex items-center gap-2">
-                                <span className="text-muted-foreground">Enrolled:</span>
-                                <span>
-                                  {enrollment.created_at ? new Date(enrollment.created_at).toLocaleString() : "N/A"}
-                                </span>
-                              </div>
                             </div>
                           </div>
 
