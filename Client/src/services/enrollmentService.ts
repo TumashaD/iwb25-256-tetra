@@ -22,6 +22,13 @@ export interface CreateEnrollmentData {
   status: string
 }
 
+export interface EnrollmentTeamMember {
+  id: string
+  name: string
+  email: string
+  role: string
+}
+
 export const EnrollmentService = {
   // Create a new enrollment
   async createEnrollment(userId: string,data: CreateEnrollmentData): Promise<Enrollment> {
@@ -177,6 +184,20 @@ export const EnrollmentService = {
       }
       
       throw new Error('Failed to delete enrollment. Please try again.')
+    }
+  },
+
+  // Get team members from enrollment id
+  async getEnrollmentTeamMembers(enrollmentId: number): Promise<EnrollmentTeamMember[]> {
+    try {
+      const result = await apiCall(`/enrollments/members/${enrollmentId}`, {
+        method: 'GET',
+      }) as EnrollmentTeamMember[]
+
+      return result || []
+    } catch (error) {
+      console.error('Failed to get enrollment team members:', error)
+      throw new Error('Failed to fetch enrollment team members. Please try again later.')
     }
   }
 }

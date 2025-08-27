@@ -37,18 +37,12 @@ import {
   CheckCircle,
   Clock,
   XCircle,
+  Trash2,
 } from "lucide-react"
+import { EnrollmentTeamMember } from "@/services/enrollmentService"
 
-interface TeamMember {
-  id: string
-  name: string
-  email: string
-  role: string
-}
-
-interface TeamWithStatus extends EnrollmentWithDetails {
-  competition_status?: string
-  members?: TeamMember[]
+interface EnrolledTeams extends EnrollmentWithDetails {
+  members?: EnrollmentTeamMember[]
 }
 
 const statusOptions = [
@@ -66,12 +60,12 @@ export default function TeamManagement() {
   const { user, loading } = useAuth()
   const router = useRouter()
   const params = useParams()
-  const competitionId = params.id as string
+  const competitionId = Number(params.id)
 
   const [competition, setCompetition] = useState<Competition | null>(null)
-  const [teams, setTeams] = useState<TeamWithStatus[]>([])
-  const [filteredTeams, setFilteredTeams] = useState<TeamWithStatus[]>([])
-  const [selectedTeam, setSelectedTeam] = useState<TeamWithStatus | null>(null)
+  const [teams, setTeams] = useState<EnrolledTeams[]>([])
+  const [filteredTeams, setFilteredTeams] = useState<EnrolledTeams[]>([])
+  const [selectedTeam, setSelectedTeam] = useState<EnrolledTeams | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [selectedTeams, setSelectedTeams] = useState<Set<number>>(new Set())
@@ -103,10 +97,9 @@ export default function TeamManagement() {
 
   const fetchCompetitionData = async () => {
     try {
-      const competitions = await CompetitionsService.getCompetitions()
-      const comp = competitions.find((c) => c.id === Number.parseInt(competitionId))
-      if (comp && comp.organizer_id === user?.id) {
-        setCompetition(comp)
+      const competition = await CompetitionsService.getCompetition(competitionId)
+      if (competition && competition.organizer_id === user?.id) {
+        setCompetition(competition)
       } else {
         router.push("/organizer/dashboard")
       }
@@ -116,21 +109,29 @@ export default function TeamManagement() {
     }
   }
 
+  const handleDeleteTeam = async (enrollmentId: number) => {
+    try {
+      setPageLoading(true)
+      await EnrollmentService.deleteEnrollment(enrollmentId)
+      setTeams((prev) => prev.filter((team) => team.enrollment_id !== enrollmentId))
+    } catch (error) {
+      console.error("Failed to delete team:", error)
+      setError("Failed to delete team")
+    } finally {
+      setPageLoading(false)
+    }
+  }
+
   const fetchTeams = async () => {
     try {
       setPageLoading(true)
-      const enrollments = await EnrollmentService.getCompetitionEnrollments(Number.parseInt(competitionId))
-
-      // Mock team members data - in real app, this would come from API
-      const teamsWithMembers = enrollments.map((team) => ({
-        ...team,
-        competition_status: "registered",
-        members: [
-          { id: "1", name: "John Doe", email: "john@example.com", role: "Captain" },
-          { id: "2", name: "Jane Smith", email: "jane@example.com", role: "Player" },
-          { id: "3", name: "Mike Johnson", email: "mike@example.com", role: "Player" },
-        ],
-      }))
+      const enrollments = await EnrollmentService.getCompetitionEnrollments(competitionId)
+      const teamsWithMembers: EnrolledTeams[] = await Promise.all(
+        enrollments.map(async (enrollment) => {
+          const members = await EnrollmentService.getEnrollmentTeamMembers(enrollment.enrollment_id)
+          return { ...enrollment, members }
+        }),
+      )
 
       setTeams(teamsWithMembers)
     } catch (error) {
@@ -149,7 +150,7 @@ export default function TeamManagement() {
     }
 
     if (statusFilter !== "all") {
-      filtered = filtered.filter((team) => team.competition_status === statusFilter)
+      filtered = filtered.filter((team) => team.status === statusFilter)
     }
 
     setFilteredTeams(filtered)
@@ -157,9 +158,9 @@ export default function TeamManagement() {
 
   const updateTeamStatus = async (teamId: number, newStatus: string) => {
     try {
-      // In real app, this would be an API call
+      await EnrollmentService.updateEnrollmentStatus(teamId, newStatus)
       setTeams((prev) =>
-        prev.map((team) => (team.enrollment_id === teamId ? { ...team, competition_status: newStatus } : team)),
+        prev.map((team) => (team.enrollment_id === teamId ? { ...team, status: newStatus } : team)),
       )
     } catch (error) {
       console.error("Failed to update team status:", error)
@@ -187,7 +188,7 @@ export default function TeamManagement() {
 
   const sendEmail = async () => {
     try {
-      let targetTeams: TeamWithStatus[] = []
+      let targetTeams: EnrolledTeams[] = []
 
       switch (emailTarget) {
         case "all":
@@ -419,7 +420,6 @@ export default function TeamManagement() {
                   <TableRow>
                     <TableHead className="w-12">Select</TableHead>
                     <TableHead>Team Name</TableHead>
-                    <TableHead>Status</TableHead>
                     <TableHead>Competition Status</TableHead>
                     <TableHead>Enrolled Date</TableHead>
                     <TableHead>Members</TableHead>
@@ -428,33 +428,21 @@ export default function TeamManagement() {
                 </TableHeader>
                 <TableBody>
                   {filteredTeams.map((team) => (
-                    <TableRow key={team.enrollment_id}>
+                    <TableRow key={team.enrollment_id} onClick={() => {
+                            setSelectedTeam(team)
+                            setShowTeamDetails(true)
+                          }} className="cursor-pointer">
                       <TableCell>
                         <Checkbox
                           checked={selectedTeams.has(team.enrollment_id)}
                           onCheckedChange={(checked) => handleTeamSelection(team.enrollment_id, checked as boolean)}
+                          onClick={(e) => e.stopPropagation()}
                         />
                       </TableCell>
                       <TableCell className="font-medium">{team.team_name}</TableCell>
                       <TableCell>
-                        <Badge
-                          variant={
-                            team.status === "enrolled"
-                              ? "default"
-                              : team.status === "pending"
-                                ? "secondary"
-                                : "destructive"
-                          }
-                        >
-                          {team.status === "enrolled" && <CheckCircle className="h-3 w-3 mr-1" />}
-                          {team.status === "pending" && <Clock className="h-3 w-3 mr-1" />}
-                          {team.status === "rejected" && <XCircle className="h-3 w-3 mr-1" />}
-                          {team.status.charAt(0).toUpperCase() + team.status.slice(1)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
                         <Select
-                          value={team.competition_status || "registered"}
+                          value={team.status || "registered"}
                           onValueChange={(value) => updateTeamStatus(team.enrollment_id, value)}
                         >
                           <SelectTrigger className="w-40">
@@ -477,17 +465,18 @@ export default function TeamManagement() {
                         </span>
                       </TableCell>
                       <TableCell className="text-right">
+                        {/* Delete Button */}
                         <Button
-                          variant="outline"
+                          variant="destructive"
                           size="sm"
-                          onClick={() => {
-                            setSelectedTeam(team)
-                            setShowTeamDetails(true)
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleDeleteTeam(team.enrollment_id)
                           }}
-                          className="gap-1"
+                          className="gap-1 cursor-pointer"
                         >
-                          <Eye className="h-3 w-3" />
-                          View Details
+                          <Trash2 className="h-3 w-3" />
+                          Delete
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -513,24 +502,8 @@ export default function TeamManagement() {
               <div className="space-y-6">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label className="text-sm font-medium text-muted-foreground">Enrollment Status</Label>
-                    <div className="mt-1">
-                      <Badge
-                        variant={
-                          selectedTeam.status === "enrolled"
-                            ? "default"
-                            : selectedTeam.status === "pending"
-                              ? "secondary"
-                              : "destructive"
-                        }
-                      >
-                        {selectedTeam.status.charAt(0).toUpperCase() + selectedTeam.status.slice(1)}
-                      </Badge>
-                    </div>
-                  </div>
-                  <div>
                     <Label className="text-sm font-medium text-muted-foreground">Competition Status</Label>
-                    <div className="mt-1">{getStatusBadge(selectedTeam.competition_status || "registered")}</div>
+                    <div className="mt-1">{getStatusBadge(selectedTeam.status || "registered")}</div>
                   </div>
                 </div>
 

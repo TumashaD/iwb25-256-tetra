@@ -30,7 +30,7 @@ export default function CompetitionSettings() {
   const { user, loading } = useAuth()
   const router = useRouter()
   const params = useParams()
-  const competitionId = params.id as string
+  const competitionId = Number(params.id)
 
   const [competition, setCompetition] = useState<Competition | null>(null)
   const [formData, setFormData] = useState<Partial<Competition>>({
@@ -66,28 +66,27 @@ export default function CompetitionSettings() {
     try {
       setPageLoading(true)
       setError(null)
-      const competitions = await CompetitionsService.getCompetitions()
-      const comp = competitions.find((c) => c.id === Number.parseInt(competitionId))
+      const competition = await CompetitionsService.getCompetition(competitionId)
 
-      if (!comp) {
+      if (!competition) {
         setError("Competition not found")
         return
       }
 
-      if (comp.organizer_id !== user?.id) {
+      if (competition.organizer_id !== user?.id) {
         setError("You don't have permission to edit this competition")
         return
       }
 
-      setCompetition(comp)
+      setCompetition(competition)
       setFormData({
-        title: comp.title,
-        description: comp.description,
-        start_date: comp.start_date.split("T")[0],
-        end_date: comp.end_date.split("T")[0],
-        category: comp.category,
-        status: comp.status,
-        prize_pool: comp.prize_pool || "",
+        title: competition.title,
+        description: competition.description,
+        start_date: competition.start_date.split("T")[0],
+        end_date: competition.end_date.split("T")[0],
+        category: competition.category,
+        status: competition.status,
+        prize_pool: competition.prize_pool || "",
       })
     } catch (error) {
       console.error("Failed to fetch competition:", error)
@@ -114,10 +113,10 @@ export default function CompetitionSettings() {
         prize_pool: formData.prize_pool,
       }
 
-      await OrganizerService.updateCompetition(Number.parseInt(competitionId), updateData)
+      await OrganizerService.updateCompetition(competitionId, updateData)
 
       if (bannerFile) {
-        await OrganizerService.uploadBanner(Number.parseInt(competitionId), bannerFile)
+        await OrganizerService.uploadBanner(competitionId, bannerFile)
         setBannerFile(null)
         setBannerPreview(null)
       }
@@ -137,7 +136,7 @@ export default function CompetitionSettings() {
       setDeleting(true)
       setError(null)
 
-      await OrganizerService.deleteCompetition(Number.parseInt(competitionId))
+      await OrganizerService.deleteCompetition(competitionId)
       router.push("/organizer/dashboard")
     } catch (error) {
       console.error("Failed to delete competition:", error)

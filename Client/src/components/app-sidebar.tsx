@@ -21,6 +21,7 @@ import {
   ViewIcon,
   GlobeIcon,
   Edit3Icon,
+  LogInIcon,
 } from "lucide-react"
 import type React from "react"
 
@@ -40,9 +41,19 @@ import Link from "next/link"
 import { useRouter, usePathname, useParams } from "next/navigation"
 import { useAuth } from "@/contexts/AuthContext"
 import { useMemo, useState, useEffect } from "react"
+import { Competition, CompetitionsService } from "@/services/competitionService"
+import RegisterButton from "./register-button"
+import { EnrollmentService, EnrollmentWithDetails } from "@/services/enrollmentService"
+
+type NavigationItem = {
+  icon?: React.ElementType
+  label: string
+  href?: string 
+  custom?: React.ReactNode
+}
 
 // Main navigation items
-const mainNavigationItems = [
+const mainNavigationItems: NavigationItem[] = [
   { icon: Home, label: "Home", href: "/" },
   { icon: Trophy, label: "Competitions", href: "/competitions" },
   { icon: Calendar, label: "Calendar", href: "/calendar" },
@@ -57,39 +68,87 @@ export function AppSidebar() {
   const { user, loading, signOut } = useAuth()
   const router = useRouter()
   const pathname = usePathname()
-  const {id} = useParams()
+  const { id } = useParams()
   const [showSubNav, setShowSubNav] = useState(false)
   const [currentSubNav, setCurrentSubNav] = useState<string>("")
-  const [showFrontButton,setShowFrontButton] = useState(false)
+  const [showFrontButton, setShowFrontButton] = useState(false)
 
-  const subNavigationItems = {
-  "/dashboard/organizer/competition": [
-    { icon: GlobeIcon, label: "Webpage", href: `/dashboard/organizer/competition/${id}` },
-    { icon: Edit3Icon, label: "Edit Page", href: `/dashboard/organizer/competition/${id}/edit` },
-    { icon: Users, label: "Teams", href: `/dashboard/organizer/competition/${id}/teams` },
-    { icon: Settings, label: "Settings", href: `/dashboard/organizer/competition/${id}/settings` },
-  ],
-}
+  const subNavigationItems: Record<string, NavigationItem[]> = {
+    "/dashboard/organizer/competition": [
+      { icon: GlobeIcon, label: "Webpage", href: `/dashboard/organizer/competition/${id}` },
+      { icon: Edit3Icon, label: "Edit Page", href: `/dashboard/organizer/competition/${id}/edit` },
+      { icon: Users, label: "Teams", href: `/dashboard/organizer/competition/${id}/teams` },
+      { icon: Settings, label: "Settings", href: `/dashboard/organizer/competition/${id}/settings` },
+    ],
+    "/competition": [
+      {
+        custom: (
+          <RegisterButton className="w-full bg-white text-black py-3 px-4 rounded-xl font-medium transition-colors duration-200" text="Register" competitionId={Number(id)} />
+        ),
+        label: "Register",
+      }
+    ]
+  }
 
   const cachedUser = useMemo(() => ({
+    id: user?.id,
     email: user?.email || '',
     avatarUrl: user?.avatarUrl || '',
-    isAuthenticated: !!user
-  }), [user?.email, user?.avatarUrl]);
+    isAuthenticated: !!user,
+    role: user?.profile?.role
+  }), [user?.email, user?.avatarUrl ,user?.profile]);
+
+  const isOrganizer = async () => {
+    let competition: Competition;
+    try {
+      competition = await CompetitionsService.getCompetition(Number(id));
+      if (cachedUser.id === competition?.organizer_id) {
+        setCurrentSubNav("/dashboard/organizer/competition");
+        setShowSubNav(true);
+      }
+    } catch (error) {
+      console.error("Error fetching competition:", error);
+    }
+  }
+
+  const isEnrolled = async () => {
+    let enrollments : EnrollmentWithDetails[] = [];
+    try {
+      enrollments = await EnrollmentService.getUserEnrollments(cachedUser.id ? cachedUser.id : user?.id ? user.id : "");
+      if (enrollments.length > 0) {
+        const enrolledCompetitionIds = enrollments.map(e => e.competition_id);
+        if (enrolledCompetitionIds.includes(Number(id))) {
+          setShowSubNav(false);
+        } else {
+          setCurrentSubNav("/competition");
+          setShowSubNav(true);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching enrollments:", error);
+    }
+  }
 
   useEffect(() => {
-      const paths = pathname.split("/")
-      const basePath = "/" + paths.slice(1,4).join("/")
-      console.log(basePath)
-      if (subNavigationItems[basePath as keyof typeof subNavigationItems]) {
-        setCurrentSubNav(basePath)
-        setShowSubNav(true)
+    const paths = pathname.split("/")
+    const basePath = "/" + paths.slice(1, 4).join("/")
+    console.log(basePath)
+    if (basePath.startsWith("/competition/")) {
+      if (cachedUser.role === "organizer") {
+        isOrganizer();
       } else {
-        setShowSubNav(false)
-        setShowFrontButton(false)
-        setCurrentSubNav("")
+        isEnrolled();
       }
-    }, [pathname])
+    }
+    if (subNavigationItems[basePath as keyof typeof subNavigationItems]) {
+      setCurrentSubNav(basePath)
+      setShowSubNav(true)
+    } else {
+      setShowSubNav(false)
+      setShowFrontButton(false)
+      setCurrentSubNav("")
+    }
+  }, [pathname])
 
   const handleLogout = async () => {
     try {
@@ -101,19 +160,19 @@ export function AppSidebar() {
   }
 
   const handleNavClick = (href: string, e: React.MouseEvent) => {
-      const basePath = href
-      if (subNavigationItems[basePath as keyof typeof subNavigationItems]) {
-        e.preventDefault()
-        setCurrentSubNav(basePath)
-        setShowSubNav(true)
-        router.push(href)
-      }
+    const basePath = href
+    if (subNavigationItems[basePath as keyof typeof subNavigationItems]) {
+      e.preventDefault()
+      setCurrentSubNav(basePath)
+      setShowSubNav(true)
+      router.push(href)
     }
-  
-    const handleBackClick = () => {
-      setShowSubNav(false)
-      setShowFrontButton(true)
-    }
+  }
+
+  const handleBackClick = () => {
+    setShowSubNav(false)
+    setShowFrontButton(true)
+  }
 
   const handleFrontClick = () => {
     setShowFrontButton(false)
@@ -152,9 +211,8 @@ export function AppSidebar() {
 
             <div className="relative w-full overflow-hidden">
               <div
-                className={`transition-transform duration-300 ease-in-out ${
-                  showSubNav ? "-translate-x-1/2" : "translate-x-0"
-                }`}
+                className={`transition-transform duration-300 ease-in-out ${showSubNav ? "-translate-x-1/2" : "translate-x-0"
+                  }`}
                 style={{ width: "200%" }}
               >
                 <div className="flex">
@@ -162,14 +220,14 @@ export function AppSidebar() {
                   <div className="w-1/2 flex justify-center">
                     <SidebarMenu className="space-y-2 flex flex-col items-center justify-center">
                       {mainNavigationItems.map((item) => {
-                        const Icon = item.icon
+                        const Icon = item.icon ? item.icon : ViewIcon;
                         return (
                           <SidebarMenuItem key={item.label}>
                             <SidebarMenuButton asChild className="h-full w-20 space-y-6">
                               <Link
                                 className="flex flex-col items-center justify-center"
-                                href={item.href}
-                                onClick={(e) => handleNavClick(item.href, e)}
+                                href={item.href ? item.href : "#"}
+                                onClick={(e) => handleNavClick(item.href ? item.href : "#", e)}
                               >
                                 <Icon className="m-0 h-6 w-6" />
                                 <span className="text-[10px] text-center leading-tight font-medium text-muted-foreground">
@@ -196,22 +254,24 @@ export function AppSidebar() {
                   {/* Sub Navigation */}
                   <div className="w-1/2 flex justify-center">
                     <SidebarMenu className="space-y-2 flex flex-col items-center justify-center">
-                      {currentSubNav &&
-                        subNavigationItems[currentSubNav as keyof typeof subNavigationItems]?.map((item) => {
-                          const Icon = item.icon
-                          return (
-                            <SidebarMenuItem key={item.label}>
-                              <SidebarMenuButton asChild className="h-full w-20 space-y-6">
-                                <Link className="flex flex-col items-center justify-center" href={item.href}>
-                                  <Icon className="m-0 h-6 w-6" />
-                                  <span className="text-[10px] text-center leading-tight font-medium text-muted-foreground">
-                                    {item.label}
-                                  </span>
-                                </Link>
-                              </SidebarMenuButton>
-                            </SidebarMenuItem>
-                          )
-                        })}
+                      {currentSubNav && (
+                        subNavigationItems[currentSubNav as keyof typeof subNavigationItems]?.map((item) => (
+                          <SidebarMenuItem key={item.label}>
+                            <SidebarMenuButton asChild className="h-full w-20 space-y-6">
+                                {item.custom ? (
+                                  item.custom
+                                ) : (
+                                  <Link className="flex flex-col items-center justify-center" href={item.href ? item.href : "#"}>
+                                    {item.icon && <item.icon className="m-0 h-6 w-6" />}
+                                    <span className="text-[10px] text-center leading-tight font-medium text-muted-foreground">
+                                      {item.label}
+                                    </span>
+                                  </Link>
+                                )}
+                            </SidebarMenuButton>
+                          </SidebarMenuItem>
+                        ))
+                      )}
                       {/* Back Button */}
                       {showSubNav && (
                         <SidebarMenuItem>
