@@ -1,12 +1,38 @@
-'use client'
+"use client"
 
-import { useAuth } from '@/contexts/AuthContext'
-import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
-import { TeamService, Team, TeamWithMembers, UserSearchResult, CreateTeamData, AddMemberData } from '@/services/teamService'
-import { UserService, Profile } from '@/services/userService'
-import { EnrollmentService, EnrollmentWithDetails } from '@/services/enrollmentService'
-import { Navbar } from '@/components/ui/navbar'
+import type React from "react"
+
+import { useAuth } from "@/contexts/AuthContext"
+import { useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
+import {
+  TeamService,
+  type Team,
+  type TeamWithMembers,
+  type UserSearchResult,
+  type CreateTeamData,
+  type AddMemberData,
+} from "@/services/teamService"
+import { UserService, type Profile } from "@/services/userService"
+import { EnrollmentService, type EnrollmentWithDetails } from "@/services/enrollmentService"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Badge } from "@/components/ui/badge"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Separator } from "@/components/ui/separator"
+import { CalendarDays, Crown, Users, Trophy, Plus, Search, Trash2, UserPlus, AlertCircle, Loader2 } from "lucide-react"
 
 interface TeamMemberWithProfile {
   team_id: number
@@ -27,15 +53,15 @@ export default function CompetitorDashboard() {
   const [showTeamForm, setShowTeamForm] = useState(false)
   const [showAddMemberForm, setShowAddMemberForm] = useState(false)
   const [teamFormData, setTeamFormData] = useState<CreateTeamData>({
-    name: '',
-    created_by: '',
-    no_participants: 1
+    name: "",
+    created_by: "",
+    no_participants: 1,
   })
   const [memberFormData, setMemberFormData] = useState<AddMemberData>({
-    member_id: '',
-    role: 'member'
+    member_id: "",
+    role: "member",
   })
-  const [searchEmail, setSearchEmail] = useState('')
+  const [searchEmail, setSearchEmail] = useState("")
   const [searchResults, setSearchResults] = useState<UserSearchResult[]>([])
   const [pageLoading, setPageLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -44,21 +70,21 @@ export default function CompetitorDashboard() {
 
   // Redirect if not competitor
   useEffect(() => {
-    if (!loading && (!user || user.profile?.role !== 'competitor')) {
-      router.push('/')
+    if (!loading && (!user || user.profile?.role !== "competitor")) {
+      router.push("/")
     }
   }, [user, loading, router])
 
   // Set user ID when user is loaded
   useEffect(() => {
     if (user?.id) {
-      setTeamFormData(prev => ({ ...prev, created_by: user.id }))
+      setTeamFormData((prev) => ({ ...prev, created_by: user.id }))
     }
   }, [user?.id])
 
   // Fetch competitor's teams and enrollments
   useEffect(() => {
-    if (user?.profile?.role === 'competitor') {
+    if (user?.profile?.role === "competitor") {
       fetchMyTeams()
       fetchMyEnrollments()
     }
@@ -73,8 +99,8 @@ export default function CompetitorDashboard() {
         setTeams(userTeams)
       }
     } catch (error) {
-      console.error('Failed to fetch teams:', error)
-      setError('Failed to fetch teams. Please try again.')
+      console.error("Failed to fetch teams:", error)
+      setError("Failed to fetch teams. Please try again.")
     } finally {
       setPageLoading(false)
     }
@@ -88,8 +114,8 @@ export default function CompetitorDashboard() {
         setEnrollments(userEnrollments)
       }
     } catch (error) {
-      console.error('Failed to fetch enrollments:', error)
-      setError('Failed to fetch enrollments. Please try again.')
+      console.error("Failed to fetch enrollments:", error)
+      setError("Failed to fetch enrollments. Please try again.")
     }
   }
 
@@ -97,33 +123,32 @@ export default function CompetitorDashboard() {
     try {
       const teamDetails = await TeamService.getTeam(teamId)
       setSelectedTeam(teamDetails)
-      
+
       // Check if current user is a team leader (either in members list or is the creator)
-      const currentUserIsLeader = (
-        teamDetails?.members?.some(
-          member => member.member_id === user?.id && member.role === 'leader'
-        ) || teamDetails?.created_by === user?.id
-      ) || false
-      
-      console.log('Team details:', teamDetails)
-      console.log('Current user ID:', user?.id)
-      console.log('Team creator:', teamDetails?.created_by)
-      console.log('Team members:', teamDetails?.members)
-      console.log('Is current user leader:', currentUserIsLeader)
-      
+      const currentUserIsLeader =
+        teamDetails?.members?.some((member) => member.member_id === user?.id && member.role === "leader") ||
+        teamDetails?.created_by === user?.id ||
+        false
+
+      console.log("Team details:", teamDetails)
+      console.log("Current user ID:", user?.id)
+      console.log("Team creator:", teamDetails?.created_by)
+      console.log("Team members:", teamDetails?.members)
+      console.log("Is current user leader:", currentUserIsLeader)
+
       setIsCurrentUserLeader(currentUserIsLeader)
-      
+
       // Fetch team creator's profile
       if (teamDetails?.created_by) {
         try {
           const creatorProfile = await UserService.getUser(teamDetails.created_by)
           setTeamCreatorProfile(creatorProfile)
         } catch (error) {
-          console.error('Failed to fetch team creator profile:', error)
+          console.error("Failed to fetch team creator profile:", error)
           setTeamCreatorProfile(null)
         }
       }
-      
+
       // Fetch member profiles
       if (teamDetails?.members) {
         const membersWithProfiles = await Promise.all(
@@ -132,21 +157,21 @@ export default function CompetitorDashboard() {
               const profile = await UserService.getUser(member.member_id)
               return {
                 ...member,
-                profile: profile || undefined
+                profile: profile || undefined,
               }
             } catch (error) {
               console.error(`Failed to fetch profile for member ${member.member_id}:`, error)
               return member
             }
-          })
+          }),
         )
         setTeamMembers(membersWithProfiles)
       } else {
         setTeamMembers([])
       }
     } catch (error) {
-      console.error('Failed to fetch team details:', error)
-      setError('Failed to fetch team details.')
+      console.error("Failed to fetch team details:", error)
+      setError("Failed to fetch team details.")
     }
   }
 
@@ -155,12 +180,12 @@ export default function CompetitorDashboard() {
       setSearchResults([])
       return
     }
-    
+
     try {
       const results = await TeamService.searchUsers(email)
       setSearchResults(results)
     } catch (error) {
-      console.error('Failed to search users:', error)
+      console.error("Failed to search users:", error)
       setSearchResults([])
     }
   }
@@ -170,15 +195,15 @@ export default function CompetitorDashboard() {
     try {
       setPageLoading(true)
       setError(null)
-      
+
       await TeamService.createTeam(teamFormData)
-      
+
       // Reset form and refresh teams
       resetTeamForm()
       fetchMyTeams()
     } catch (error) {
-      console.error('Failed to create team:', error)
-      setError('Failed to create team. Please try again.')
+      console.error("Failed to create team:", error)
+      setError("Failed to create team. Please try again.")
     } finally {
       setPageLoading(false)
     }
@@ -187,50 +212,54 @@ export default function CompetitorDashboard() {
   const handleAddMember = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!selectedTeam) return
-    
+
     try {
       setPageLoading(true)
       setError(null)
-      
+
       await TeamService.addTeamMember(selectedTeam.id, memberFormData)
-      
+
       // Reset form and refresh team details
       resetMemberForm()
       fetchTeamDetails(selectedTeam.id)
     } catch (error) {
-      console.error('Failed to add team member:', error)
-      setError('Failed to add team member. Please try again.')
+      console.error("Failed to add team member:", error)
+      setError("Failed to add team member. Please try again.")
     } finally {
       setPageLoading(false)
     }
   }
 
   const handleRemoveMember = async (teamId: number, memberId: string) => {
-    if (confirm('Are you sure you want to remove this team member?')) {
+    if (confirm("Are you sure you want to remove this team member?")) {
       try {
         await TeamService.removeTeamMember(teamId, memberId)
         fetchTeamDetails(teamId)
       } catch (error) {
-        console.error('Failed to remove team member:', error)
-        setError('Failed to remove team member. Please try again.')
+        console.error("Failed to remove team member:", error)
+        setError("Failed to remove team member. Please try again.")
       }
     }
   }
 
   const handleDeleteTeam = async (teamId: number) => {
-    if (confirm('Are you sure you want to delete this team? This action cannot be undone and will remove all team members.')) {
+    if (
+      confirm(
+        "Are you sure you want to delete this team? This action cannot be undone and will remove all team members.",
+      )
+    ) {
       try {
         setPageLoading(true)
         setError(null)
-        
+
         await TeamService.deleteTeam(teamId)
-        
+
         // Reset team selection and refresh teams list
         resetTeamSelection()
         fetchMyTeams()
       } catch (error) {
-        console.error('Failed to delete team:', error)
-        setError('Failed to delete team. Please try again.')
+        console.error("Failed to delete team:", error)
+        setError("Failed to delete team. Please try again.")
       } finally {
         setPageLoading(false)
       }
@@ -239,20 +268,20 @@ export default function CompetitorDashboard() {
 
   const resetTeamForm = () => {
     setTeamFormData({
-      name: '',
-      created_by: user?.id || '',
-      no_participants: 1
+      name: "",
+      created_by: user?.id || "",
+      no_participants: 1,
     })
     setShowTeamForm(false)
   }
 
   const resetMemberForm = () => {
     setMemberFormData({
-      member_id: '',
-      role: 'member'
+      member_id: "",
+      role: "member",
     })
     setShowAddMemberForm(false)
-    setSearchEmail('')
+    setSearchEmail("")
     setSearchResults([])
   }
 
@@ -264,395 +293,469 @@ export default function CompetitorDashboard() {
   }
 
   const selectUserForTeam = (user: UserSearchResult) => {
-    setMemberFormData(prev => ({ ...prev, member_id: user.id }))
+    setMemberFormData((prev) => ({ ...prev, member_id: user.id }))
     setSearchEmail(user.email)
     setSearchResults([])
   }
 
   if (loading || pageLoading) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-white text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <div>Loading...</div>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto" />
+          <p className="text-muted-foreground">Loading your dashboard...</p>
         </div>
       </div>
     )
   }
 
-  if (!user || user.profile?.role !== 'competitor') {
+  if (!user || user.profile?.role !== "competitor") {
     return null // Will redirect
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
-      <Navbar />
-      
-      <div className="container mx-auto px-4 pt-24">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold">Competitor Dashboard</h1>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setShowTeamForm(true)}
-              className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg transition-colors"
-            >
-              Create Team
-            </button>
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-4 pt-24 pb-8">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Competitor Dashboard</h1>
+            <p className="text-muted-foreground mt-1">Manage your teams and track competition enrollments</p>
           </div>
-        </div>
-
-        {/* Error Display */}
-        {error && (
-          <div className="bg-red-900/50 border border-red-500 text-red-200 px-4 py-3 rounded-lg mb-6">
-            <div className="flex items-center justify-between">
-              <span>{error}</span>
-              <button 
-                onClick={() => setError(null)}
-                className="text-red-400 hover:text-red-200"
-              >
-                ×
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Create Team Form */}
-        {showTeamForm && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-gray-800 p-6 rounded-lg w-full max-w-md">
-              <h2 className="text-xl font-bold mb-4">Create Team</h2>
-              
+          <Dialog open={showTeamForm} onOpenChange={setShowTeamForm}>
+            <DialogTrigger asChild>
+              <Button className="gap-2">
+                <Plus className="h-4 w-4" />
+                Create Team
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Create New Team</DialogTitle>
+                <DialogDescription>Create a team to participate in competitions together.</DialogDescription>
+              </DialogHeader>
               <form onSubmit={handleTeamSubmit} className="space-y-4">
-                <input
-                  type="text"
-                  placeholder="Team Name"
-                  value={teamFormData.name}
-                  onChange={(e) => setTeamFormData({ ...teamFormData, name: e.target.value })}
-                  className="w-full p-3 bg-gray-700 rounded-lg"
-                  required
-                />
-                
-                <input
-                  type="number"
-                  placeholder="Number of Participants"
-                  value={teamFormData.no_participants}
-                  onChange={(e) => setTeamFormData({ ...teamFormData, no_participants: parseInt(e.target.value) || 1 })}
-                  className="w-full p-3 bg-gray-700 rounded-lg"
-                  min="1"
-                  required
-                />
-                
-                <div className="flex gap-2">
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed p-3 rounded-lg transition-colors"
-                  >
-                    {loading ? 'Creating...' : 'Create Team'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={resetTeamForm}
-                    disabled={loading}
-                    className="flex-1 bg-gray-600 hover:bg-gray-700 disabled:bg-gray-500 disabled:cursor-not-allowed p-3 rounded-lg transition-colors"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
-
-        {/* Add Member Form */}
-        {showAddMemberForm && selectedTeam && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-gray-800 p-6 rounded-lg w-full max-w-md">
-              <h2 className="text-xl font-bold mb-4">Add Team Member</h2>
-              <p className="text-sm text-gray-400 mb-4">Search for a user by email to add them as a team member.</p>
-              
-              <form onSubmit={handleAddMember} className="space-y-4">
-                <div className="relative">
-                  <input
-                    type="email"
-                    placeholder="Search by email..."
-                    value={searchEmail}
-                    onChange={(e) => {
-                      setSearchEmail(e.target.value)
-                      searchUsers(e.target.value)
-                    }}
-                    className="w-full p-3 bg-gray-700 rounded-lg"
+                <div className="space-y-2">
+                  <Label htmlFor="teamName">Team Name</Label>
+                  <Input
+                    id="teamName"
+                    placeholder="Enter team name"
+                    value={teamFormData.name}
+                    onChange={(e) => setTeamFormData({ ...teamFormData, name: e.target.value })}
+                    required
                   />
-                  
-                  {/* Search Results Dropdown */}
-                  {searchResults.length > 0 && (
-                    <div className="absolute top-full left-0 right-0 bg-gray-700 border border-gray-600 rounded-lg mt-1 max-h-48 overflow-y-auto z-10">
-                      {searchResults.map((user) => (
-                        <div
-                          key={user.id}
-                          onClick={() => selectUserForTeam(user)}
-                          className="p-3 hover:bg-gray-600 cursor-pointer border-b border-gray-600 last:border-b-0"
-                        >
-                          <div className="font-semibold">{user.name}</div>
-                          <div className="text-sm text-gray-400">{user.email}</div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
                 </div>
-                
-                <div className="flex gap-2">
-                  <button
-                    type="submit"
-                    disabled={loading || !memberFormData.member_id}
-                    className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed p-3 rounded-lg transition-colors"
-                  >
-                    {loading ? 'Adding...' : 'Add Member'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={resetMemberForm}
-                    disabled={loading}
-                    className="flex-1 bg-gray-600 hover:bg-gray-700 disabled:bg-gray-500 disabled:cursor-not-allowed p-3 rounded-lg transition-colors"
-                  >
+                <div className="space-y-2">
+                  <Label htmlFor="participants">Maximum Participants</Label>
+                  <Input
+                    id="participants"
+                    type="number"
+                    min="1"
+                    value={teamFormData.no_participants}
+                    onChange={(e) =>
+                      setTeamFormData({ ...teamFormData, no_participants: Number.parseInt(e.target.value) || 1 })
+                    }
+                    required
+                  />
+                </div>
+                <div className="flex gap-2 pt-4">
+                  <Button type="submit" disabled={loading} className="flex-1">
+                    {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                    Create Team
+                  </Button>
+                  <Button type="button" variant="outline" onClick={resetTeamForm} className="flex-1 bg-transparent">
                     Cancel
-                  </button>
+                  </Button>
                 </div>
               </form>
-            </div>
-          </div>
-        )}
-
-        {/* My Enrollments Section */}
-        <div className="mb-8">
-          <h2 className="text-2xl font-semibold mb-4">My Competition Enrollments</h2>
-          <p className="text-sm text-gray-400 mb-4">Competitions you have enrolled in with your teams</p>
-          
-          {enrollments.length === 0 ? (
-            <div className="bg-gray-800 p-6 rounded-lg text-center">
-              <p className="text-gray-400 mb-4">No enrollments yet.</p>
-              <p className="text-sm text-gray-500">
-                Browse competitions and enroll your teams to get started!
-              </p>
-            </div>
-          ) : (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {enrollments.map((enrollment) => (
-                <div key={enrollment.enrollment_id} className="bg-gray-800 p-4 rounded-lg">
-                  <div className="flex justify-between items-start mb-2">
-                    <h3 className="text-lg font-semibold text-blue-400">
-                      {enrollment.competition_title}
-                    </h3>
-                    <span className={`text-xs px-2 py-1 rounded ${
-                      enrollment.competition_status === 'active' ? 'bg-green-600' :
-                      enrollment.competition_status === 'upcoming' ? 'bg-blue-600' :
-                      enrollment.competition_status === 'completed' ? 'bg-gray-600' :
-                      'bg-red-600'
-                    }`}>
-                      {enrollment.competition_status?.toUpperCase()}
-                    </span>
-                  </div>
-                  
-                  <div className="space-y-2 text-sm text-gray-300">
-                    <div>
-                      <span className="text-gray-400">Team: </span>
-                      <span className="font-medium">{enrollment.team_name}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-400">Status: </span>
-                      <span className={`font-medium ${
-                        enrollment.status === 'enrolled' ? 'text-green-400' :
-                        enrollment.status === 'pending' ? 'text-yellow-400' :
-                        'text-red-400'
-                      }`}>
-                        {enrollment.status.charAt(0).toUpperCase() + enrollment.status.slice(1)}
-                      </span>
-                    </div>
-                    {enrollment.competition_start_date && (
-                      <div>
-                        <span className="text-gray-400">Start: </span>
-                        <span>{new Date(enrollment.competition_start_date).toLocaleDateString()}</span>
-                      </div>
-                    )}
-                    {enrollment.competition_end_date && (
-                      <div>
-                        <span className="text-gray-400">End: </span>
-                        <span>{new Date(enrollment.competition_end_date).toLocaleDateString()}</span>
-                      </div>
-                    )}
-                    {enrollment.created_at && (
-                      <div>
-                        <span className="text-gray-400">Enrolled: </span>
-                        <span>{new Date(enrollment.created_at).toLocaleDateString()}</span>
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div className="mt-3">
-                    <button
-                      onClick={() => router.push(`/competition/${enrollment.competition_id}`)}
-                      className="text-blue-400 hover:text-blue-300 text-sm"
-                    >
-                      View Competition →
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+            </DialogContent>
+          </Dialog>
         </div>
 
-        {/* Teams Management */}
-        <div className="grid md:grid-cols-2 gap-6">
-          {/* Teams List */}
-          <div>
-            <h2 className="text-xl font-semibold mb-4">My Teams</h2>
-            <p className="text-sm text-gray-400 mb-4">All teams where you are either the creator or a member</p>
-            {teams.length === 0 ? (
-              <p className="text-gray-400 text-center py-8">
-                No teams yet. Create your first team or get added to an existing team!
-              </p>
-            ) : (
-              <div className="space-y-4">
-                {teams.map((team) => (
-                  <div 
-                    key={team.id} 
-                    className={`bg-gray-800 p-4 rounded-lg cursor-pointer transition-colors ${
-                      selectedTeam?.id === team.id ? 'ring-2 ring-blue-500' : 'hover:bg-gray-750'
-                    }`}
-                    onClick={() => fetchTeamDetails(team.id)}
-                  >
-                    <div className="flex justify-between items-start mb-2">
-                      <h3 className="text-lg font-semibold">{team.name}</h3>
-                      {team.created_by === user?.id ? (
-                        <span className="text-xs bg-blue-600 text-white px-2 py-1 rounded">Creator</span>
-                      ) : (
-                        <span className="text-xs bg-green-600 text-white px-2 py-1 rounded">Member</span>
-                      )}
-                    </div>
-                    <div className="text-sm text-gray-400 space-y-1">
-                      <div>Max Participants: {team.no_participants}</div>
-                      <div>Created: {team.created_at ? new Date(team.created_at).toLocaleDateString() : 'N/A'}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+        {error && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription className="flex items-center justify-between">
+              <span>{error}</span>
+              <Button variant="ghost" size="sm" onClick={() => setError(null)}>
+                ×
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
 
-          {/* Team Details */}
-          <div>
-            <h2 className="text-xl font-semibold mb-4">Team Details</h2>
-            {selectedTeam ? (
-              <div className="bg-gray-800 p-4 rounded-lg">
-                <div className="mb-4">
-                  <div className="flex justify-between items-start mb-2">
-                    <h3 className="text-lg font-semibold">{selectedTeam.name}</h3>
-                    {isCurrentUserLeader && (
-                      <button
-                        onClick={() => handleDeleteTeam(selectedTeam.id)}
-                        disabled={loading}
-                        className="bg-red-600 hover:bg-red-700 disabled:bg-gray-600 disabled:cursor-not-allowed px-3 py-1 rounded text-sm transition-colors"
-                        title="Delete Team"
-                      >
-                        Delete Team
-                      </button>
-                    )}
-                  </div>
-                  <div className="text-sm text-gray-400 space-y-1">
-                    <div>Max Participants: {selectedTeam.no_participants}</div>
-                    <div>Current Members: {teamMembers.length}</div>
-                    <div>Created: {selectedTeam.created_at ? new Date(selectedTeam.created_at).toLocaleDateString() : 'N/A'}</div>
-                    {/* Debug info - remove this later */}
-                    <div className="text-xs text-yellow-400 mt-2">
-                      Debug: You are {isCurrentUserLeader ? 'a team leader' : 'not a team leader'} | 
-                      Your ID: {user?.id} | Creator ID: {selectedTeam.created_by}
-                    </div>
-                  </div>
-                </div>
+        <Tabs defaultValue="enrollments" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="enrollments" className="gap-2">
+              <Trophy className="h-4 w-4" />
+              My Enrollments
+            </TabsTrigger>
+            <TabsTrigger value="teams" className="gap-2">
+              <Users className="h-4 w-4" />
+              My Teams
+            </TabsTrigger>
+          </TabsList>
 
-                {/* Team Members */}
-                <div className="border-t border-gray-700 pt-4">
-                  <div className="flex justify-between items-center mb-3">
-                    <h4 className="font-semibold">Team Members</h4>
-                    {isCurrentUserLeader && (
-                      <button
-                        onClick={() => setShowAddMemberForm(true)}
-                        className="bg-green-600 hover:bg-green-700 px-3 py-1 rounded text-sm transition-colors"
-                      >
-                        + Add Member
-                      </button>
-                    )}
-                  </div>
-                  
-                  {/* Always show team creator first */}
-                  {selectedTeam.created_by && teamCreatorProfile && (
-                    <div className="mb-3">
-                      <div className="flex justify-between items-center bg-blue-900/30 p-3 rounded border border-blue-700">
-                        <div>
-                          <div className="font-medium flex items-center gap-2">
-                            {teamCreatorProfile.name}
-                            <span className="text-xs bg-blue-600 text-white px-2 py-1 rounded">Creator</span>
-                          </div>
-                          <div className="text-sm text-gray-400">
-                            {teamCreatorProfile.email}
-                          </div>
-                          <div className="text-sm text-blue-400 font-medium">Role: Team Leader</div>
+          <TabsContent value="enrollments" className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-semibold mb-2">Competition Enrollments</h2>
+              <p className="text-muted-foreground mb-6">Track all competitions you've enrolled in with your teams</p>
+
+              {enrollments.length === 0 ? (
+                <Card>
+                  <CardContent className="flex flex-col items-center justify-center py-12">
+                    <Trophy className="h-12 w-12 text-muted-foreground mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">No enrollments yet</h3>
+                    <p className="text-muted-foreground text-center mb-4">
+                      Browse competitions and enroll your teams to get started!
+                    </p>
+                    <Button onClick={() => router.push("/competitions")}>Browse Competitions</Button>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {enrollments.map((enrollment) => (
+                    <Card key={enrollment.enrollment_id} className="hover:shadow-md transition-shadow">
+                      <CardHeader className="pb-3">
+                        <div className="flex items-start justify-between">
+                          <CardTitle className="text-lg leading-tight">{enrollment.competition_title}</CardTitle>
+                          <Badge
+                            variant={
+                              enrollment.competition_status === "active"
+                                ? "default"
+                                : enrollment.competition_status === "upcoming"
+                                  ? "secondary"
+                                  : enrollment.competition_status === "completed"
+                                    ? "outline"
+                                    : "destructive"
+                            }
+                          >
+                            {enrollment.competition_status?.toUpperCase()}
+                          </Badge>
                         </div>
-                        {/* Team creator cannot be removed */}
-                        <div className="text-xs text-gray-500">Cannot be removed</div>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {/* Show other team members */}
-                  {teamMembers.filter(member => member.member_id !== selectedTeam.created_by).length > 0 ? (
-                    <div className="space-y-2">
-                      {teamMembers
-                        .filter(member => member.member_id !== selectedTeam.created_by)
-                        .map((member) => (
-                        <div key={member.member_id} className="flex justify-between items-center bg-gray-700 p-3 rounded">
-                          <div>
-                            <div className="font-medium">
-                              {member.profile?.name || 'Unknown User'}
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        <div className="flex items-center gap-2">
+                          <Users className="h-4 w-4 text-muted-foreground" />
+                          <span className="font-medium">{enrollment.team_name}</span>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1">
+                            <div
+                              className={`w-2 h-2 rounded-full ${
+                                enrollment.status === "enrolled"
+                                  ? "bg-green-500"
+                                  : enrollment.status === "pending"
+                                    ? "bg-yellow-500"
+                                    : "bg-red-500"
+                              }`}
+                            />
+                            <span className="text-sm font-medium">
+                              {enrollment.status.charAt(0).toUpperCase() + enrollment.status.slice(1)}
+                            </span>
+                          </div>
+                        </div>
+
+                        {enrollment.competition_start_date && (
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <CalendarDays className="h-4 w-4" />
+                            <span>
+                              {new Date(enrollment.competition_start_date).toLocaleDateString()} -{" "}
+                              {enrollment.competition_end_date
+                                ? new Date(enrollment.competition_end_date).toLocaleDateString()
+                                : "TBD"}
+                            </span>
+                          </div>
+                        )}
+
+                        <Separator />
+
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full bg-transparent"
+                          onClick={() => router.push(`/competition/${enrollment.competition_id}`)}
+                        >
+                          View Competition
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="teams" className="space-y-6">
+            <div className="grid lg:grid-cols-2 gap-6">
+              {/* Teams List */}
+              <div>
+                <h2 className="text-2xl font-semibold mb-2">My Teams</h2>
+                <p className="text-muted-foreground mb-6">Teams where you are either the creator or a member</p>
+
+                {teams.length === 0 ? (
+                  <Card>
+                    <CardContent className="flex flex-col items-center justify-center py-12">
+                      <Users className="h-12 w-12 text-muted-foreground mb-4" />
+                      <h3 className="text-lg font-semibold mb-2">No teams yet</h3>
+                      <p className="text-muted-foreground text-center">
+                        Create your first team or get added to an existing team!
+                      </p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <div className="space-y-3">
+                    {teams.map((team) => (
+                      <Card
+                        key={team.id}
+                        className={`cursor-pointer transition-all hover:shadow-md ${
+                          selectedTeam?.id === team.id ? "ring-2 ring-primary" : ""
+                        }`}
+                        onClick={() => fetchTeamDetails(team.id)}
+                      >
+                        <CardContent className="p-4">
+                          <div className="flex items-start justify-between mb-2">
+                            <h3 className="font-semibold text-lg">{team.name}</h3>
+                            <Badge variant={team.created_by === user?.id ? "default" : "secondary"}>
+                              {team.created_by === user?.id ? (
+                                <>
+                                  <Crown className="h-3 w-3 mr-1" />
+                                  Creator
+                                </>
+                              ) : (
+                                "Member"
+                              )}
+                            </Badge>
+                          </div>
+                          <div className="space-y-1 text-sm text-muted-foreground">
+                            <div className="flex items-center gap-2">
+                              <Users className="h-4 w-4" />
+                              <span>Max {team.no_participants} participants</span>
                             </div>
-                            <div className="text-sm text-gray-400">
-                              {member.profile?.email || member.member_id}
-                            </div>
-                            <div className="text-sm text-gray-500">
-                              Role: {member.role === 'leader' ? 'Team Leader' : 'Member'}
+                            <div className="flex items-center gap-2">
+                              <CalendarDays className="h-4 w-4" />
+                              <span>
+                                Created {team.created_at ? new Date(team.created_at).toLocaleDateString() : "N/A"}
+                              </span>
                             </div>
                           </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Team Details */}
+              <div>
+                <h2 className="text-2xl font-semibold mb-2">Team Details</h2>
+                <p className="text-muted-foreground mb-6">Select a team to view and manage details</p>
+
+                {selectedTeam ? (
+                  <Card>
+                    <CardHeader>
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <CardTitle className="text-xl">{selectedTeam.name}</CardTitle>
+                          <CardDescription className="mt-1">
+                            {teamMembers.length} of {selectedTeam.no_participants} members
+                          </CardDescription>
+                        </div>
+                        {isCurrentUserLeader && (
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleDeleteTeam(selectedTeam.id)}
+                            disabled={loading}
+                          >
+                            <Trash2 className="h-4 w-4 mr-1" />
+                            Delete
+                          </Button>
+                        )}
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <span className="text-muted-foreground">Max Participants:</span>
+                          <p className="font-medium">{selectedTeam.no_participants}</p>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Current Members:</span>
+                          <p className="font-medium">{teamMembers.length}</p>
+                        </div>
+                      </div>
+
+                      <Separator />
+
+                      {/* Team Members Section */}
+                      <div>
+                        <div className="flex items-center justify-between mb-4">
+                          <h4 className="font-semibold flex items-center gap-2">
+                            <Users className="h-4 w-4" />
+                            Team Members
+                          </h4>
                           {isCurrentUserLeader && (
-                            <button
-                              onClick={() => handleRemoveMember(selectedTeam.id, member.member_id)}
-                              className="bg-red-600 hover:bg-red-700 px-2 py-1 rounded text-sm transition-colors"
-                            >
-                              Remove
-                            </button>
+                            <Dialog open={showAddMemberForm} onOpenChange={setShowAddMemberForm}>
+                              <DialogTrigger asChild>
+                                <Button size="sm" variant="outline">
+                                  <UserPlus className="h-4 w-4 mr-1" />
+                                  Add Member
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent>
+                                <DialogHeader>
+                                  <DialogTitle>Add Team Member</DialogTitle>
+                                  <DialogDescription>
+                                    Search for a user by email to add them to your team.
+                                  </DialogDescription>
+                                </DialogHeader>
+                                <form onSubmit={handleAddMember} className="space-y-4">
+                                  <div className="space-y-2">
+                                    <Label htmlFor="memberEmail">Member Email</Label>
+                                    <div className="relative">
+                                      <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                                      <Input
+                                        id="memberEmail"
+                                        type="email"
+                                        placeholder="Search by email..."
+                                        value={searchEmail}
+                                        onChange={(e) => {
+                                          setSearchEmail(e.target.value)
+                                          searchUsers(e.target.value)
+                                        }}
+                                        className="pl-10"
+                                      />
+                                      {searchResults.length > 0 && (
+                                        <Card className="absolute top-full left-0 right-0 mt-1 z-10 max-h-48 overflow-y-auto">
+                                          <CardContent className="p-0">
+                                            {searchResults.map((user) => (
+                                              <div
+                                                key={user.id}
+                                                onClick={() => selectUserForTeam(user)}
+                                                className="p-3 hover:bg-muted cursor-pointer border-b last:border-b-0"
+                                              >
+                                                <div className="font-medium">{user.name}</div>
+                                                <div className="text-sm text-muted-foreground">{user.email}</div>
+                                              </div>
+                                            ))}
+                                          </CardContent>
+                                        </Card>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div className="flex gap-2 pt-4">
+                                    <Button
+                                      type="submit"
+                                      disabled={loading || !memberFormData.member_id}
+                                      className="flex-1"
+                                    >
+                                      {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                                      Add Member
+                                    </Button>
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      onClick={resetMemberForm}
+                                      className="flex-1 bg-transparent"
+                                    >
+                                      Cancel
+                                    </Button>
+                                  </div>
+                                </form>
+                              </DialogContent>
+                            </Dialog>
                           )}
                         </div>
-                      ))}
-                    </div>
-                  ) : (
-                    teamMembers.length === 0 && !teamCreatorProfile && (
-                      <p className="text-gray-400">No members yet. Add some members to get started!</p>
-                    )
-                  )}
-                  
-                  {/* Show message if only creator exists */}
-                  {teamMembers.filter(member => member.member_id !== selectedTeam.created_by).length === 0 && teamCreatorProfile && (
-                    <p className="text-gray-400 text-sm mt-2">No additional members yet. Add some members to get started!</p>
-                  )}
-                </div>
+
+                        <div className="space-y-3">
+                          {/* Team Creator */}
+                          {selectedTeam.created_by && teamCreatorProfile && (
+                            <Card className="border-primary/20 bg-primary/5">
+                              <CardContent className="p-4">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-3">
+                                    <Avatar>
+                                      {/* <AvatarInitials>{teamCreatorProfile.name?.charAt(0) || "U"}</AvatarInitials> */}
+                                      <AvatarFallback>U</AvatarFallback>
+                                    </Avatar>
+                                    <div>
+                                      <div className="font-medium flex items-center gap-2">
+                                        {teamCreatorProfile.name}
+                                        <Badge variant="default" className="text-xs">
+                                          <Crown className="h-3 w-3 mr-1" />
+                                          Creator
+                                        </Badge>
+                                      </div>
+                                      <div className="text-sm text-muted-foreground">{teamCreatorProfile.email}</div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          )}
+
+                          {/* Other Members */}
+                          {teamMembers
+                            .filter((member) => member.member_id !== selectedTeam.created_by)
+                            .map((member) => (
+                              <Card key={member.member_id}>
+                                <CardContent className="p-4">
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                      <Avatar>
+                                        {/* <AvatarInitials>{member.profile?.name?.charAt(0) || "U"}</AvatarInitials> */}
+                                        <AvatarFallback>U</AvatarFallback>
+                                      </Avatar>
+                                      <div>
+                                        <div className="font-medium">{member.profile?.name || "Unknown User"}</div>
+                                        <div className="text-sm text-muted-foreground">
+                                          {member.profile?.email || member.member_id}
+                                        </div>
+                                        <Badge variant="outline" className="text-xs mt-1">
+                                          {member.role === "leader" ? "Team Leader" : "Member"}
+                                        </Badge>
+                                      </div>
+                                    </div>
+                                    {isCurrentUserLeader && (
+                                      <Button
+                                        variant="destructive"
+                                        size="sm"
+                                        onClick={() => handleRemoveMember(selectedTeam.id, member.member_id)}
+                                      >
+                                        Remove
+                                      </Button>
+                                    )}
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            ))}
+
+                          {teamMembers.filter((member) => member.member_id !== selectedTeam.created_by).length === 0 &&
+                            teamCreatorProfile && (
+                              <p className="text-muted-foreground text-sm text-center py-4">
+                                No additional members yet. Add some members to get started!
+                              </p>
+                            )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <Card>
+                    <CardContent className="flex flex-col items-center justify-center py-12">
+                      <Users className="h-12 w-12 text-muted-foreground mb-4" />
+                      <h3 className="text-lg font-semibold mb-2">Select a team</h3>
+                      <p className="text-muted-foreground text-center">
+                        Choose a team from the list to view and manage its details
+                      </p>
+                    </CardContent>
+                  </Card>
+                )}
               </div>
-            ) : (
-              <div className="bg-gray-800 p-4 rounded-lg text-center text-gray-400">
-                Select a team to view details
-              </div>
-            )}
-          </div>
-        </div>
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   )

@@ -5,7 +5,7 @@ export interface Competition {
   title: string
   name: string
   description: string
-  prizePool: string
+  prize_pool: string
   organizer_id: string
   start_date: string
   end_date: string
