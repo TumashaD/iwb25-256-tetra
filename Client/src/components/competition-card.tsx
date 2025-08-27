@@ -1,11 +1,12 @@
 
-import { Calendar,  Trophy, Users } from "lucide-react"
+import { Calendar,  Settings2Icon,  Trophy, Users } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Competition } from "@/services/competitionService"
 import Link from "next/link"
 import RegisterButton from "./register-button"
+import { Button } from "./ui/button"
 
-export function CompetitionCard({ competition }: { competition: Competition }) {
+export function CompetitionCard({ competition, userType }: { competition: Competition, userType:"organizer"|"competitor" }) {
 
   const statusColors = {
     upcoming: "bg-blue-100 text-blue-800",
@@ -19,9 +20,11 @@ export function CompetitionCard({ competition }: { competition: Competition }) {
     completed: "Completed",
   }
 
+  const href = userType == "competitor" ? `/competition/${competition.id}` : `/dashboard/organizer/competition/${competition.id}`;
+
   return (
     <div className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 hover:scale-[1.02] group">
-      <Link href={`/competition/${competition.id}`}>
+      <Link href={href}>
         {/* Competition Image */}
         <div className="relative h-48 overflow-hidden">
           <img
@@ -63,46 +66,20 @@ export function CompetitionCard({ competition }: { competition: Competition }) {
               </span>
             </div>
           </div>
-        </div>
+        </div> 
+        <div className="px-6 pb-6">
+        {userType == "organizer" && 
+          <Button className="w-full bg-gray-800 hover:bg-gray-900 text-white py-3 px-4 rounded-xl font-medium transition-colors duration-200 cursor-pointer">
+            <Settings2Icon className="h-4 w-4 mr-2" />
+            Manage
+          </Button>
+        }
+      </div>
       </Link>
       <div className="px-6 pb-6">
-        <RegisterButton className="w-full bg-teal-700 hover:bg-teal-800 text-white py-3 px-4 rounded-xl font-medium transition-colors duration-200" text={competition.status === "active" ? "Register Now" : competition.status === "upcoming" ? "Register Now" : "View Results"} competitionId={competition.id}/>
-        {/* <Dialog open={showRegistration} onOpenChange={setShowRegistration}>
-          <DialogTrigger asChild>
-            <button
-              className="w-full bg-teal-700 hover:bg-teal-800 text-white py-3 px-4 rounded-xl font-medium transition-colors duration-200"
-              onClick={handleRegistration}
-            >
-              {competition.status === "active" ? "Register Now" : competition.status === "upcoming" ? "Register Now" : "View Results"}
-            </button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>Register for Competition</DialogTitle>
-              <DialogDescription>
-                Enter your team details to register for {competition.title}
-              </DialogDescription>
-            </DialogHeader>
-            <form className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="team-id">Team ID</Label>
-                <Input
-                  id="team-id"
-                  type="number"
-                  value={enrollmentData.team_id}
-                  onChange={(e) => setEnrollmentData({
-                    ...enrollmentData,
-                    team_id: parseInt(e.target.value)
-                  })}
-                  required
-                />
-              </div>
-              <Button type="submit" className="w-full">
-                Submit Registration
-              </Button>
-            </form>
-          </DialogContent>
-        </Dialog> */}
+        {userType == "competitor" && 
+          <RegisterButton className="w-full bg-teal-700 hover:bg-teal-800 text-white py-3 px-4 rounded-xl font-medium transition-colors duration-200" text={competition.status === "active" ? "Register Now" : competition.status === "upcoming" ? "Register Now" : "View Results"} competitionId={competition.id}/>
+        }
       </div>
       
     </div>

@@ -253,7 +253,7 @@ export default function CompetitionsPage() {
         ) : filteredCompetitions.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {filteredCompetitions.map((competition, index) => (
-              <CompetitionCard key={index} competition={competition} />
+              <CompetitionCard key={index} competition={competition} userType="competitor" />
             ))}
           </div>
         ) : (

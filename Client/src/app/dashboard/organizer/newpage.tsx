@@ -24,25 +24,7 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
-import {
-  CalendarDays,
-  Users,
-  Trophy,
-  Plus,
-  Trash2,
-  Eye,
-  Check,
-  X,
-  AlertCircle,
-  Settings,
-  Globe,
-  UserCheck,
-  TrendingUp,
-  Calendar,
-  ChevronDown,
-  ChevronUp,
-} from "lucide-react"
-import { CompetitionCard } from "@/components/competition-card"
+import { CalendarDays, Users, Trophy, Plus, Trash2, Check, X, AlertCircle, TrendingUp, Calendar } from "lucide-react"
 
 export default function OrganizerDashboard() {
   const { user, loading } = useAuth()
@@ -53,7 +35,6 @@ export default function OrganizerDashboard() {
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [showEnrollmentModal, setShowEnrollmentModal] = useState(false)
   const [editingCompetition, setEditingCompetition] = useState<Competition | null>(null)
-  const [expandedCard, setExpandedCard] = useState<number | null>(null)
   const [formData, setFormData] = useState<Partial<Competition>>({
     title: "",
     description: "",
@@ -258,7 +239,7 @@ export default function OrganizerDashboard() {
             <DialogTrigger asChild>
               <Button size="lg" className="gap-2">
                 <Plus className="h-4 w-4" />
-                New Competition
+                Create Competition
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -379,7 +360,7 @@ export default function OrganizerDashboard() {
                         alt="Current Banner"
                         className="w-full h-32 object-cover rounded-lg border"
                         onError={(e) => {
-                          ; (e.target as HTMLImageElement).style.display = "none"
+                          ;(e.target as HTMLImageElement).style.display = "none"
                         }}
                       />
                     </div>
@@ -479,14 +460,6 @@ export default function OrganizerDashboard() {
           </Alert>
         )}
 
-        {/* My Competitions */}
-        <div className="mb-8 flex flex-col gap-2">
-          <h2 className="text-3xl font-semibold">My Competitions</h2>
-          <span className="text-lg text-muted-foreground">
-            Manage your competitions and track their progress
-          </span>
-
-        </div>
         {competitions.length === 0 ? (
           <Card className="text-center py-12">
             <CardContent>
@@ -500,14 +473,77 @@ export default function OrganizerDashboard() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+          <div className="grid gap-6">
             {competitions.map((competition) => (
-              <CompetitionCard competition={competition} key={competition.id} userType="organizer"/>
+              <Card key={competition.id} className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer">
+                <div onClick={() => router.push(`/organizer/competition/${competition.id}`)} className="relative">
+                  <div className="relative h-48 bg-gradient-to-r from-blue-600 to-purple-600">
+                    {competition.banner_url ? (
+                      <img
+                        src={
+                          competition.banner_url + "?t=" + new Date(competition.updated_at).getTime() ||
+                          "/placeholder.svg" ||
+                          "/placeholder.svg"
+                        }
+                        alt={competition.title}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          ;(e.target as HTMLImageElement).style.display = "none"
+                        }}
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <Trophy className="h-16 w-16 text-white/50" />
+                      </div>
+                    )}
+                    <div className="absolute inset-0 bg-black/40" />
+                    <div className="absolute top-4 right-4">
+                      <Badge
+                        variant={
+                          competition.status === "active"
+                            ? "default"
+                            : competition.status === "upcoming"
+                              ? "secondary"
+                              : "outline"
+                        }
+                        className="bg-white/90 text-black"
+                      >
+                        {competition.status.charAt(0).toUpperCase() + competition.status.slice(1)}
+                      </Badge>
+                    </div>
+                    <div className="absolute bottom-4 left-4 right-4">
+                      <h3 className="text-2xl font-bold text-white mb-2">{competition.title}</h3>
+                      <p className="text-white/90 text-sm line-clamp-2">{competition.description}</p>
+                    </div>
+                  </div>
+
+                  <div className="p-4 bg-muted/50">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Trophy className="h-4 w-4" />
+                        <span>{competition.category}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <CalendarDays className="h-4 w-4" />
+                        <span>{new Date(competition.start_date).toLocaleDateString()}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <CalendarDays className="h-4 w-4" />
+                        <span>{new Date(competition.end_date).toLocaleDateString()}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Users className="h-4 w-4" />
+                        <span>{competition.teams || 0} Teams</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </Card>
             ))}
           </div>
         )}
 
-        {/* <Dialog open={showEnrollmentModal} onOpenChange={setShowEnrollmentModal}>
+        <Dialog open={showEnrollmentModal} onOpenChange={setShowEnrollmentModal}>
           <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="text-2xl">Enrollments for "{selectedCompetition?.title}"</DialogTitle>
@@ -547,6 +583,12 @@ export default function OrganizerDashboard() {
                                 >
                                   {enrollment.status.charAt(0).toUpperCase() + enrollment.status.slice(1)}
                                 </Badge>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-muted-foreground">Enrolled:</span>
+                                <span>
+                                  {enrollment.created_at ? new Date(enrollment.created_at).toLocaleString() : "N/A"}
+                                </span>
                               </div>
                             </div>
                           </div>
@@ -623,7 +665,7 @@ export default function OrganizerDashboard() {
               </div>
             )}
           </DialogContent>
-        </Dialog> */}
+        </Dialog>
       </div>
     </div>
   )
