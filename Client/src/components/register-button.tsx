@@ -8,11 +8,11 @@ import { Input } from './ui/input';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { Team, TeamService } from '@/services/teamService';
-import { Loader2 } from 'lucide-react';
+import { Loader2, LogIn } from 'lucide-react';
 import { CreateEnrollmentData, EnrollmentService } from '@/services/enrollmentService';
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from './ui/select';
 
-const RegisterButton = ({ className, text, competitionId }: { className: string, text: string, competitionId: number }) => {
+const RegisterButton = ({ className, text, competitionId , variant = "default"}: { className?: string, text: string, competitionId: number, variant?: 'default' | 'sidebar' }) => {
     const [showRegistration, setShowRegistration] = useState(false);
     const { user, loading } = useAuth();
     const router = useRouter();
@@ -39,25 +39,6 @@ const RegisterButton = ({ className, text, competitionId }: { className: string,
         }
     };
 
-    // const handleFormSubmit = () => async (e: React.FormEvent) => {
-    //     e.preventDefault();
-    //     if (selectedTeam && user) {
-    //         try {
-    //             const newEnrollment: CreateEnrollmentData = {
-    //                 team_id: selectedTeam.id,
-    //                 competition_id: competitionId,
-    //                 status: 'pending'
-    //             };
-    //             const response = await EnrollmentService.createEnrollment(user.id, newEnrollment);
-    //             console.log('Enrollment successful:', response);
-    //         }
-    //         catch (error) {
-    //             console.error('Error creating enrollment:', error);
-    //             alert(error instanceof Error ? error.message : 'An unexpected error occurred');
-    //         }
-    //     }
-    // };
-
     const handleFormSubmit = () => {
         if (selectedTeam && user) {
             (async () => {
@@ -82,12 +63,21 @@ const RegisterButton = ({ className, text, competitionId }: { className: string,
     return (
         <Dialog open={showRegistration} onOpenChange={setShowRegistration}>
             <DialogTrigger asChild>
-                <Button
-                    className={`w-full bg-teal-700 hover:bg-teal-800 text-white py-3 px-4 rounded-xl font-medium transition-colors duration-200 ${className}`}
-                    onClick={handleRegistration}
-                >
-                    {text}
-                </Button>
+                {variant == "default" ? (
+                    <Button
+                        className={`w-full bg-teal-700 hover:bg-teal-800 text-white py-3 px-4 rounded-xl font-medium transition-colors duration-200 ${className}`}
+                        onClick={handleRegistration}
+                    >
+                        {text}
+                    </Button>
+                ) : (
+                    <div className='flex flex-col items-center py-2 rounded-xl justify-center w-20 hover:bg-sidebar-accent cursor-pointer' onClick={handleRegistration}>
+                        <LogIn className="m-0"/>
+                        <Button className='bg-transparent text-black border-0 shadow-none pointer-events-none w-18'>
+                            {text}
+                        </Button>
+                    </div>
+                )}
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>

@@ -10,18 +10,13 @@ import {
   Search,
   Settings,
   Trophy,
-  User,
-  Wrench,
   ChevronLeft,
   Users,
-  BarChart3,
-  MessageSquare,
-  Bell,
   ChevronRight,
   ViewIcon,
   GlobeIcon,
   Edit3Icon,
-  LogInIcon,
+  Bot,
 } from "lucide-react"
 import type React from "react"
 
@@ -44,6 +39,7 @@ import { useMemo, useState, useEffect } from "react"
 import { Competition, CompetitionsService } from "@/services/competitionService"
 import RegisterButton from "./register-button"
 import { EnrollmentService, EnrollmentWithDetails } from "@/services/enrollmentService"
+import { ChatDialog } from "./chatbot"
 
 type NavigationItem = {
   icon?: React.ElementType
@@ -72,6 +68,7 @@ export function AppSidebar() {
   const [showSubNav, setShowSubNav] = useState(false)
   const [currentSubNav, setCurrentSubNav] = useState<string>("")
   const [showFrontButton, setShowFrontButton] = useState(false)
+  const [isChatOpen, setIsChatOpen] = useState(false)
 
   const subNavigationItems: Record<string, NavigationItem[]> = {
     "/dashboard/organizer/competition": [
@@ -83,9 +80,15 @@ export function AppSidebar() {
     "/competition": [
       {
         custom: (
-          <RegisterButton className="w-full bg-white text-black py-3 px-4 rounded-xl font-medium transition-colors duration-200" text="Register" competitionId={Number(id)} />
+            <RegisterButton text="Register" competitionId={Number(id)} variant="sidebar" />
         ),
         label: "Register",
+      },
+      {
+        custom: (
+          <ChatDialog open={isChatOpen} onOpenChange={setIsChatOpen} />
+        ),
+        label: "Chat",
       }
     ]
   }
@@ -188,27 +191,6 @@ export function AppSidebar() {
       <SidebarContent className="justify-center relative">
         <SidebarGroup>
           <SidebarGroupContent className="items-center">
-            {/* {showSubNav && (
-              <div className="w-full flex justify-center mb-4">
-                <button
-                  onClick={handleBackClick}
-                  className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </button>
-              </div>
-            )}
-            {showFrontButton && (
-              <div className="w-full flex justify-center mb-4">
-                <button
-                  onClick={handleFrontClick}
-                  className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </button>
-              </div>
-            )} */}
-
             <div className="relative w-full overflow-hidden">
               <div
                 className={`transition-transform duration-300 ease-in-out ${showSubNav ? "-translate-x-1/2" : "translate-x-0"
@@ -315,6 +297,7 @@ export function AppSidebar() {
           </Link>
         )}
       </SidebarFooter>
+      
     </Sidebar>
   )
 }
