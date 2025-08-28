@@ -17,6 +17,7 @@ import {
   GlobeIcon,
   Edit3Icon,
   Bot,
+  OrigamiIcon,
 } from "lucide-react"
 import type React from "react"
 
@@ -52,10 +53,8 @@ type NavigationItem = {
 const mainNavigationItems: NavigationItem[] = [
   { icon: Home, label: "Home", href: "/" },
   { icon: Trophy, label: "Competitions", href: "/competitions" },
-  { icon: Calendar, label: "Calendar", href: "/calendar" },
-  { icon: Globe, label: "About Us", href: "/about" },
-  { icon: FileText, label: "News", href: "/news" },
-  { icon: LucideLayoutDashboard, label: "Dashboard", href: "/dashboard" },
+  { icon: LucideLayoutDashboard, label: "Compete", href: "/dashboard/competitor" },
+  { icon: OrigamiIcon, label: "Organize", href: "/dashboard/organizer" },
   { icon: Settings, label: "Settings", href: "/settings" },
   { icon: Search, label: "Search", href: "/search" },
 ]
@@ -93,65 +92,53 @@ export function AppSidebar() {
     ]
   }
 
-  const cachedUser = useMemo(() => ({
-    id: user?.id,
-    email: user?.email || '',
-    avatarUrl: user?.avatarUrl || '',
-    isAuthenticated: !!user,
-    role: user?.profile?.role
-  }), [user?.email, user?.avatarUrl ,user?.profile]);
+  useEffect(() => {
+  if (!user?.id) return; // Wait until user is hydrated
 
-  const isOrganizer = async () => {
-    let competition: Competition;
-    try {
-      competition = await CompetitionsService.getCompetition(Number(id));
-      if (cachedUser.id === competition?.organizer_id) {
-        setCurrentSubNav("/dashboard/organizer/competition");
-        setShowSubNav(true);
-      }
-    } catch (error) {
-      console.error("Error fetching competition:", error);
-    }
-  }
+  const paths = pathname.split("/");
+  const basePath = "/" + paths.slice(1, 4).join("/");
 
-  const isEnrolled = async () => {
-    let enrollments : EnrollmentWithDetails[] = [];
+  const checkSubNav = async () => {
     try {
-      enrollments = await EnrollmentService.getUserEnrollments(cachedUser.id ? cachedUser.id : user?.id ? user.id : "");
-      if (enrollments.length > 0) {
-        const enrolledCompetitionIds = enrollments.map(e => e.competition_id);
-        if (enrolledCompetitionIds.includes(Number(id))) {
-          setShowSubNav(false);
+      // Organizer / competition checks
+      if (basePath.startsWith("/competition/")) {
+          const competition = await CompetitionsService.getCompetition(Number(id));
+          if (competition?.organizer_id === user.id) {
+            setCurrentSubNav("/dashboard/organizer/competition");
+            setShowSubNav(true);
+            return; 
         } else {
-          setCurrentSubNav("/competition");
-          setShowSubNav(true);
+          const enrollments = await EnrollmentService.getUserEnrollments(user.id);
+          const enrolledCompetitionIds = enrollments.map(e => e.competition_id);
+          if (enrolledCompetitionIds.includes(Number(id))) {
+            setShowSubNav(false);
+            setCurrentSubNav("");
+            return;
+          } else {
+            setCurrentSubNav("/competition");
+            setShowSubNav(true);
+            return;
+          }
         }
       }
-    } catch (error) {
-      console.error("Error fetching enrollments:", error);
-    }
-  }
 
-  useEffect(() => {
-    const paths = pathname.split("/")
-    const basePath = "/" + paths.slice(1, 4).join("/")
-    console.log(basePath)
-    if (basePath.startsWith("/competition/")) {
-      if (cachedUser.role === "organizer") {
-        isOrganizer();
+      // Default mapping from subNavigationItems
+      if (subNavigationItems[basePath as keyof typeof subNavigationItems]) {
+        setCurrentSubNav(basePath);
+        setShowSubNav(true);
       } else {
-        isEnrolled();
+        setCurrentSubNav("");
+        setShowSubNav(false);
+        setShowFrontButton(false);
       }
+    } catch (err) {
+      console.error("Error in sidebar subnav check:", err);
     }
-    if (subNavigationItems[basePath as keyof typeof subNavigationItems]) {
-      setCurrentSubNav(basePath)
-      setShowSubNav(true)
-    } else {
-      setShowSubNav(false)
-      setShowFrontButton(false)
-      setCurrentSubNav("")
-    }
-  }, [pathname])
+  };
+
+  checkSubNav();
+}, [pathname, user?.id, user?.profile?.role, id]);
+
 
   const handleLogout = async () => {
     try {
@@ -276,12 +263,12 @@ export function AppSidebar() {
       <SidebarFooter className="p-4 flex items-center justify-center">
         {loading ? (
           <div className="animate-spin h-5 w-5 border-4 border-t-transparent border-gray-200 rounded-full"></div>
-        ) : cachedUser.isAuthenticated ? (
+        ) : user?.isAuthenticated ? (
           <button onClick={handleLogout} className="group relative transition-transform hover:scale-105 cursor-pointer">
             <Avatar className="h-10 w-10">
-              <AvatarImage src={cachedUser.avatarUrl || "/placeholder.svg"} />
+              <AvatarImage src={user?.avatarUrl || "/placeholder.svg"} />
               <AvatarFallback className="bg-gray-300 text-gray-700">
-                {cachedUser.email?.charAt(0).toUpperCase() || "U"}
+                {user?.email?.charAt(0).toUpperCase() || "U"}
               </AvatarFallback>
             </Avatar>
             <div className="absolute inset-0 flex items-center justify-center opacity-0 bg-destructive rounded-full group-hover:opacity-100 transition-opacity">

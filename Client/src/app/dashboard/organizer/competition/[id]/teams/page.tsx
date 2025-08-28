@@ -78,14 +78,13 @@ export default function TeamManagement() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!loading && (!user || user.profile?.role !== "organizer")) {
+    if (!loading && !user) {
       router.push("/")
     }
   }, [user, loading, router])
 
   useEffect(() => {
-    console.log(params)
-    if (user?.profile?.role === "organizer" && competitionId) {
+    if (user && competitionId) {
       fetchCompetitionData()
       fetchTeams()
     }
@@ -240,7 +239,7 @@ export default function TeamManagement() {
     )
   }
 
-  if (!user || user.profile?.role !== "organizer" || !competition) {
+  if (!user || !competition) {
     return null
   }
 

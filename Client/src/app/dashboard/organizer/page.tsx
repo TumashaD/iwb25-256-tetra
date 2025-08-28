@@ -70,21 +70,13 @@ export default function OrganizerDashboard() {
   const [uploadedBanners, setUploadedBanners] = useState<Record<number, string>>({})
 
   useEffect(() => {
-    if (!loading && (!user || user.profile?.role !== "organizer")) {
-      router.push("/")
-    }
-  }, [user, loading, router])
-
-  useEffect(() => {
     if (user?.id) {
       setFormData((prev) => ({ ...prev, organizer_id: user.id }))
     }
   }, [user?.id])
 
   useEffect(() => {
-    if (user?.profile?.role === "organizer") {
       fetchMyCompetitions()
-    }
   }, [user])
 
   const fetchMyCompetitions = async () => {
@@ -240,10 +232,6 @@ export default function OrganizerDashboard() {
         </Card>
       </div>
     )
-  }
-
-  if (!user || user.profile?.role !== "organizer") {
-    return null
   }
 
   return (

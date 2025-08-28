@@ -7,13 +7,12 @@ import type { User as SupabaseUser } from '@supabase/supabase-js'
 import type { User } from '@/types/user'
 import type { Profile } from '@/services/userService'
 
-
 type AuthContextType = {
   user: User | null
   loading: boolean
   error: string | null
   signOut: () => Promise<void>
-  signUpWithGoogle: () => Promise<{ provider: string; url: string; }>
+  signUpWithGoogle: () => Promise<{ provider: string; url: string }>
   createUserProfile: (userData: Omit<Profile, 'id' | 'createdAt'>) => Promise<void>
   updateUserProfile: (userData: Partial<Profile>) => Promise<void>
   refreshUserProfile: () => Promise<void>
@@ -36,8 +35,38 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [authLoading, setAuthLoading] = useState(true)
   const [userLoading, setUserLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  
+  const [isHydrated, setIsHydrated] = useState(false)
+
   const supabase = createClient()
+
+  // 🔥 Hydrate from localStorage on mount
+  useEffect(() => {
+    const cached = localStorage.getItem('auth_cache')
+    if (cached) {
+      try {
+        const { authUser, userProfile } = JSON.parse(cached)
+        if (authUser?.id && userProfile?.id) {
+          setAuthUser(authUser)
+          setUserProfile(userProfile)
+        }
+      } catch {
+        localStorage.removeItem('auth_cache')
+      }
+    }
+    setIsHydrated(true)
+  }, [])
+
+  // 🔥 Persist to localStorage whenever user changes
+  useEffect(() => {
+    if (authUser && userProfile) {
+      localStorage.setItem(
+        'auth_cache',
+        JSON.stringify({ authUser, userProfile })
+      )
+    } else {
+      localStorage.removeItem('auth_cache')
+    }
+  }, [authUser, userProfile])
 
   // Function to fetch user profile from your users table
   const fetchUserProfile = async (userId: string) => {
@@ -47,10 +76,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const profile = await UserService.getUser(userId)
       setUserProfile(profile)
     } catch (err) {
-      // If it's a 404 or "user not found" error, that's expected for new users
-      // Set user to null but don't set an error
       setUserProfile(null)
-      // Only set error for actual API/network failures
       if (err instanceof Error && !err.message.includes('not found') && !err.message.includes('404')) {
         setError(err.message)
       }
@@ -61,6 +87,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   // Initialize auth state and listen for changes
   useEffect(() => {
+    if (!isHydrated) return
+
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       setAuthUser(user)
@@ -70,14 +98,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     getUser()
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      async (_event, session) => {
         setAuthUser(session?.user ?? null)
         setAuthLoading(false)
       }
     )
 
     return () => subscription.unsubscribe()
-  }, [supabase.auth])
+  }, [supabase.auth, isHydrated])
 
   // Fetch user profile when auth user changes
   useEffect(() => {
@@ -92,51 +120,39 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   // Auth methods
   const signOut = async () => {
     await supabase.auth.signOut()
-    setUserProfile(null) // Clear user profile when signing out
+    setUserProfile(null)
+    localStorage.removeItem('auth_cache') // 🔥 clear cache
   }
 
   const signUpWithGoogle = async () => {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        queryParams: {
-          prompt: 'select_account'
-        },
+        queryParams: { prompt: 'select_account' },
         redirectTo: `${window.location.origin}/auth/callback`,
       },
     })
-    
-    if (error) {
-      throw error
-    }
-    
+
+    if (error) throw error
     return data
   }
 
   // User profile methods
   const createUserProfile = async (userData: Omit<Profile, 'id' | 'createdAt'>) => {
-    if (!authUser?.id) {
-      throw new Error('User must be authenticated to create profile')
-    }
-
-    // Prevent duplicate requests
-    if (userLoading) {
-      return
-    }
+    if (!authUser?.id) throw new Error('User must be authenticated to create profile')
+    if (userLoading) return
 
     try {
       setUserLoading(true)
       setError(null)
-      
+
       const userDataToSend = {
         ...userData,
         id: authUser.id,
         email: authUser.email || userData.email,
       }
-      
+
       const response = await UserService.createUser(userDataToSend)
-      
-      // Handle the Ballerina API response structure which returns { user: User, message: string, timestamp: string }
       const newUser = (response as any).user || response
       setUserProfile(newUser)
     } catch (err) {
@@ -156,10 +172,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       setUserLoading(true)
       setError(null)
-      
-      // Use the updateUser method instead of createUser
-      const updatedUser = await UserService.updateUser(authUser.id, userData)
 
+      const updatedUser = await UserService.updateUser(authUser.id, userData)
       setUserProfile(updatedUser)
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to update user profile'
@@ -177,7 +191,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }
 
   // Merge authUser and user profile into a single currentUser
-  let currentUser: User | null = null;
+  let currentUser: User | null = null
   if (authUser && userProfile) {
     currentUser = {
       id: authUser.id,
@@ -188,8 +202,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }
 
-  // Loading is true if either auth is loading OR if we have an auth user but no profile yet
-  const loading = authLoading || userLoading || (!!authUser && !userProfile)
+  // Fixed loading logic
+  const loading = !isHydrated || 
+                  authLoading || 
+                  userLoading || 
+                  (authUser !== null && userProfile === null && !userLoading)
 
   const value: AuthContextType = {
     user: currentUser,
