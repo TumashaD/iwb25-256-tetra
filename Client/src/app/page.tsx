@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 
 import { ChevronDown } from 'lucide-react';
 import { CompetitionCard } from '@/components/competition-card';
+import { SearchBar } from '@/components/search-bar';
 
 export default function Home() {
   const [competitions, setCompetitions] = useState<Competition[]>([]);

@@ -41,23 +41,19 @@ import { Competition, CompetitionsService } from "@/services/competitionService"
 import RegisterButton from "./register-button"
 import { EnrollmentService, EnrollmentWithDetails } from "@/services/enrollmentService"
 import { ChatDialog } from "./chatbot"
+import { Dialog } from "@radix-ui/react-dialog"
+import { SearchBar } from "./search-bar"
 
 type NavigationItem = {
   icon?: React.ElementType
   label: string
-  href?: string 
+  href?: string
   custom?: React.ReactNode
+  onClick?: () => void
 }
 
-// Main navigation items
-const mainNavigationItems: NavigationItem[] = [
-  { icon: Home, label: "Home", href: "/" },
-  { icon: Trophy, label: "Competitions", href: "/competitions" },
-  { icon: LucideLayoutDashboard, label: "Compete", href: "/dashboard/competitor" },
-  { icon: OrigamiIcon, label: "Organize", href: "/dashboard/organizer" },
-  { icon: Settings, label: "Settings", href: "/settings" },
-  { icon: Search, label: "Search", href: "/search" },
-]
+
+
 
 export function AppSidebar() {
   const { user, loading, signOut } = useAuth()
@@ -68,6 +64,17 @@ export function AppSidebar() {
   const [currentSubNav, setCurrentSubNav] = useState<string>("")
   const [showFrontButton, setShowFrontButton] = useState(false)
   const [isChatOpen, setIsChatOpen] = useState(false)
+  const [showSearch, setShowSearch] = useState(false)
+
+  // Main navigation items
+  const mainNavigationItems: NavigationItem[] = [
+    { icon: Home, label: "Home", href: "/" },
+    { icon: Trophy, label: "Competitions", href: "/competitions" },
+    { icon: LucideLayoutDashboard, label: "Compete", href: "/dashboard/competitor" },
+    { icon: OrigamiIcon, label: "Organize", href: "/dashboard/organizer" },
+    { icon: Settings, label: "Settings", href: "/settings" },
+    { icon: Search, label: "Search", onClick: () => setShowSearch(true) },
+  ]
 
   const subNavigationItems: Record<string, NavigationItem[]> = {
     "/dashboard/organizer/competition": [
@@ -79,7 +86,7 @@ export function AppSidebar() {
     "/competition": [
       {
         custom: (
-            <RegisterButton text="Register" competitionId={Number(id)} variant="sidebar" />
+          <RegisterButton text="Register" competitionId={Number(id)} variant="sidebar" />
         ),
         label: "Register",
       },
@@ -93,51 +100,51 @@ export function AppSidebar() {
   }
 
   useEffect(() => {
-  if (!user?.id) return; // Wait until user is hydrated
+    if (!user?.id) return; // Wait until user is hydrated
 
-  const paths = pathname.split("/");
-  const basePath = "/" + paths.slice(1, 4).join("/");
+    const paths = pathname.split("/");
+    const basePath = "/" + paths.slice(1, 4).join("/");
 
-  const checkSubNav = async () => {
-    try {
-      // Organizer / competition checks
-      if (basePath.startsWith("/competition/")) {
+    const checkSubNav = async () => {
+      try {
+        // Organizer / competition checks
+        if (basePath.startsWith("/competition/")) {
           const competition = await CompetitionsService.getCompetition(Number(id));
           if (competition?.organizer_id === user.id) {
             setCurrentSubNav("/dashboard/organizer/competition");
             setShowSubNav(true);
-            return; 
-        } else {
-          const enrollments = await EnrollmentService.getUserEnrollments(user.id);
-          const enrolledCompetitionIds = enrollments.map(e => e.competition_id);
-          if (enrolledCompetitionIds.includes(Number(id))) {
-            setShowSubNav(false);
-            setCurrentSubNav("");
             return;
           } else {
-            setCurrentSubNav("/competition");
-            setShowSubNav(true);
-            return;
+            const enrollments = await EnrollmentService.getUserEnrollments(user.id);
+            const enrolledCompetitionIds = enrollments.map(e => e.competition_id);
+            if (enrolledCompetitionIds.includes(Number(id))) {
+              setShowSubNav(false);
+              setCurrentSubNav("");
+              return;
+            } else {
+              setCurrentSubNav("/competition");
+              setShowSubNav(true);
+              return;
+            }
           }
         }
-      }
 
-      // Default mapping from subNavigationItems
-      if (subNavigationItems[basePath as keyof typeof subNavigationItems]) {
-        setCurrentSubNav(basePath);
-        setShowSubNav(true);
-      } else {
-        setCurrentSubNav("");
-        setShowSubNav(false);
-        setShowFrontButton(false);
+        // Default mapping from subNavigationItems
+        if (subNavigationItems[basePath as keyof typeof subNavigationItems]) {
+          setCurrentSubNav(basePath);
+          setShowSubNav(true);
+        } else {
+          setCurrentSubNav("");
+          setShowSubNav(false);
+          setShowFrontButton(false);
+        }
+      } catch (err) {
+        console.error("Error in sidebar subnav check:", err);
       }
-    } catch (err) {
-      console.error("Error in sidebar subnav check:", err);
-    }
-  };
+    };
 
-  checkSubNav();
-}, [pathname, user?.id, user?.profile?.role, id]);
+    checkSubNav();
+  }, [pathname, user?.id, user?.profile?.role, id]);
 
 
   const handleLogout = async () => {
@@ -193,16 +200,26 @@ export function AppSidebar() {
                         return (
                           <SidebarMenuItem key={item.label}>
                             <SidebarMenuButton asChild className="h-full w-20 space-y-6">
-                              <Link
-                                className="flex flex-col items-center justify-center"
-                                href={item.href ? item.href : "#"}
-                                onClick={(e) => handleNavClick(item.href ? item.href : "#", e)}
-                              >
-                                <Icon className="m-0 h-6 w-6" />
-                                <span className="text-[10px] text-center leading-tight font-medium text-muted-foreground">
-                                  {item.label}
-                                </span>
-                              </Link>
+                              {item.href ? (
+                                <Link
+                                  className="flex flex-col items-center justify-center"
+                                  href={item.href}
+                                  onClick={item.onClick ? item.onClick : (e) => handleNavClick(item.href!, e)}
+                                >
+                                  {item.icon && <Icon className="m-0 h-6 w-6" />}
+                                  <span className="text-[10px] text-center leading-tight font-medium text-muted-foreground">{item.label}</span>
+                                </Link>
+                              ) : (
+                                <button
+                                  type="button"
+                                  className="flex flex-col items-center justify-center cursor-pointer"
+                                  onClick={item.onClick}
+                                >
+                                  {item.icon && <Icon className="m-0 h-6 w-6" />}
+                                  <span className="text-[10px] text-center leading-tight font-medium text-muted-foreground">{item.label}</span>
+                                </button>
+                              )}
+
                             </SidebarMenuButton>
                           </SidebarMenuItem>
                         )
@@ -227,16 +244,16 @@ export function AppSidebar() {
                         subNavigationItems[currentSubNav as keyof typeof subNavigationItems]?.map((item) => (
                           <SidebarMenuItem key={item.label}>
                             <SidebarMenuButton asChild className="h-full w-20 space-y-6">
-                                {item.custom ? (
-                                  item.custom
-                                ) : (
-                                  <Link className="flex flex-col items-center justify-center" href={item.href ? item.href : "#"}>
-                                    {item.icon && <item.icon className="m-0 h-6 w-6" />}
-                                    <span className="text-[10px] text-center leading-tight font-medium text-muted-foreground">
-                                      {item.label}
-                                    </span>
-                                  </Link>
-                                )}
+                              {item.custom ? (
+                                item.custom
+                              ) : (
+                                <Link className="flex flex-col items-center justify-center" href={item.href ? item.href : "#"}>
+                                  {item.icon && <item.icon className="m-0 h-6 w-6" />}
+                                  <span className="text-[10px] text-center leading-tight font-medium text-muted-foreground">
+                                    {item.label}
+                                  </span>
+                                </Link>
+                              )}
                             </SidebarMenuButton>
                           </SidebarMenuItem>
                         ))
@@ -284,7 +301,16 @@ export function AppSidebar() {
           </Link>
         )}
       </SidebarFooter>
-      
+      {showSearch && (
+        <div
+          className="fixed inset-0 flex items-start justify-center pt-20 z-50 bg-black/30"
+          onClick={() => setShowSearch(false)} // click outside to close
+        >
+          <div onClick={(e) => e.stopPropagation()}> {/* prevent overlay click from closing */}
+            <SearchBar placeholder="Search Competitions.." />
+          </div>
+        </div>
+      )}
     </Sidebar>
   )
 }
