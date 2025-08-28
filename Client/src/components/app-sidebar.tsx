@@ -1,8 +1,5 @@
 "use client"
 import {
-  Calendar,
-  FileText,
-  Globe,
   Home,
   LogIn,
   LogOut,
@@ -16,7 +13,6 @@ import {
   ViewIcon,
   GlobeIcon,
   Edit3Icon,
-  Bot,
   OrigamiIcon,
 } from "lucide-react"
 import type React from "react"
@@ -51,9 +47,6 @@ type NavigationItem = {
   custom?: React.ReactNode
   onClick?: () => void
 }
-
-
-
 
 export function AppSidebar() {
   const { user, loading, signOut } = useAuth()
@@ -92,7 +85,7 @@ export function AppSidebar() {
       },
       {
         custom: (
-          <ChatDialog open={isChatOpen} onOpenChange={setIsChatOpen} />
+          <ChatDialog open={isChatOpen} competitionId={Number(id)} avatarUrl={user?.avatarUrl ? user.avatarUrl : ""} onOpenChange={setIsChatOpen} />
         ),
         label: "Chat",
       }
