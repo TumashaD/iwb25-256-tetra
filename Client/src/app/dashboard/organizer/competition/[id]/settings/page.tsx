@@ -131,7 +131,7 @@ export default function CompetitionSettings() {
       setError(null)
 
       await OrganizerService.deleteCompetition(competitionId)
-      router.push("/organizer/dashboard")
+      router.push("/dashboard/organizer")
     } catch (error) {
       console.error("Failed to delete competition:", error)
       setError("Failed to delete competition. Please try again.")

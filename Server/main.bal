@@ -4,6 +4,7 @@ import ballerina/log;
 import vinnova.auth;
 import vinnova.supabase;
 import ballerinax/postgresql;
+import ballerinax/googleapis.gmail;
 
 configurable string supabaseUrl = ?;
 configurable string supabaseJwtSecret = ?;
@@ -19,6 +20,10 @@ configurable string supabaseStorageUrl = ?;
 configurable string supabaseAnonKey = ?;
 
 configurable string geminiApiKey = ?;
+
+configurable string refreshToken = ?;
+configurable string clientId = ?;
+configurable string clientSecret = ?;
 
 listener http:Listener ln = new (serverPort);
 
@@ -38,12 +43,15 @@ public function main() returns error? {
 
     supabase:StorageClient storageClient = check new (supabaseStorageUrl, supabaseAnonKey,supabaseStorageUrl);
 
+    gmail:Client gmail = check new gmail:Client(config = {auth: {refreshToken,clientId,clientSecret}});
+
     http:Service competitionService = services:createCompetitionService(db, storageClient, CORS_CONFIG);
     http:Service organizerService = services:createOrganizerService(db, storageClient, CORS_CONFIG,authInterceptor);
     http:Service userService = services:createUserService(db, CORS_CONFIG, authInterceptor);
     http:Service teamService = services:createTeamService(db, CORS_CONFIG, authInterceptor);
     http:Service enrollmentService = services:createEnrollmentService(db, CORS_CONFIG, authInterceptor);
     http:Service aiService = services:createAIService(db, geminiApiKey, CORS_CONFIG);
+    http:Service gmailService = services:createGmailService(gmail, CORS_CONFIG);
 
     check ln.attach(competitionService, "/competitions");
     check ln.attach(organizerService, "/organizer");
@@ -51,6 +59,7 @@ public function main() returns error? {
     check ln.attach(teamService, "/teams");
     check ln.attach(enrollmentService, "/enrollments");
     check ln.attach(aiService, "/ai");
+    check ln.attach(gmailService, "/gmail");
 
     check ln.'start();
     log:printInfo("Competition service started on port " + serverPort.toString());

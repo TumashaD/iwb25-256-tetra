@@ -1,10 +1,8 @@
-import { memo, useEffect, useRef } from "react";
-import { useParams } from "next/navigation";
 import { InputAssetProps, StudioEditor } from "@grapesjs/studio-sdk/react";
+import { rteTinyMce, canvasFullSize,flexComponent, accordionComponent } from '@grapesjs/studio-sdk-plugins';
 import { OrganizerCompetition } from "@/services/organizerService";
 import type {Asset, Editor, ProjectData} from "grapesjs";
-// import '@grapesjs/studio-sdk/style';
-import './editor.css'
+import '@grapesjs/studio-sdk/style';
 
 type EditorProps = {
   competition: OrganizerCompetition;
@@ -17,6 +15,7 @@ type EditorProps = {
 };
 
 export default function PageEditor({competition,publishLandingPage, uploadAssets, deleteAssets, getAssets, saveLandingPage, initialProjectData }: EditorProps) {
+  
   const FallbackHTML = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -149,7 +148,7 @@ export default function PageEditor({competition,publishLandingPage, uploadAssets
       },
     },
       project: {
-        type: 'react',
+        type: 'web',
         default:{
           pages: [
             { name: 'Home', component: FallbackHTML, id: 'home' },
@@ -185,6 +184,12 @@ export default function PageEditor({competition,publishLandingPage, uploadAssets
         autosaveChanges: 50,
         autosaveIntervalMs: 100000
       },
+      plugins: [
+        rteTinyMce.init({ /* Plugin options: https://app.grapesjs.com/docs-sdk/plugins/rte/tinymce */ }),
+        canvasFullSize.init({ /* Plugin options: https://app.grapesjs.com/docs-sdk/plugins/canvas/full-size */ }),
+        flexComponent.init({ /* Plugin options: https://app.grapesjs.com/docs-sdk/plugins/components/flex */ }),
+        accordionComponent.init({ /* Plugin options: https://app.grapesjs.com/docs-sdk/plugins/components/accordion */ })
+      ]
       
       }}
         />;

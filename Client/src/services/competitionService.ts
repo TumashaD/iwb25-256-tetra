@@ -3,9 +3,8 @@ import { apiCall } from '@/lib/api'
 export interface Competition {
   id: number
   title: string
-  name: string
   description: string
-  prize_pool: string
+  prize_pool?: string
   organizer_id: string
   start_date: string
   end_date: string

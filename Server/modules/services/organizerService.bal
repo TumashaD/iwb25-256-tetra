@@ -33,6 +33,7 @@ public function createOrganizerService(postgresql:Client dbClient,supabase:Stora
         
         // Extract and validate required fields from JSON
         json|error titleJson = competitionData.title;
+        json|error prizePoolJson = competitionData.prize_pool;
         json|error descriptionJson = competitionData.description;
         json|error organizerIdJson = competitionData.organizer_id;
         json|error startDateJson = competitionData.start_date;
@@ -48,6 +49,7 @@ public function createOrganizerService(postgresql:Client dbClient,supabase:Stora
         // Cast JSON values to appropriate types
         string title = titleJson.toString();
         string description = descriptionJson is error ? "" : descriptionJson.toString();
+        string prize_pool = prizePoolJson is error ? "" : prizePoolJson.toString();
         string organizer_id = organizerIdJson.toString();
         string start_date = startDateJson.toString();
         string end_date = endDateJson.toString();
@@ -62,9 +64,9 @@ public function createOrganizerService(postgresql:Client dbClient,supabase:Stora
         
         // Insert new competition with all fields
         sql:ExecutionResult|error result = self.db->execute(`
-            INSERT INTO competitions (title, description, organizer_id, start_date, end_date, category, status,
+            INSERT INTO competitions (title,description,prize_pool, organizer_id, start_date, end_date, category, status,
                                     created_at, updated_at) 
-            VALUES (${title}, ${description}, ${organizer_id}::uuid, 
+            VALUES (${title},${description},${prize_pool}, ${organizer_id}::uuid, 
                     ${start_date}::date, ${end_date}::date, ${category}, ${status},
                     NOW(), NOW())
         `);
@@ -95,7 +97,7 @@ public function createOrganizerService(postgresql:Client dbClient,supabase:Stora
         }
         
         // Fetch the newly created competition
-        sql:ParameterizedQuery selectQuery = `SELECT id, title, description, organizer_id, start_date, end_date, category, status, created_at, updated_at FROM competitions WHERE id = ${competitionId}`;
+        sql:ParameterizedQuery selectQuery = `SELECT id, title, description, prize_pool, organizer_id, start_date, end_date, category, status, created_at, updated_at FROM competitions WHERE id = ${competitionId}`;
         stream<Competition, sql:Error?> newCompetitionResult = self.db->query(selectQuery, Competition);
         Competition[]|error newCompetition = from Competition competition in newCompetitionResult
                                                select competition;
@@ -163,6 +165,7 @@ public function createOrganizerService(postgresql:Client dbClient,supabase:Stora
         // Extract fields from JSON, using existing values as defaults
         json|error titleJson = updateData.title;
         json|error descriptionJson = updateData.description;
+        json|error prizePoolJson = updateData.prize_pool;
         json|error startDateJson = updateData.start_date;
         json|error endDateJson = updateData.end_date;
         json|error categoryJson = updateData.category;
@@ -170,6 +173,7 @@ public function createOrganizerService(postgresql:Client dbClient,supabase:Stora
 
         string title = titleJson !is error ? titleJson.toString() : existingCompetition.title;
         string description = descriptionJson !is error ? descriptionJson.toString() : existingCompetition.description;
+        string? prize_pool = prizePoolJson !is error ? prizePoolJson.toString() : (existingCompetition.prize_pool == "" ? "" : existingCompetition.prize_pool);
         string start_date = startDateJson !is error ? startDateJson.toString() : existingCompetition.start_date;
         string end_date = endDateJson !is error ? endDateJson.toString() : existingCompetition.end_date;
         string category = categoryJson !is error ? categoryJson.toString() : existingCompetition.category;
@@ -186,7 +190,7 @@ public function createOrganizerService(postgresql:Client dbClient,supabase:Stora
         // Update competition with single query 
         sql:ExecutionResult|error result = self.db->execute(`
             UPDATE competitions 
-            SET title = ${title}, description = ${description}, start_date = ${start_date}::date, 
+            SET title = ${title}, description = ${description}, prize_pool = ${prize_pool}, start_date = ${start_date}::date, 
                 end_date = ${end_date}::date, category = ${category}, status = ${status}, updated_at = NOW()
             WHERE id = ${id}
         `);

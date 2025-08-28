@@ -204,7 +204,7 @@ export default function SignUpPage() {
             Your browser does not support the video tag.
           </video>
           {/* Fallback image */}
-          <img src="/background.png" alt="Fallback" className="absolute inset-0 w-full h-full object-cover" />
+          {/* <img src="/background.png" alt="Fallback" className="absolute inset-0 w-full h-full object-cover" /> */}
           {/* Overlay for better text readability */}
           <div className="absolute inset-0 bg-black/20" />
         </div>

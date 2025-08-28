@@ -3,7 +3,6 @@
 import type React from "react"
 
 import { useAuth } from "@/contexts/AuthContext"
-import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { CompetitionsService, type Competition } from "@/services/competitionService"
 import { EnrollmentService, type EnrollmentWithDetails } from "@/services/enrollmentService"
@@ -12,7 +11,6 @@ import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/c
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { Badge } from "@/components/ui/badge"
 import {
   Dialog,
   DialogContent,
@@ -25,38 +23,25 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
 import {
-  CalendarDays,
   Users,
   Trophy,
   Plus,
-  Trash2,
-  Eye,
   Check,
   X,
   AlertCircle,
-  Settings,
-  Globe,
-  UserCheck,
   TrendingUp,
   Calendar,
-  ChevronDown,
-  ChevronUp,
 } from "lucide-react"
 import { CompetitionCard } from "@/components/competition-card"
 
 export default function OrganizerDashboard() {
   const { user, loading } = useAuth()
-  const router = useRouter()
   const [competitions, setCompetitions] = useState<Competition[]>([])
-  const [selectedCompetition, setSelectedCompetition] = useState<Competition | null>(null)
-  const [competitionEnrollments, setCompetitionEnrollments] = useState<EnrollmentWithDetails[]>([])
   const [showCreateForm, setShowCreateForm] = useState(false)
-  const [showEnrollmentModal, setShowEnrollmentModal] = useState(false)
-  const [editingCompetition, setEditingCompetition] = useState<Competition | null>(null)
-  const [expandedCard, setExpandedCard] = useState<number | null>(null)
   const [formData, setFormData] = useState<Partial<Competition>>({
     title: "",
     description: "",
+    prize_pool: "",
     organizer_id: "",
     start_date: "",
     end_date: "",
@@ -64,10 +49,8 @@ export default function OrganizerDashboard() {
     status: "upcoming",
   })
   const [bannerFile, setBannerFile] = useState<File | null>(null)
-  const [uploading, setUploading] = useState<number | null>(null)
   const [pageLoading, setPageLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [uploadedBanners, setUploadedBanners] = useState<Record<number, string>>({})
 
   useEffect(() => {
     if (user?.id) {
@@ -94,40 +77,14 @@ export default function OrganizerDashboard() {
     }
   }
 
-  const fetchCompetitionEnrollments = async (competition: Competition) => {
-    try {
-      setSelectedCompetition(competition)
-      setError(null)
-      const enrollments = await EnrollmentService.getCompetitionEnrollments(competition.id)
-      setCompetitionEnrollments(enrollments)
-      setShowEnrollmentModal(true)
-    } catch (error) {
-      console.error("Failed to fetch competition enrollments:", error)
-      setError("Failed to fetch enrollments. Please try again.")
-    }
-  }
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
       setPageLoading(true)
       setError(null)
       let competitionId: number | null = null
-      if (editingCompetition) {
-        const updateData: Partial<Competition> = {
-          title: formData.title,
-          description: formData.description,
-          start_date: formData.start_date,
-          end_date: formData.end_date,
-          category: formData.category,
-          status: formData.status,
-        }
-        await OrganizerService.updateCompetition(editingCompetition.id, updateData)
-        competitionId = editingCompetition.id
-      } else {
         const created = await OrganizerService.createCompetition(formData)
         competitionId = created?.id
-      }
       if (bannerFile && competitionId) {
         await OrganizerService.uploadBanner(competitionId, bannerFile)
       }
@@ -141,57 +98,11 @@ export default function OrganizerDashboard() {
     }
   }
 
-  const handleDelete = async (id: number) => {
-    if (confirm("Are you sure you want to delete this competition?")) {
-      try {
-        await OrganizerService.deleteCompetition(id)
-        fetchMyCompetitions()
-      } catch (error) {
-        console.error("Failed to delete competition:", error)
-        alert("Failed to delete competition. Please try again.")
-      }
-    }
-  }
-
-  const handleEdit = (competition: Competition) => {
-    setEditingCompetition(competition)
-    setFormData({
-      title: competition.title,
-      description: competition.description,
-      organizer_id: competition.organizer_id,
-      start_date: competition.start_date.split("T")[0],
-      end_date: competition.end_date.split("T")[0],
-      category: competition.category,
-      status: competition.status,
-    })
-    setBannerFile(null)
-    setShowCreateForm(true)
-  }
-
-  const handleBannerUpload = async (competitionId: number, file: File) => {
-    try {
-      setUploading(competitionId)
-      setUploadedBanners((prev) => ({ ...prev, [competitionId]: URL.createObjectURL(file) }))
-      await OrganizerService.uploadBanner(competitionId, file)
-      fetchMyCompetitions()
-      alert("Banner uploaded successfully!")
-    } catch (error) {
-      console.error("Failed to upload banner:", error)
-      alert("Failed to upload banner. Please try again.")
-      setUploadedBanners((prev) => {
-        const newState = { ...prev }
-        delete newState[competitionId]
-        return newState
-      })
-    } finally {
-      setUploading(null)
-    }
-  }
-
   const resetForm = () => {
     setFormData({
       title: "",
       description: "",
+      prize_pool: "",
       organizer_id: user?.id || "",
       start_date: "",
       end_date: "",
@@ -199,7 +110,6 @@ export default function OrganizerDashboard() {
       status: "upcoming",
     })
     setShowCreateForm(false)
-    setEditingCompetition(null)
     setBannerFile(null)
   }
 
@@ -251,11 +161,9 @@ export default function OrganizerDashboard() {
             </DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>{editingCompetition ? "Edit Competition" : "Create New Competition"}</DialogTitle>
+                <DialogTitle>{"Create New Competition"}</DialogTitle>
                 <DialogDescription>
-                  {editingCompetition
-                    ? "Update your competition details"
-                    : "Fill in the details to create a new competition"}
+                  {"Fill in the details to create a new competition"}
                 </DialogDescription>
               </DialogHeader>
 
@@ -275,9 +183,19 @@ export default function OrganizerDashboard() {
                     <Label htmlFor="category">Category</Label>
                     <Input
                       id="category"
-                      placeholder="e.g., FPS, MOBA, Battle Royale"
+                      placeholder="e.g., IoT, AI, Blockchain,"
                       value={formData.category}
                       onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="prize_pool">Prize Pool</Label>
+                    <Input
+                      id="prize_pool"
+                      placeholder="Enter competition prize pool"
+                      value={formData.prize_pool}
+                      onChange={(e) => setFormData({ ...formData, prize_pool: e.target.value })}
                       required
                     />
                   </div>
@@ -356,27 +274,11 @@ export default function OrganizerDashboard() {
                       />
                     </div>
                   )}
-                  {!bannerFile && editingCompetition && editingCompetition.banner_url && (
-                    <div className="mt-2">
-                      <img
-                        src={
-                          editingCompetition.banner_url + "?t=" + new Date(editingCompetition.updated_at).getTime() ||
-                          "/placeholder.svg" ||
-                          "/placeholder.svg"
-                        }
-                        alt="Current Banner"
-                        className="w-full h-32 object-cover rounded-lg border"
-                        onError={(e) => {
-                          ; (e.target as HTMLImageElement).style.display = "none"
-                        }}
-                      />
-                    </div>
-                  )}
                 </div>
 
                 <div className="flex gap-3 pt-4">
                   <Button type="submit" disabled={loading} className="flex-1">
-                    {loading ? "Saving..." : editingCompetition ? "Update Competition" : "Create Competition"}
+                    {loading ? "Saving..." : "Create Competition"}
                   </Button>
                   <Button
                     type="button"
@@ -494,124 +396,6 @@ export default function OrganizerDashboard() {
             ))}
           </div>
         )}
-
-        {/* <Dialog open={showEnrollmentModal} onOpenChange={setShowEnrollmentModal}>
-          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="text-2xl">Enrollments for "{selectedCompetition?.title}"</DialogTitle>
-              <DialogDescription>Manage team enrollments and approvals</DialogDescription>
-            </DialogHeader>
-
-            {competitionEnrollments.length === 0 ? (
-              <div className="text-center py-12">
-                <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No enrollments yet</h3>
-                <p className="text-muted-foreground">Teams haven't enrolled in this competition yet.</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm text-muted-foreground">Total Enrollments: {competitionEnrollments.length}</p>
-                </div>
-
-                <div className="space-y-3">
-                  {competitionEnrollments.map((enrollment) => (
-                    <Card key={enrollment.enrollment_id}>
-                      <CardContent className="p-4">
-                        <div className="flex justify-between items-start">
-                          <div className="flex-1">
-                            <h3 className="font-semibold text-lg mb-2">{enrollment.team_name}</h3>
-                            <div className="grid md:grid-cols-2 gap-4 text-sm">
-                              <div className="flex items-center gap-2">
-                                <span className="text-muted-foreground">Status:</span>
-                                <Badge
-                                  variant={
-                                    enrollment.status === "enrolled"
-                                      ? "default"
-                                      : enrollment.status === "pending"
-                                        ? "secondary"
-                                        : "destructive"
-                                  }
-                                >
-                                  {enrollment.status.charAt(0).toUpperCase() + enrollment.status.slice(1)}
-                                </Badge>
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="flex gap-2 ml-4">
-                            {enrollment.status === "pending" && (
-                              <>
-                                <Button
-                                  size="sm"
-                                  onClick={async () => {
-                                    try {
-                                      await EnrollmentService.updateEnrollmentStatus(
-                                        enrollment.enrollment_id,
-                                        "enrolled",
-                                      )
-                                      fetchCompetitionEnrollments(selectedCompetition!)
-                                    } catch (error) {
-                                      console.error("Failed to approve enrollment:", error)
-                                      setError("Failed to approve enrollment")
-                                    }
-                                  }}
-                                  className="gap-1"
-                                >
-                                  <Check className="h-3 w-3" />
-                                  Approve
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="destructive"
-                                  onClick={async () => {
-                                    try {
-                                      await EnrollmentService.updateEnrollmentStatus(
-                                        enrollment.enrollment_id,
-                                        "rejected",
-                                      )
-                                      fetchCompetitionEnrollments(selectedCompetition!)
-                                    } catch (error) {
-                                      console.error("Failed to reject enrollment:", error)
-                                      setError("Failed to reject enrollment")
-                                    }
-                                  }}
-                                  className="gap-1"
-                                >
-                                  <X className="h-3 w-3" />
-                                  Reject
-                                </Button>
-                              </>
-                            )}
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={async () => {
-                                if (confirm("Are you sure you want to remove this enrollment?")) {
-                                  try {
-                                    await EnrollmentService.deleteEnrollment(enrollment.enrollment_id)
-                                    fetchCompetitionEnrollments(selectedCompetition!)
-                                  } catch (error) {
-                                    console.error("Failed to delete enrollment:", error)
-                                    setError("Failed to delete enrollment")
-                                  }
-                                }
-                              }}
-                              className="gap-1"
-                            >
-                              <Trash2 className="h-3 w-3" />
-                              Remove
-                            </Button>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </div>
-            )}
-          </DialogContent>
-        </Dialog> */}
       </div>
     </div>
   )

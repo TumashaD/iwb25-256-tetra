@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/tooltip"
 import { Facebook, Instagram, Linkedin, Moon, Send, Sun, Twitter } from "lucide-react"
 
-function Footerdemo() {
+function Footer() {
 
   return (
     <footer className="relative border-t bg-background text-foreground transition-colors duration-300">
@@ -149,4 +149,4 @@ function Footerdemo() {
   )
 }
 
-export { Footerdemo }
+export { Footer }

@@ -20,7 +20,7 @@ export function CompetitionCard({ competition, userType }: { competition: Compet
     completed: "Completed",
   }
 
-  const href = userType == "competitor" ? `/competition/${competition.id}` : `/dashboard/organizer/competition/${competition.id}`;
+  const href = userType == "competitor" ? `/competitions/${competition.id}` : `/dashboard/organizer/competition/${competition.id}`;
 
   return (
     <div className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 hover:scale-[1.02] group">
@@ -46,7 +46,6 @@ export function CompetitionCard({ competition, userType }: { competition: Compet
         <div className="p-6">
           <div className="mb-3">
             <h3 className="text-xl font-bold text-gray-900 mb-1 text-balance">{competition.title}</h3>
-            <p className="text-teal-600 font-medium">{competition.name}</p>
           </div>
 
           {/* Stats */}

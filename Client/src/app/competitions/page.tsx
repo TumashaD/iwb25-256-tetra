@@ -21,8 +21,8 @@ export default function CompetitionsPage() {
   const [loading, setLoading] = useState(true);
   const [availableCategories, setAvailableCategories] = useState<string[]>([]);
   const router = useRouter();
-
-  // generates current and upcoming months
+    
+    // generates current and upcoming months
   const generateDateOptions = () => {
     const currentDate = new Date();
     const options: Array<{value: string, label: string}> = [];
@@ -82,8 +82,7 @@ export default function CompetitionsPage() {
     return competitions.filter((competition) => {
       // Search filter
       const matchesSearch =
-        competition.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        competition.name.toLowerCase().includes(searchQuery.toLowerCase())
+        competition.title.toLowerCase().includes(searchQuery.toLowerCase())
 
       // Category filter
       const matchesCategory = categoryFilter === "all" || competition.category === categoryFilter
@@ -92,7 +91,7 @@ export default function CompetitionsPage() {
       const matchesStatus = statusFilter === "all" || competition.status === statusFilter
 
       // Remove currency from the prize pool string
-      const prizePool = parseFloat(competition.prize_pool.replace(/[^0-9.-]+/g, ""));
+      const prizePool = parseFloat(competition.prize_pool ? competition.prize_pool.replace(/[^0-9.-]+/g, "") : "0");
 
       // Prize pool filter
       const matchesPrizePool =
@@ -177,7 +176,7 @@ export default function CompetitionsPage() {
               <SelectContent>
                 <SelectItem value="all">All Categories</SelectItem>
                 {loading ? (
-                  <SelectItem value="" disabled>Loading categories...</SelectItem>
+                  <SelectItem value="loading" disabled>Loading categories...</SelectItem>
                 ) : (
                   availableCategories.map((category) => (
                     <SelectItem key={category} value={category}>

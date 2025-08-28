@@ -461,7 +461,7 @@ export default function CompetitorDashboard() {
                           variant="outline"
                           size="sm"
                           className="w-full bg-transparent"
-                          onClick={() => router.push(`/competition/${enrollment.competition_id}`)}
+                          onClick={() => router.push(`/competitions/${enrollment.competition_id}`)}
                         >
                           View Competition
                         </Button>

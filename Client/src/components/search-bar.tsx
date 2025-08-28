@@ -2,21 +2,13 @@
 
 import type React from "react"
 import { useState, useRef, useEffect, useMemo } from "react"
-import { Search, CircleDot } from "lucide-react"
+import { Search, CircleDot, Trophy, Calendar, DollarSign, Users } from "lucide-react"
 import { motion, AnimatePresence, Variants } from "framer-motion"
 import { cn } from "@/lib/utils"
 
-const SUGGESTIONS = [
-  "React",
-  "Vue",
-  "Angular",
-  "Next.js",
-  "Svelte",
-  "TailwindCSS",
-  "TypeScript",
-  "JavaScript",
-  "Node.js",
-]
+// Import the competitions service
+import { Competition, CompetitionsService } from "@/services/competitionService"
+import { useRouter } from "next/navigation"
 
 const GooeyFilter = () => (
   <svg style={{ position: "absolute", width: 0, height: 0 }} aria-hidden="true">
@@ -32,17 +24,47 @@ const GooeyFilter = () => (
 
 interface SearchBarProps {
   placeholder?: string
-  onSearch?: (query: string) => void
+  onCompetitionSelect?: (competition: Competition) => void
+  onSearch?: (query: string, results: Competition[]) => void
+  maxResults?: number
+  showCategories?: boolean
+  className?: string
 }
 
-const SearchBar = ({ placeholder = "Search...", onSearch }: SearchBarProps) => {
+export const SearchBar = ({
+  placeholder = "Search competitions...",
+  onCompetitionSelect,
+  onSearch,
+  maxResults = 5,
+  showCategories = true,
+  className
+}: SearchBarProps) => {
   const inputRef = useRef<HTMLInputElement>(null)
   const [isFocused, setIsFocused] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [isAnimating, setIsAnimating] = useState(false)
-  const [suggestions, setSuggestions] = useState<string[]>([])
   const [isClicked, setIsClicked] = useState(false)
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
+  const [competitions, setCompetitions] = useState<Competition[]>([])
+  const [loading, setLoading] = useState(true)
+  const router = useRouter()
+
+  // Fetch competitions on component mount
+  useEffect(() => {
+    const fetchCompetitions = async () => {
+      try {
+        const competitionsData = await CompetitionsService.getCompetitions()
+        console.log('Fetched competitions for search:', competitionsData)
+        setCompetitions(competitionsData)
+      } catch (error) {
+        console.error('Error fetching competitions:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchCompetitions()
+  }, [])
 
   const isUnsupportedBrowser = useMemo(() => {
     if (typeof window === "undefined") return false
@@ -52,25 +74,57 @@ const SearchBar = ({ placeholder = "Search...", onSearch }: SearchBarProps) => {
     return isSafari || isChromeOniOS
   }, [])
 
+  // Filter competitions based on search query
+  const filteredCompetitions = useMemo(() => {
+    if (!searchQuery.trim() || loading) return []
+    
+    const filtered = competitions.filter((competition) => {
+      const searchLower = searchQuery.toLowerCase()
+      return (
+        competition.title.toLowerCase().includes(searchLower) ||
+        competition.category.toLowerCase().includes(searchLower)
+      )
+    })
+    
+    return filtered.slice(0, maxResults)
+  }, [competitions, searchQuery, maxResults, loading])
+
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value
     setSearchQuery(value)
-
-    if (value.trim()) {
-      const filtered = SUGGESTIONS.filter((item) => item.toLowerCase().includes(value.toLowerCase()))
-      setSuggestions(filtered)
-    } else {
-      setSuggestions([])
+    
+    // Call onSearch callback with current query and results
+    if (onSearch) {
+      const results = competitions.filter((competition) => {
+        const searchLower = value.toLowerCase()
+        return (
+          competition.title.toLowerCase().includes(searchLower) ||
+          competition.category.toLowerCase().includes(searchLower)
+        )
+      })
+      onSearch(value, results)
     }
   }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (onSearch && searchQuery.trim()) {
-      onSearch(searchQuery)
+    if (searchQuery.trim() && filteredCompetitions.length > 0) {
+      // Select first result if no specific selection
+      if (onCompetitionSelect) {
+        onCompetitionSelect(filteredCompetitions[0])
+      }
       setIsAnimating(true)
       setTimeout(() => setIsAnimating(false), 1000)
     }
+  }
+
+  const handleCompetitionClick = (competition: Competition) => {
+    setSearchQuery(competition.title)
+    setIsFocused(false)
+    if (onCompetitionSelect) {
+      onCompetitionSelect(competition)
+    }
+    router.push(`/competitions/${competition.id}`)
   }
 
   const handleMouseMove = (e: React.MouseEvent) => {
@@ -129,6 +183,24 @@ const SearchBar = ({ placeholder = "Search...", onSearch }: SearchBarProps) => {
     }),
   }
 
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'live': return 'text-green-500'
+      case 'upcoming': return 'text-blue-500'
+      case 'completed': return 'text-gray-500'
+      default: return 'text-gray-400'
+    }
+  }
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'live': return <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+      case 'upcoming': return <Calendar className="w-3 h-3" />
+      case 'completed': return <Trophy className="w-3 h-3" />
+      default: return <CircleDot className="w-3 h-3" />
+    }
+  }
+
   const particles = Array.from({ length: isFocused ? 18 : 0 }, (_, i) => (
     <motion.div
       key={i}
@@ -145,7 +217,7 @@ const SearchBar = ({ placeholder = "Search...", onSearch }: SearchBarProps) => {
         repeat: Number.POSITIVE_INFINITY,
         repeatType: "reverse",
       }}
-      className="absolute w-3 h-3 rounded-full bg-gradient-to-r from-purple-400 to-pink-400"
+      className="absolute w-3 h-3 rounded-full bg-gradient-to-r from-teal-400 to-blue-400"
       style={{
         left: `${Math.random() * 100}%`,
         top: `${Math.random() * 100}%`,
@@ -176,7 +248,7 @@ const SearchBar = ({ placeholder = "Search...", onSearch }: SearchBarProps) => {
     : null
 
   return (
-    <div className="relative w-full">
+    <div className={cn("relative w-full", className)}>
       <GooeyFilter />
       <motion.form
         onSubmit={handleSubmit}
@@ -191,9 +263,36 @@ const SearchBar = ({ placeholder = "Search...", onSearch }: SearchBarProps) => {
             "flex items-center w-full rounded-full border relative overflow-hidden backdrop-blur-md gap-2",
             isFocused ? "border-transparent shadow-xl" : "border-gray-200 dark:border-gray-700 bg-white/30 dark:bg-gray-800/50"
           )}
+
+        {...isFocused && loading && searchQuery && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
+            className="absolute z-10 w-full mt-2 overflow-hidden bg-white/95 dark:bg-gray-900/95 backdrop-blur-md rounded-lg shadow-xl border border-gray-100 dark:border-gray-700"
+          >
+            <div className="p-4 text-center">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-teal-500 mx-auto mb-2"></div>
+              <span className="text-gray-500 text-sm">Searching competitions...</span>
+            </div>
+          </motion.div>
+        )}
+        {...isFocused && !loading && searchQuery && filteredCompetitions.length === 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
+            className="absolute z-10 w-full mt-2 overflow-hidden bg-white/95 dark:bg-gray-900/95 backdrop-blur-md rounded-lg shadow-xl border border-gray-100 dark:border-gray-700"
+          >
+            <div className="p-4 text-center">
+              <Search className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+              <span className="text-gray-500 text-sm">No competitions found for "{searchQuery}"</span>
+            </div>
+          </motion.div>
+        )}
           animate={{
             boxShadow: isClicked
-              ? "0 0 40px rgba(139, 92, 246, 0.5), 0 0 15px rgba(236, 72, 153, 0.7) inset"
+              ? "0 0 40px rgba(20, 184, 166, 0.5), 0 0 15px rgba(59, 130, 246, 0.7) inset"
               : isFocused
               ? "0 15px 35px rgba(0, 0, 0, 0.2)"
               : "0 0 0 rgba(0, 0, 0, 0)",
@@ -207,10 +306,10 @@ const SearchBar = ({ placeholder = "Search...", onSearch }: SearchBarProps) => {
               animate={{
                 opacity: 0.15,
                 background: [
-                  "linear-gradient(90deg, #f6d365 0%, #fda085 100%)",
-                  "linear-gradient(90deg, #a1c4fd 0%, #c2e9fb 100%)",
-                  "linear-gradient(90deg, #d4fc79 0%, #96e6a1 100%)",
-                  "linear-gradient(90deg, #f6d365 0%, #fda085 100%)",
+                  "linear-gradient(90deg, #14b8a6 0%, #3b82f6 100%)",
+                  "linear-gradient(90deg, #06b6d4 0%, #8b5cf6 100%)",
+                  "linear-gradient(90deg, #10b981 0%, #f59e0b 100%)",
+                  "linear-gradient(90deg, #14b8a6 0%, #3b82f6 100%)",
                 ],
               }}
               transition={{ duration: 15, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
@@ -227,7 +326,7 @@ const SearchBar = ({ placeholder = "Search...", onSearch }: SearchBarProps) => {
           {isClicked && (
             <>
               <motion.div
-                className="absolute inset-0 -z-5 rounded-full bg-purple-400/10"
+                className="absolute inset-0 -z-5 rounded-full bg-teal-400/10"
                 initial={{ scale: 0, opacity: 0.7 }}
                 animate={{ scale: 2, opacity: 0 }}
                 transition={{ duration: 0.8, ease: "easeOut" }}
@@ -249,7 +348,7 @@ const SearchBar = ({ placeholder = "Search...", onSearch }: SearchBarProps) => {
               strokeWidth={isFocused ? 2.5 : 2}
               className={cn(
                 "transition-all duration-300",
-                isAnimating ? "text-purple-500" : isFocused ? "text-purple-600" : "text-gray-500 dark:text-gray-300",
+                isAnimating ? "text-teal-500" : isFocused ? "text-teal-600" : "text-gray-500 dark:text-gray-300",
               )}
             />
           </motion.div>
@@ -257,19 +356,20 @@ const SearchBar = ({ placeholder = "Search...", onSearch }: SearchBarProps) => {
           <input
             ref={inputRef}
             type="text"
-            placeholder={placeholder}
+            placeholder={loading ? "Loading competitions..." : placeholder}
             value={searchQuery}
             onChange={handleSearch}
             onFocus={() => setIsFocused(true)}
             onBlur={() => setTimeout(() => setIsFocused(false), 200)}
+            disabled={loading}
             className={cn(
-              "w-full py-3 bg-transparent outline-none placeholder:text-gray-700 dark:placeholder:text-gray-500 font-medium text-base relative z-10",
+              "w-full py-3 bg-transparent outline-none placeholder:text-gray-700 dark:placeholder:text-gray-500 font-medium text-base relative z-10 disabled:opacity-50",
               isFocused ? "text-white dark:text-white tracking-wide" : "text-gray-600 dark:text-gray-300"
             )}
           />
 
           <AnimatePresence>
-            {searchQuery && (
+            {searchQuery && !loading && (
               <motion.button
                 type="submit"
                 initial={{ opacity: 0, scale: 0.8, x: -20 }}
@@ -277,11 +377,11 @@ const SearchBar = ({ placeholder = "Search...", onSearch }: SearchBarProps) => {
                 exit={{ opacity: 0, scale: 0.8, x: -20 }}
                 whileHover={{
                   scale: 1.05,
-                  background: "linear-gradient(45deg, #8B5CF6 0%, #EC4899 100%)",
-                  boxShadow: "0 10px 25px -5px rgba(139, 92, 246, 0.5)",
+                  background: "linear-gradient(45deg, #14b8a6 0%, #3b82f6 100%)",
+                  boxShadow: "0 10px 25px -5px rgba(20, 184, 166, 0.5)",
                 }}
                 whileTap={{ scale: 0.95 }}
-                className="px-5 py-2 mr-2 text-sm font-medium rounded-full bg-gradient-to-r from-purple-500 to-pink-500 text-white backdrop-blur-sm transition-all shadow-lg"
+                className="px-5 py-2 mr-2 text-sm font-medium rounded-full bg-gradient-to-r from-teal-500 to-blue-500 text-white backdrop-blur-sm transition-all shadow-lg"
               >
                 Search
               </motion.button>
@@ -303,49 +403,81 @@ const SearchBar = ({ placeholder = "Search...", onSearch }: SearchBarProps) => {
       </motion.form>
 
       <AnimatePresence>
-        {isFocused && suggestions.length > 0 && (
+        {isFocused && !loading && filteredCompetitions.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 10, height: 0 }}
             animate={{ opacity: 1, y: 0, height: "auto" }}
             exit={{ opacity: 0, y: 10, height: 0 }}
             transition={{ duration: 0.2 }}
-            className="absolute z-10 w-full mt-2 overflow-hidden bg-white/90 dark:bg-gray-900/90 backdrop-blur-md rounded-lg shadow-xl border border-gray-100 dark:border-gray-700"
+            className="absolute z-10 w-full mt-2 overflow-hidden bg-white/95 dark:bg-gray-900/95 backdrop-blur-md rounded-lg shadow-xl border border-gray-100 dark:border-gray-700"
             style={{
-              maxHeight: "300px",
+              maxHeight: "400px",
               overflowY: "auto",
               filter: isUnsupportedBrowser ? "none" : "drop-shadow(0 15px 15px rgba(0,0,0,0.1))",
             }}
           >
             <div className="p-2">
-              {suggestions.map((suggestion, index) => (
+              {filteredCompetitions.map((competition, index) => (
                 <motion.div
-                  key={suggestion}
+                  key={competition.id}
                   custom={index}
                   variants={suggestionVariants}
                   initial="hidden"
                   animate="visible"
                   exit="exit"
-                  onClick={() => {
-                    setSearchQuery(suggestion)
-                    if (onSearch) onSearch(suggestion)
-                    setIsFocused(false)
-                  }}
-                  className="flex items-center gap-2 px-4 py-2 cursor-pointer rounded-md hover:bg-purple-50 dark:hover:bg-purple-900/20 group"
+                  onClick={() => handleCompetitionClick(competition)}
+                  className="flex items-center justify-between gap-3 px-4 py-3 cursor-pointer rounded-md hover:bg-teal-50 dark:hover:bg-teal-900/20 group transition-colors"
                 >
-                  <motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }} transition={{ delay: index * 0.06 }}>
-                    <CircleDot size={16} className="text-purple-400 group-hover:text-purple-600" />
-                  </motion.div>
-                  <motion.span
-                    className="text-gray-700 dark:text-gray-100 group-hover:text-purple-700 dark:group-hover:text-purple-400"
-                    initial={{ x: -5, opacity: 0 }}
-                    animate={{ x: 0, opacity: 1 }}
-                    transition={{ delay: index * 0.08 }}
-                  >
-                    {suggestion}
-                  </motion.span>
+                  <div className="flex items-center gap-3 flex-1">
+                    <motion.div 
+                      initial={{ scale: 0.8 }} 
+                      animate={{ scale: 1 }} 
+                      transition={{ delay: index * 0.06 }}
+                      className={cn("flex items-center gap-1", getStatusColor(competition.status))}
+                    >
+                      {getStatusIcon(competition.status)}
+                    </motion.div>
+                    
+                    <div className="flex-1">
+                      <motion.div
+                        className="font-medium text-gray-900 dark:text-gray-100 group-hover:text-teal-700 dark:group-hover:text-teal-400"
+                        initial={{ x: -5, opacity: 0 }}
+                        animate={{ x: 0, opacity: 1 }}
+                        transition={{ delay: index * 0.08 }}
+                      >
+                        {competition.title}
+                      </motion.div>
+                      
+                      <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
+                        {showCategories && (
+                          <span className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-full">
+                            {competition.category}
+                          </span>
+                        )}
+                        <span className="flex items-center gap-1">
+                          <DollarSign className="w-3 h-3" />
+                          {competition.prize_pool}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Users className="w-3 h-3" />
+                          {competition.teams}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="text-xs text-gray-400 capitalize">
+                    {competition.status}
+                  </div>
                 </motion.div>
               ))}
             </div>
+            
+            {filteredCompetitions.length === maxResults && (
+              <div className="px-4 py-2 text-center text-sm text-gray-500 border-t border-gray-100 dark:border-gray-700">
+                Showing top {maxResults} results
+              </div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
@@ -353,4 +485,93 @@ const SearchBar = ({ placeholder = "Search...", onSearch }: SearchBarProps) => {
   )
 }
 
-export { SearchBar }
+// // Example usage component
+// const SearchBarDemo = () => {
+//   const [selectedCompetition, setSelectedCompetition] = useState<Competition | null>(null)
+//   const [searchResults, setSearchResults] = useState<Competition[]>([])
+
+//   const handleCompetitionSelect = (competition: Competition) => {
+//     setSelectedCompetition(competition)
+//     console.log("Selected competition:", competition)
+//     // In a real app, you might navigate to the competition page:
+//     // router.push(`/competition/${competition.id}`)
+//   }
+
+//   const handleSearch = (query: string, results: Competition[]) => {
+//     setSearchResults(results)
+//     console.log(`Search query: "${query}", Found ${results.length} results`)
+//   }
+
+//   const getStatusColor = (status: string) => {
+//     switch (status) {
+//       case 'live': return 'text-green-500'
+//       case 'upcoming': return 'text-blue-500'
+//       case 'completed': return 'text-gray-500'
+//       default: return 'text-gray-400'
+//     }
+//   }
+
+//   return (
+//     <div className="min-h-screen bg-gradient-to-br from-teal-50 via-blue-50 to-indigo-100 p-8">
+//       <div className="max-w-4xl mx-auto">
+//         <div className="text-center mb-12">
+//           <h1 className="text-4xl font-bold text-gray-900 mb-4">
+//             Competition Search Bar
+//           </h1>
+//           <p className="text-xl text-gray-600">
+//             Find your next esports competition with our smart search
+//           </p>
+//         </div>
+
+//         <div className="mb-8">
+//           <CompetitionSearchBar
+//             placeholder="Search competitions by name, title, or category..."
+//             onCompetitionSelect={handleCompetitionSelect}
+//             onSearch={handleSearch}
+//             maxResults={6}
+//             showCategories={true}
+//             className="max-w-2xl mx-auto"
+//           />
+//         </div>
+
+//         {selectedCompetition && (
+//           <motion.div
+//             initial={{ opacity: 0, y: 20 }}
+//             animate={{ opacity: 1, y: 0 }}
+//             className="bg-white rounded-xl shadow-lg p-6 max-w-2xl mx-auto"
+//           >
+//             <h3 className="text-2xl font-bold text-gray-900 mb-2">
+//               {selectedCompetition.title}
+//             </h3>
+//             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+//               <div>
+//                 <span className="text-gray-500">Category:</span>
+//                 <div className="font-medium">{selectedCompetition.category}</div>
+//               </div>
+//               <div>
+//                 <span className="text-gray-500">Status:</span>
+//                 <div className={cn("font-medium capitalize", getStatusColor(selectedCompetition.status))}>
+//                   {selectedCompetition.status}
+//                 </div>
+//               </div>
+//               <div>
+//                 <span className="text-gray-500">Prize Pool:</span>
+//                 <div className="font-medium">{selectedCompetition.prize_pool}</div>
+//               </div>
+//               <div>
+//                 <span className="text-gray-500">Teams:</span>
+//                 <div className="font-medium">{selectedCompetition.teams}</div>
+//               </div>
+//             </div>
+//             <div className="mt-4 pt-4 border-t border-gray-200">
+//               <span className="text-gray-500 text-sm">Duration:</span>
+//               <div className="text-sm">{selectedCompetition.start_date} - {selectedCompetition.end_date}</div>
+//             </div>
+//           </motion.div>
+//         )}
+//       </div>
+//     </div>
+//   )
+// }
+
+// export default SearchBarDemo
