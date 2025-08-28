@@ -1,34 +1,28 @@
 "use client"
 
 import { useState, type FormEvent } from "react"
-import { Paperclip, Mic, CornerDownLeft } from "lucide-react"
+import { Paperclip, Mic, CornerDownLeft, Bot } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { ChatBubble, ChatBubbleAvatar, ChatBubbleMessage } from "@/components/ui/chat-bubble"
 import { ChatInput } from "@/components/ui/chat-input"
 import { ChatMessageList } from "@/components/ui/chat-message-list"
 import { DialogTrigger } from "@radix-ui/react-dialog"
+import { aiService } from "@/services/aiService"
+import ReactMarkdown from "react-markdown"
 
 interface ChatDialogProps {
   open: boolean
+  competitionId: number
+  avatarUrl: string
   onOpenChange: (open: boolean) => void
 }
 
-export function ChatDialog({ open, onOpenChange }: ChatDialogProps) {
+export function ChatDialog({ open, onOpenChange, competitionId, avatarUrl }: ChatDialogProps) {
   const [messages, setMessages] = useState([
     {
       id: 1,
-      content: "Hello! How can I help you today?",
-      sender: "ai",
-    },
-    {
-      id: 2,
-      content: "I have a question about the component library.",
-      sender: "user",
-    },
-    {
-      id: 3,
-      content: "I'd be happy to help. What would you like to know?",
+      content: "Hello! Ask me anything about this competition.",
       sender: "ai",
     },
   ])
@@ -36,52 +30,70 @@ export function ChatDialog({ open, onOpenChange }: ChatDialogProps) {
   const [input, setInput] = useState("")
   const [isLoading, setIsLoading] = useState(false)
 
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault()
-    if (!input.trim()) return
+  const handleSubmit = async (e: FormEvent) => {
+  e.preventDefault()
+  if (!input.trim()) return
 
+  // Add user message
+  setMessages((prev) => [
+    ...prev,
+    {
+      id: prev.length + 1,
+      content: input,
+      sender: "user",
+    },
+  ])
+
+  const userInput = input
+  setInput("")
+  setIsLoading(true)
+
+  try {
+    // Call your backend AI API
+    const aiResponse = await aiService.generateResponse({
+      question: userInput,
+      competitionId: competitionId, // optional: pass competition context if you want
+    })
+
+    // Add AI reply
     setMessages((prev) => [
       ...prev,
       {
         id: prev.length + 1,
-        content: input,
-        sender: "user",
+        content: aiResponse.answer,
+        sender: "ai",
       },
     ])
-    setInput("")
-    setIsLoading(true)
-
-    setTimeout(() => {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: prev.length + 1,
-          content: "This is an AI response to your message.",
-          sender: "ai",
-        },
-      ])
-      setIsLoading(false)
-    }, 1000)
+  } catch (error) {
+    console.error("AI request failed:", error)
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: prev.length + 1,
+        content: "Sorry, something went wrong. Please try again.",
+        sender: "ai",
+      },
+    ])
+  } finally {
+    setIsLoading(false)
   }
-
-  const handleAttachFile = () => {
-    // File attachment logic
-  }
-
-  const handleMicrophoneClick = () => {
-    // Voice input logic
-  }
+}
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
-        <Button variant="outline">Open Chat</Button>
+         <div className='flex flex-col items-center py-2 rounded-xl justify-center w-20 hover:bg-sidebar-accent cursor-pointer'>
+                        <Bot className='mb-0' />
+                        <Button className='bg-transparent text-black border-0 shadow-none pointer-events-none w-18'>
+                            Chat
+                        </Button>
+                    </div>
       </DialogTrigger>
-      <DialogContent className="max-w-2xl h-[600px] flex flex-col p-0">
+      <DialogContent className="max-w-2xl h-[800px] flex flex-col p-0">
         <DialogHeader className="flex-row items-center justify-between p-4 border-b">
           <div className="text-center flex-1">
-            <DialogTitle className="text-xl font-semibold">Chat with AI ✨</DialogTitle>
-            <p className="text-sm text-muted-foreground mt-1">Ask me anything about the components</p>
+            <DialogTitle className="text-xl font-semibold">Chat with Our AI</DialogTitle>
+            <p className="text-sm text-muted-foreground mt-1">Ask me anything about this competition</p>
           </div>
         </DialogHeader>
 
@@ -93,13 +105,13 @@ export function ChatDialog({ open, onOpenChange }: ChatDialogProps) {
                   className="h-8 w-8 shrink-0"
                   src={
                     message.sender === "user"
-                      ? "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=64&h=64&q=80&crop=faces&fit=crop"
-                      : "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=64&h=64&q=80&crop=faces&fit=crop"
+                      ? avatarUrl
+                      : "/ai.png"
                   }
                   fallback={message.sender === "user" ? "US" : "AI"}
                 />
                 <ChatBubbleMessage variant={message.sender === "user" ? "sent" : "received"}>
-                  {message.content}
+<ReactMarkdown>{message.content}</ReactMarkdown>
                 </ChatBubbleMessage>
               </ChatBubble>
             ))}
@@ -108,7 +120,7 @@ export function ChatDialog({ open, onOpenChange }: ChatDialogProps) {
               <ChatBubble variant="received">
                 <ChatBubbleAvatar
                   className="h-8 w-8 shrink-0"
-                  src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=64&h=64&q=80&crop=faces&fit=crop"
+                  src="/ai.png"
                   fallback="AI"
                 />
                 <ChatBubbleMessage isLoading />
