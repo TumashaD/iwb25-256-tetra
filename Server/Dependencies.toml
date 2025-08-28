@@ -346,6 +346,27 @@ dependencies = [
 
 [[package]]
 org = "ballerinax"
+name = "googleapis.gmail"
+version = "4.1.0"
+dependencies = [
+	{org = "ballerina", name = "http"},
+	{org = "ballerina", name = "io"},
+	{org = "ballerina", name = "lang.array"},
+	{org = "ballerina", name = "lang.runtime"},
+	{org = "ballerina", name = "log"},
+	{org = "ballerina", name = "os"},
+	{org = "ballerina", name = "url"},
+	{org = "ballerina", name = "uuid"},
+	{org = "ballerinai", name = "observe"}
+]
+modules = [
+	{org = "ballerinax", packageName = "googleapis.gmail", moduleName = "googleapis.gmail"},
+	{org = "ballerinax", packageName = "googleapis.gmail", moduleName = "googleapis.gmail.mock"},
+	{org = "ballerinax", packageName = "googleapis.gmail", moduleName = "googleapis.gmail.oas"}
+]
+
+[[package]]
+org = "ballerinax"
 name = "postgresql"
 version = "1.16.1"
 dependencies = [
@@ -373,6 +394,7 @@ dependencies = [
 	{org = "ballerina", name = "sql"},
 	{org = "ballerina", name = "time"},
 	{org = "ballerinai", name = "observe"},
+	{org = "ballerinax", name = "googleapis.gmail"},
 	{org = "ballerinax", name = "postgresql"}
 ]
 modules = [

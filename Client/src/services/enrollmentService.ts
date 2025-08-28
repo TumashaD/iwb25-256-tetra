@@ -34,7 +34,6 @@ export const EnrollmentService = {
   async createEnrollment(userId: string,data: CreateEnrollmentData): Promise<Enrollment> {
     try {
       console.log('EnrollmentService.createEnrollment called with data:', data)
-      
       // Validate required fields on client side
       if (!data.competition_id || data.competition_id <= 0) {
         throw new Error('Valid competition ID is required')

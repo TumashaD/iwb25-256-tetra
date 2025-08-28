@@ -27,19 +27,15 @@ import {
   Search,
   Filter,
   Mail,
-  Eye,
-  ArrowLeft,
   Send,
   Trophy,
   Calendar,
   AlertCircle,
   X,
-  CheckCircle,
-  Clock,
-  XCircle,
   Trash2,
 } from "lucide-react"
 import { EnrollmentTeamMember } from "@/services/enrollmentService"
+import { MailService } from "@/services/mailService"
 
 interface EnrolledTeams extends EnrollmentWithDetails {
   members?: EnrollmentTeamMember[]
@@ -202,6 +198,16 @@ export default function TeamManagement() {
       }
 
       // In real app, this would send emails via API
+      await Promise.all(
+        targetTeams.map((team) =>
+          MailService.sendMail({
+            sender: user?.email ? user.email : "",
+            recipients: team.members ? team.members.map((member) => member.email) : [],
+            subject: emailSubject,
+            body: emailMessage,
+          })
+        )
+      )
       console.log(
         "Sending email to teams:",
         targetTeams.map((t) => t.team_name),
@@ -428,9 +434,9 @@ export default function TeamManagement() {
                 <TableBody>
                   {filteredTeams.map((team) => (
                     <TableRow key={team.enrollment_id} onClick={() => {
-                            setSelectedTeam(team)
-                            setShowTeamDetails(true)
-                          }} className="cursor-pointer">
+                      setSelectedTeam(team)
+                      setShowTeamDetails(true)
+                    }} className="cursor-pointer">
                       <TableCell>
                         <Checkbox
                           checked={selectedTeams.has(team.enrollment_id)}

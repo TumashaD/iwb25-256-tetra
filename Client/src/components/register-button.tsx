@@ -39,26 +39,26 @@ const RegisterButton = ({ className, text, competitionId , variant = "default"}:
         }
     };
 
-    const handleFormSubmit = () => {
-        if (selectedTeam && user) {
-            (async () => {
-                try {
-                    const newEnrollment: CreateEnrollmentData = {
-                        team_id: selectedTeam.id,
-                        competition_id: competitionId,
-                        status: 'Registered'
-                    };
-                    await EnrollmentService.createEnrollment(user.id, newEnrollment);
-                    setShowRegistration(false);
-                    alert('Enrollment successful!');
-                }
-                catch (error) {
-                    console.error('Error creating enrollment:', error);
-                    alert(error instanceof Error ? error.message : 'An unexpected error occurred');
-                }
-            })();
+    const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (selectedTeam && user) {
+        try {
+            const newEnrollment: CreateEnrollmentData = {
+                team_id: selectedTeam.id,
+                competition_id: competitionId,
+                status: 'Registered'
+            };
+            await EnrollmentService.createEnrollment(user.id, newEnrollment);
+            setShowRegistration(false);
+            console.log('Enrollment successful!');
+            alert('Enrollment successful!');
+            router.push("/dashboard/competitor");
+        } catch (error) {
+            console.error('Error creating enrollment:', error);
+            alert(error instanceof Error ? error.message : 'An unexpected error occurred');
         }
     }
+}
 
     return (
         <Dialog open={showRegistration} onOpenChange={setShowRegistration}>
