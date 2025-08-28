@@ -1,10 +1,8 @@
 'use client'
 
-import { Competition } from "@/services/competitionService";
 import { OrganizerService } from "@/services/organizerService";
 import { useParams } from "next/navigation";
 import { useState, useEffect } from "react";
-import grapejs from "grapesjs";
 
 export default function CompetitionPage() {
   const [competition, setCompetition] = useState<string | null>(null);

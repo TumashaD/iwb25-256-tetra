@@ -1,4 +1,6 @@
-# Competitions Page
+# Front End
+
+## Competitions Page
 
 - [] Add Pagination
 - [] Fix Date Picker for filters
@@ -6,12 +8,14 @@
 - [] Fetch Categories for categories filter
 - [] Make the filters more beautiful
 
-# Home Page
+## Home Page
 
 - [] Fetch only the latest 5 competitions and show
 - [] Make the buttons and colors more beautiful
 - [] Do some beauty to the competition categories
 
-# Organizers Dashboard
+# Back End
 
-- [] Make the competition cards more beautiful. (Maybe make the expanded version better)
+- [] Add prize pool, name to the competition creation and others
+- [] When a team enrolls, update the no of teams in the competition table
+- [] Gmail Integration

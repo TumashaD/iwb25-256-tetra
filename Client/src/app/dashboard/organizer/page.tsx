@@ -42,6 +42,7 @@ import {
   ChevronDown,
   ChevronUp,
 } from "lucide-react"
+import { CompetitionCard } from "@/components/competition-card"
 
 export default function OrganizerDashboard() {
   const { user, loading } = useAuth()
@@ -69,21 +70,13 @@ export default function OrganizerDashboard() {
   const [uploadedBanners, setUploadedBanners] = useState<Record<number, string>>({})
 
   useEffect(() => {
-    if (!loading && (!user || user.profile?.role !== "organizer")) {
-      router.push("/")
-    }
-  }, [user, loading, router])
-
-  useEffect(() => {
     if (user?.id) {
       setFormData((prev) => ({ ...prev, organizer_id: user.id }))
     }
   }, [user?.id])
 
   useEffect(() => {
-    if (user?.profile?.role === "organizer") {
       fetchMyCompetitions()
-    }
   }, [user])
 
   const fetchMyCompetitions = async () => {
@@ -241,10 +234,6 @@ export default function OrganizerDashboard() {
     )
   }
 
-  if (!user || user.profile?.role !== "organizer") {
-    return null
-  }
-
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 pt-24 pb-8">
@@ -257,7 +246,7 @@ export default function OrganizerDashboard() {
             <DialogTrigger asChild>
               <Button size="lg" className="gap-2">
                 <Plus className="h-4 w-4" />
-                Create Competition
+                New Competition
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -378,7 +367,7 @@ export default function OrganizerDashboard() {
                         alt="Current Banner"
                         className="w-full h-32 object-cover rounded-lg border"
                         onError={(e) => {
-                          ;(e.target as HTMLImageElement).style.display = "none"
+                          ; (e.target as HTMLImageElement).style.display = "none"
                         }}
                       />
                     </div>
@@ -478,6 +467,14 @@ export default function OrganizerDashboard() {
           </Alert>
         )}
 
+        {/* My Competitions */}
+        <div className="mb-8 flex flex-col gap-2">
+          <h2 className="text-3xl font-semibold">My Competitions</h2>
+          <span className="text-lg text-muted-foreground">
+            Manage your competitions and track their progress
+          </span>
+
+        </div>
         {competitions.length === 0 ? (
           <Card className="text-center py-12">
             <CardContent>
@@ -491,155 +488,14 @@ export default function OrganizerDashboard() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
             {competitions.map((competition) => (
-              <Card key={competition.id} className="overflow-hidden gap-0 hover:shadow-lg transition-shadow cursor-pointer p-0 ">
-                <div
-                  onClick={() => setExpandedCard(expandedCard === competition.id ? null : competition.id)}
-                  className="relative"
-                >
-                  <div className="relative h-56 bg-gradient-to-r from-blue-600 to-purple-600">
-                    {competition.banner_url ? (
-                      <img
-                        src={
-                          competition.banner_url + "?t=" + new Date(competition.updated_at).getTime() ||
-                          "/placeholder.svg"
-                        }
-                        alt={competition.title}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          ;(e.target as HTMLImageElement).style.display = "none"
-                        }}
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <Trophy className="h-16 w-16 text-white/50" />
-                      </div>
-                    )}
-                    <div className="absolute inset-0 bg-black/40" />
-                    <div className="absolute top-4 right-4">
-                      <Badge
-                        variant={
-                          competition.status === "active"
-                            ? "default"
-                            : competition.status === "upcoming"
-                              ? "secondary"
-                              : "outline"
-                        }
-                        className="bg-white/90 text-black"
-                      >
-                        {competition.status.charAt(0).toUpperCase() + competition.status.slice(1)}
-                      </Badge>
-                    </div>
-                    <div className="absolute bottom-4 left-4 right-4">
-                      <h3 className="text-2xl font-bold text-white mb-2">{competition.title}</h3>
-                      <p className="text-white/90 text-sm line-clamp-2">{competition.description}</p>
-                    </div>
-                    <div className="absolute bottom-4 right-4">
-                      {expandedCard === competition.id ? (
-                        <ChevronUp className="h-6 w-6 text-white" />
-                      ) : (
-                        <ChevronDown className="h-6 w-6 text-white" />
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="p-4 bg-muted/50">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <Trophy className="h-4 w-4" />
-                        <span>{competition.category}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <CalendarDays className="h-4 w-4" />
-                        <span>{new Date(competition.start_date).toLocaleDateString()}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <CalendarDays className="h-4 w-4" />
-                        <span>{new Date(competition.end_date).toLocaleDateString()}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <Users className="h-4 w-4" />
-                        <span>{competition.teams || 0} Teams</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {expandedCard === competition.id && (
-                  <CardContent className="p-6 border-t bg-card">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-                      <Button
-                        variant="outline"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          fetchCompetitionEnrollments(competition)
-                        }}
-                        className="gap-2 h-12"
-                      >
-                        <UserCheck className="h-4 w-4" />
-                        Team Management
-                      </Button>
-
-                      <Button
-                        variant="outline"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          router.push(`/competition/${competition.id}/edit-webpage`)
-                        }}
-                        className="gap-2 h-12"
-                      >
-                        <Globe className="h-4 w-4" />
-                        Edit Webpage
-                      </Button>
-
-                      <Button
-                        variant="outline"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          handleEdit(competition)
-                        }}
-                        className="gap-2 h-12"
-                      >
-                        <Settings className="h-4 w-4" />
-                        Edit Competition
-                      </Button>
-
-                      <Button
-                        variant="outline"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          router.push(`/competition/${competition.id}`)
-                        }}
-                        className="gap-2 h-12"
-                      >
-                        <Eye className="h-4 w-4" />
-                        View Competition
-                      </Button>
-                    </div>
-
-                    <div className="flex justify-end mt-4 pt-4 border-t">
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          handleDelete(competition.id)
-                        }}
-                        className="gap-2"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                        Delete Competition
-                      </Button>
-                    </div>
-                  </CardContent>
-                )}
-              </Card>
+              <CompetitionCard competition={competition} key={competition.id} userType="organizer"/>
             ))}
           </div>
         )}
 
-        <Dialog open={showEnrollmentModal} onOpenChange={setShowEnrollmentModal}>
+        {/* <Dialog open={showEnrollmentModal} onOpenChange={setShowEnrollmentModal}>
           <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="text-2xl">Enrollments for "{selectedCompetition?.title}"</DialogTitle>
@@ -755,7 +611,7 @@ export default function OrganizerDashboard() {
               </div>
             )}
           </DialogContent>
-        </Dialog>
+        </Dialog> */}
       </div>
     </div>
   )

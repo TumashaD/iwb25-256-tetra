@@ -68,13 +68,6 @@ export default function CompetitorDashboard() {
   const [isCurrentUserLeader, setIsCurrentUserLeader] = useState(false)
   const [teamCreatorProfile, setTeamCreatorProfile] = useState<Profile | null>(null)
 
-  // Redirect if not competitor
-  useEffect(() => {
-    if (!loading && (!user || user.profile?.role !== "competitor")) {
-      router.push("/")
-    }
-  }, [user, loading, router])
-
   // Set user ID when user is loaded
   useEffect(() => {
     if (user?.id) {
@@ -84,10 +77,8 @@ export default function CompetitorDashboard() {
 
   // Fetch competitor's teams and enrollments
   useEffect(() => {
-    if (user?.profile?.role === "competitor") {
       fetchMyTeams()
       fetchMyEnrollments()
-    }
   }, [user])
 
   const fetchMyTeams = async () => {
@@ -307,10 +298,6 @@ export default function CompetitorDashboard() {
         </div>
       </div>
     )
-  }
-
-  if (!user || user.profile?.role !== "competitor") {
-    return null // Will redirect
   }
 
   return (

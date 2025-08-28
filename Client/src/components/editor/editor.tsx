@@ -3,7 +3,8 @@ import { useParams } from "next/navigation";
 import { InputAssetProps, StudioEditor } from "@grapesjs/studio-sdk/react";
 import { OrganizerCompetition } from "@/services/organizerService";
 import type {Asset, Editor, ProjectData} from "grapesjs";
-import '@grapesjs/studio-sdk/style';
+// import '@grapesjs/studio-sdk/style';
+import './editor.css'
 
 type EditorProps = {
   competition: OrganizerCompetition;
@@ -115,7 +116,7 @@ export default function PageEditor({competition,publishLandingPage, uploadAssets
   </div>
 </body>
 </html>`
-  return <StudioEditor
+  return <div className="editor-wrapper h-[100vh]"><StudioEditor
           options={{
         licenseKey: '8fedb98a1263429db09e2ccf5ea68dad71d9b490487a4940b9e6dcd91ca5c14d',
       theme: 'light',
@@ -187,4 +188,5 @@ export default function PageEditor({competition,publishLandingPage, uploadAssets
       
       }}
         />;
+        </div>
 };

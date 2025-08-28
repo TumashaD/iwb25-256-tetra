@@ -100,21 +100,21 @@ export default function Competition() {
 
   useEffect(() => {
     fetchCompetition();
-  }, [competitionId]);
+    console.log('CompetitionId:', competitionId);
+  }, []);
 
-  return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white">
-      {competition && (
-        <PageEditor
-          competition={competition}
-          publishLandingPage={publishLandingPage}
-          uploadAssets={uploadAssets}
+  if (competition) {
+    return (
+      <PageEditor
+        competition={competition}
+        publishLandingPage={publishLandingPage}
+        uploadAssets={uploadAssets}
           deleteAssets={deleteAssets}
           getAssets={getAssets}
           saveLandingPage={saveLandingPage}
           initialProjectData={JSON.parse(competition.landing_data)}
         />
-      )}
-    </div>
+      
   );
+}
 }
