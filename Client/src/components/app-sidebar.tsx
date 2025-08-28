@@ -101,7 +101,7 @@ export function AppSidebar() {
     const checkSubNav = async () => {
       try {
         // Organizer / competition checks
-        if (basePath.startsWith("/competition/")) {
+        if (basePath.startsWith("/competitions/")) {
           const competition = await CompetitionsService.getCompetition(Number(id));
           if (competition?.organizer_id === user.id) {
             setCurrentSubNav("/dashboard/organizer/competition");

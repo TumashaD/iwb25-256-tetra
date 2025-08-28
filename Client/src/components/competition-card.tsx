@@ -20,7 +20,7 @@ export function CompetitionCard({ competition, userType }: { competition: Compet
     completed: "Completed",
   }
 
-  const href = userType == "competitor" ? `/competition/${competition.id}` : `/dashboard/organizer/competition/${competition.id}`;
+  const href = userType == "competitor" ? `/competitions/${competition.id}` : `/dashboard/organizer/competitions/${competition.id}`;
 
   return (
     <div className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 hover:scale-[1.02] group">

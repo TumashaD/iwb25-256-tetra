@@ -28,7 +28,7 @@ export default function Home() {
   }, []);
 
   const handleCompetitionClick = (competitionId: number) => {
-    router.push(`/competition/${competitionId}`);
+    router.push(`/competitions/${competitionId}`);
   };
 
   return (

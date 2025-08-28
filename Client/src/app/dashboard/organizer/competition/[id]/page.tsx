@@ -1,4 +1,4 @@
-import CompetitionPage from "@/app/competition/[id]/page"
+import CompetitionPage from "@/app/competitions/[id]/page"
 
 export default function OrgCompetition() {
   return (

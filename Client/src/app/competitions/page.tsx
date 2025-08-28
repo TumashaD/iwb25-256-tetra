@@ -38,7 +38,7 @@ export default function CompetitionsPage() {
     }, []);
   
     const handleCompetitionClick = (competitionId: number) => {
-      router.push(`/competition/${competitionId}`);
+      router.push(`/competitions/${competitionId}`);
     };
 
   const filteredCompetitions = useMemo(() => {
