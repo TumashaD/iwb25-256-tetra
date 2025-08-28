@@ -114,7 +114,6 @@ export default function Competition() {
           saveLandingPage={saveLandingPage}
           initialProjectData={JSON.parse(competition.landing_data)}
         />
-      
   );
 }
 }
