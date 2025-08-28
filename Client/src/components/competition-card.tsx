@@ -46,7 +46,6 @@ export function CompetitionCard({ competition, userType }: { competition: Compet
         <div className="p-6">
           <div className="mb-3">
             <h3 className="text-xl font-bold text-gray-900 mb-1 text-balance">{competition.title}</h3>
-            <p className="text-teal-600 font-medium">{competition.name}</p>
           </div>
 
           {/* Stats */}

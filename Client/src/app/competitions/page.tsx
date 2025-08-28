@@ -19,34 +19,70 @@ export default function CompetitionsPage() {
   const [endDateFilter, setEndDateFilter] = useState("all")
   const [competitions, setCompetitions] = useState<Competition[]>([]);
   const [loading, setLoading] = useState(true);
+  const [availableCategories, setAvailableCategories] = useState<string[]>([]);
   const router = useRouter();
     
-    const fetchCompetitions = async () => {
-      try {
-        const competitions = await CompetitionsService.getCompetitions();
-        console.log('Fetched competitions:', competitions);
-        setCompetitions(competitions);
-      } catch (error) {
-        console.error('Error fetching competitions:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-  
-    useEffect(() => {
-      fetchCompetitions();
-    }, []);
-  
-    const handleCompetitionClick = (competitionId: number) => {
-      router.push(`/competitions/${competitionId}`);
-    };
+    // generates current and upcoming months
+  const generateDateOptions = () => {
+    const currentDate = new Date();
+    const options: Array<{value: string, label: string}> = [];
+    
+    // Add current and next 11 months (full year)
+    for (let i = 0; i < 12; i++) {
+      const date = new Date(currentDate.getFullYear(), currentDate.getMonth() + i, 1);
+      const monthName = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+      // Include year in the key: "aug-2025", "sep-2025", etc.
+      const monthKey = `${date.toLocaleDateString('en-US', { month: 'short' }).toLowerCase()}-${date.getFullYear()}`;
+      options.push({ value: monthKey, label: monthName });
+    }
+    
+    return options;
+  };
+
+  const dateOptions = generateDateOptions();
+
+  const fetchCompetitions = async () => {
+    try {
+      const competitions = await CompetitionsService.getCompetitions();
+      console.log('Fetched competitions:', competitions);
+      setCompetitions(competitions);
+      
+      // Extract unique categories from competitions
+      const categories = [...new Set(competitions.map(comp => comp.category).filter(Boolean))];
+      setAvailableCategories(categories.sort());
+      
+    } catch (error) {
+      console.error('Error fetching competitions:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCompetitions();
+  }, []);
+
+  const handleCompetitionClick = (competitionId: number) => {
+    router.push(`/competition/${competitionId}`);
+  };
+
+  // Month and year-based date filtering
+  const isDateInRange = (dateString: string, filterValue: string) => {
+    if (filterValue === "all") return true;
+    
+    const competitionDate = new Date(dateString);
+    const monthAbbr = competitionDate.toLocaleDateString('en-US', { month: 'short' }).toLowerCase();
+    const year = competitionDate.getFullYear();
+    const competitionKey = `${monthAbbr}-${year}`;
+    
+    return competitionKey === filterValue;
+  };
 
   const filteredCompetitions = useMemo(() => {
     return competitions.filter((competition) => {
       // Search filter
       const matchesSearch =
-        competition.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        competition.name.toLowerCase().includes(searchQuery.toLowerCase())
+        competition.title.toLowerCase().includes(searchQuery.toLowerCase())
 
       // Category filter
       const matchesCategory = categoryFilter === "all" || competition.category === categoryFilter
@@ -55,16 +91,16 @@ export default function CompetitionsPage() {
       const matchesStatus = statusFilter === "all" || competition.status === statusFilter
 
       // Remove currency from the prize pool string
-      const prizePool = parseFloat(competition.prize_pool.replace(/[^0-9.-]+/g, ""));
+      const prizePool = parseFloat(competition.prize_pool ? competition.prize_pool.replace(/[^0-9.-]+/g, "") : "0");
 
       // Prize pool filter
       const matchesPrizePool =
         prizePoolFilter === "all" ||
-        (prizePoolFilter === "under-1m" && prizePool < 1000000) ||
-        (prizePoolFilter === "1m-5m" &&
-          prizePool >= 1000000 &&
-          prizePool < 5000000) ||
-        (prizePoolFilter === "over-5m" && prizePool >= 5000000)
+        (prizePoolFilter === "under-100k" && prizePool < 100000) ||
+        (prizePoolFilter === "100k-250k" && prizePool >= 100000 && prizePool < 250000) ||
+        (prizePoolFilter === "250k-500k" && prizePool >= 250000 && prizePool < 500000) ||
+        (prizePoolFilter === "500k-1m" && prizePool >= 500000 && prizePool < 1000000) ||
+        (prizePoolFilter === "over-1m" && prizePool >= 1000000)
 
       // Teams filter
       const matchesTeams =
@@ -73,16 +109,9 @@ export default function CompetitionsPage() {
         (teamsFilter === "10-20" && competition.teams >= 10 && competition.teams <= 20) ||
         (teamsFilter === "over-20" && competition.teams > 20)
 
-      // Date filters (simplified for demo)
-      const matchesStartDate =
-        startDateFilter === "all" ||
-        (startDateFilter === "july" && competition.start_date.includes("Jul")) ||
-        (startDateFilter === "august" && competition.start_date.includes("Aug"))
-
-      const matchesEndDate =
-        endDateFilter === "all" ||
-        (endDateFilter === "july" && competition.end_date.includes("Jul")) ||
-        (endDateFilter === "august" && competition.end_date.includes("Aug"))
+      // Enhanced date filters using the new logic
+      const matchesStartDate = isDateInRange(competition.start_date, startDateFilter);
+      const matchesEndDate = isDateInRange(competition.end_date, endDateFilter);
 
       return (
         matchesSearch &&
@@ -141,15 +170,20 @@ export default function CompetitionsPage() {
               <SelectTrigger className="h-12">
                 <div className="flex items-center gap-2">
                   <Filter className="h-4 w-4" />
-                  <SelectValue placeholder="Category" />
+                  <SelectValue placeholder={loading ? "Loading categories..." : "Category"} />
                 </div>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Categories</SelectItem>
-                <SelectItem value="FPS">FPS</SelectItem>
-                <SelectItem value="MOBA">MOBA</SelectItem>
-                <SelectItem value="Battle Royale">Battle Royale</SelectItem>
-                <SelectItem value="Sports">Sports</SelectItem>
+                {loading ? (
+                  <SelectItem value="loading" disabled>Loading categories...</SelectItem>
+                ) : (
+                  availableCategories.map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {category}
+                    </SelectItem>
+                  ))
+                )}
               </SelectContent>
             </Select>
 
@@ -162,7 +196,7 @@ export default function CompetitionsPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="live">Live</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
                 <SelectItem value="upcoming">Upcoming</SelectItem>
                 <SelectItem value="completed">Completed</SelectItem>
               </SelectContent>
@@ -177,9 +211,11 @@ export default function CompetitionsPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Prize Pools</SelectItem>
-                <SelectItem value="under-1m">Under $1M</SelectItem>
-                <SelectItem value="1m-5m">$1M - $5M</SelectItem>
-                <SelectItem value="over-5m">Over $5M</SelectItem>
+                <SelectItem value="under-100k">Under 100K</SelectItem>
+                <SelectItem value="100k-250k">100K - 250K</SelectItem>
+                <SelectItem value="250k-500k">250K - 500K</SelectItem>
+                <SelectItem value="500k-1m">500K - 1M</SelectItem>
+                <SelectItem value="over-1m">Over 1M</SelectItem>
               </SelectContent>
             </Select>
 
@@ -207,8 +243,11 @@ export default function CompetitionsPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Start Dates</SelectItem>
-                <SelectItem value="july">July</SelectItem>
-                <SelectItem value="august">August</SelectItem>
+                {dateOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
 
@@ -221,8 +260,11 @@ export default function CompetitionsPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All End Dates</SelectItem>
-                <SelectItem value="july">July</SelectItem>
-                <SelectItem value="august">August</SelectItem>
+                {dateOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

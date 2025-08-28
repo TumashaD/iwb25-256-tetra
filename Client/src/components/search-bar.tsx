@@ -82,7 +82,6 @@ export const SearchBar = ({
       const searchLower = searchQuery.toLowerCase()
       return (
         competition.title.toLowerCase().includes(searchLower) ||
-        competition.name.toLowerCase().includes(searchLower) ||
         competition.category.toLowerCase().includes(searchLower)
       )
     })
@@ -100,7 +99,6 @@ export const SearchBar = ({
         const searchLower = value.toLowerCase()
         return (
           competition.title.toLowerCase().includes(searchLower) ||
-          competition.name.toLowerCase().includes(searchLower) ||
           competition.category.toLowerCase().includes(searchLower)
         )
       })

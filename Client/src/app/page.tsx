@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 
 import { ChevronDown } from 'lucide-react';
 import { CompetitionCard } from '@/components/competition-card';
-import { SearchBar } from '@/components/search-bar';
 
 export default function Home() {
   const [competitions, setCompetitions] = useState<Competition[]>([]);
@@ -27,14 +26,10 @@ export default function Home() {
     fetchCompetitions();
   }, []);
 
-  const handleCompetitionClick = (competitionId: number) => {
-    router.push(`/competitions/${competitionId}`);
-  };
-
   return (
     <div className="relative">
       {/* Hero Section */}
-      <div className="relative h-[66vh] overflow-hidden">
+      <div className="relative h-[80vh] overflow-hidden">
         {/* Video Background */}
         <video autoPlay muted loop playsInline className="absolute inset-0 w-full h-full object-cover opacity-85">
           <source src="/background.webm?query=dark cinematic esports arena with dramatic lighting" type="video/webm" />
