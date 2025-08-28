@@ -1,6 +1,5 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-
 @custom-variant dark (&:is(.dark *));
 
 /* Line clamp utilities */
@@ -11,6 +10,7 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
 
 h1.ce-header{
   @apply text-3xl font-bold

@@ -6,7 +6,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { usePathname } from "next/navigation";
-import { Footerdemo } from "@/components/footer";
+import { Footer } from "@/components/footer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -36,7 +36,7 @@ export default function RootLayout({
               <AppSidebar />
               <main className="flex-1 pl-24">
                 {children}
-                <Footerdemo />
+                <Footer />
               </main>
             </SidebarProvider>
           ) : (

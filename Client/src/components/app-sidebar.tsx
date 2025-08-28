@@ -170,7 +170,7 @@ export function AppSidebar() {
   }
 
   return (
-    <Sidebar className="w-24 h-screen shadow-slate-300 shadow-lg fixed z-50 overflow-hidden" collapsible="none">
+    <Sidebar className=" w-24 h-screen shadow-slate-300 shadow-lg fixed z-50 overflow-hidden" collapsible="none">
       <SidebarHeader className="p-4 flex items-center justify-center">
         <h1 className="text-lg font-semibold pt-4">V</h1>
       </SidebarHeader>
@@ -180,7 +180,7 @@ export function AppSidebar() {
           <SidebarGroupContent className="items-center">
             <div className="relative w-full overflow-hidden">
               <div
-                className={`transition-transform duration-300 ease-in-out ${showSubNav ? "-translate-x-1/2" : "translate-x-0"
+                className={`transition-transform duration-300 ease-in-out ${showSubNav ? "-translate-x-1/2!" : "translate-x-0"
                   }`}
                 style={{ width: "200%" }}
               >

@@ -3,8 +3,7 @@ import { useParams } from "next/navigation";
 import { InputAssetProps, StudioEditor } from "@grapesjs/studio-sdk/react";
 import { OrganizerCompetition } from "@/services/organizerService";
 import type {Asset, Editor, ProjectData} from "grapesjs";
-// import '@grapesjs/studio-sdk/style';
-import './editor.css'
+import '@grapesjs/studio-sdk/style';
 
 type EditorProps = {
   competition: OrganizerCompetition;
@@ -17,6 +16,7 @@ type EditorProps = {
 };
 
 export default function PageEditor({competition,publishLandingPage, uploadAssets, deleteAssets, getAssets, saveLandingPage, initialProjectData }: EditorProps) {
+  
   const FallbackHTML = `<!DOCTYPE html>
 <html lang="en">
 <head>
