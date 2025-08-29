@@ -80,7 +80,7 @@ export function CompetitionCard({ competition, userType }: { competition: Compet
       {/* Competitor Button - Outside Link */}
       {userType == "competitor" && 
         <div className="px-6 pb-6 flex-shrink-0 w-full">
-          <RegisterButton text={competition.status === "active" ? "Register Now" : competition.status === "upcoming" ? "Register Now" : "View Results"} competitionId={competition.id}/>
+          <RegisterButton text={competition.status === "active" ? "Register Now" : competition.status === "upcoming" ? "Register Now" : "View Results"} competitionId={competition.id} organizerId={competition.organizer_id} />
         </div>
       }
     </div>
