@@ -256,8 +256,8 @@ export default function TeamManagement() {
         {/* Header */}
         <div className="flex items-center gap-4 mb-6">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Team Management</h1>
-            <p className="text-muted-foreground">{competition.title}</p>
+            <h1 className="text-3xl font-bold tracking-tight text-main">Team Management</h1>
+            <p className="text-muted-foreground">Manage all your teams participating in the competition</p>
           </div>
         </div>
 
@@ -321,9 +321,8 @@ export default function TeamManagement() {
 
               <Dialog open={showEmailModal} onOpenChange={setShowEmailModal}>
                 <DialogTrigger asChild>
-
-                  <Button className="gap-2 cursor-pointer bg-main">
-                    <Mail className="h-4 w-4 " />
+                  <Button className="gap-2 rounded-2xl hover:bg-blue-900">
+                    <Mail className="h-4 w-4" />
                     Send Email
                   </Button>
                 </DialogTrigger>
@@ -372,7 +371,7 @@ export default function TeamManagement() {
                     <div className="flex gap-3 pt-4">
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
-                          <Button disabled={!emailSubject || !emailMessage} className="flex-1 cursor-pointer">
+                          <Button disabled={!emailSubject || !emailMessage} className="flex-1 cursor-pointer rounded-2xl">
                             <Send className="h-4 w-4 mr-2" />
                             Send Email
                           </Button>
@@ -385,13 +384,13 @@ export default function TeamManagement() {
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={sendEmail}>Continue</AlertDialogAction>
+                            <AlertDialogCancel className="rounded-2xl">Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={sendEmail} className="rounded-2xl">Continue</AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>
                       </AlertDialog>
 
-                      <Button variant="outline" onClick={() => setShowEmailModal(false)} className="flex-1">
+                      <Button variant="outline" onClick={() => setShowEmailModal(false)} className="flex-1 rounded-2xl">
                         Cancel
                       </Button>
                     </div>
@@ -407,7 +406,7 @@ export default function TeamManagement() {
             <AlertCircle className="h-4 w-4" />
             <AlertDescription className="flex items-center justify-between">
               <span>{error}</span>
-              <Button variant="ghost" size="sm" onClick={() => setError(null)}>
+              <Button variant="ghost" size="sm" onClick={() => setError(null)} className="rounded-2xl">
                 <X className="h-4 w-4" />
               </Button>
             </AlertDescription>

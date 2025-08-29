@@ -179,7 +179,7 @@ export default function CompetitionSettings() {
       <div className="container mx-auto px-4 pt-24 pb-8 max-w-4xl">
         <div className="flex items-center gap-4 mb-8">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Competition Settings</h1>
+            <h1 className="text-3xl font-bold tracking-tight text-main">Competition Settings</h1>
             <p className="text-muted-foreground">Edit competition details and manage settings</p>
           </div>
         </div>
@@ -336,7 +336,7 @@ export default function CompetitionSettings() {
               )}
             </CardContent>
           </Card>
-                <Button type="submit" disabled={saving} className="gap-2">
+                <Button type="submit" disabled={saving} className="gap-2 rounded-2xl">
                   <Save className="h-4 w-4" />
                   {saving ? "Saving..." : "Save Changes"}
                 </Button>
@@ -365,7 +365,7 @@ export default function CompetitionSettings() {
                 </div>
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button variant="destructive" className="gap-2">
+                    <Button variant="destructive" className="gap-2 rounded-2xl">
                       <Trash2 className="h-4 w-4" />
                       Delete Competition
                     </Button>
@@ -379,11 +379,11 @@ export default function CompetitionSettings() {
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogCancel className="rounded-2xl">Cancel</AlertDialogCancel>
                       <AlertDialogAction
                         onClick={handleDelete}
                         disabled={deleting}
-                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-2xl"
                       >
                         {deleting ? "Deleting..." : "Delete Competition"}
                       </AlertDialogAction>

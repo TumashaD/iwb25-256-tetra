@@ -39,6 +39,7 @@ export default function OrganizerDashboard() {
   const { user, loading } = useAuth()
   const [competitions, setCompetitions] = useState<Competition[]>([])
   const [showCreateForm, setShowCreateForm] = useState(false)
+  const [showAllCompetitions, setShowAllCompetitions] = useState(false)
   const [formData, setFormData] = useState<Partial<Competition>>({
     title: "",
     description: "",
@@ -130,7 +131,16 @@ export default function OrganizerDashboard() {
     }
   }
 
+  const getDisplayedCompetitions = () => {
+    if (showAllCompetitions || competitions.length <= 6) {
+      return competitions
+    }
+    return competitions.slice(0, 6)
+  }
+
   const stats = getStatistics()
+  const displayedCompetitions = getDisplayedCompetitions()
+  const hasMoreCompetitions = competitions.length > 6
 
   if (loading || pageLoading) {
     return (
@@ -145,19 +155,21 @@ export default function OrganizerDashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 pt-24 pb-8">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-          <div>
-            <h1 className="text-4xl font-bold tracking-tight">Organizer Dashboard</h1>
-            <p className="text-muted-foreground mt-2">Manage your competitions and enrollments</p>
-          </div>
-          <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
-            <DialogTrigger asChild>
-              <Button size="lg" className="gap-2">
-                <Plus className="h-4 w-4" />
-                New Competition
-              </Button>
-            </DialogTrigger>
+      {/* Header Section - White Background */}
+      <div className="bg-background">
+        <div className="container mx-auto px-4 pt-24 pb-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+            <div>
+              <h1 className="text-4xl font-bold tracking-tight text-main">Organizer Dashboard</h1>
+              <p className="text-muted-foreground mt-2">Create | Manage | View | competitions</p>
+            </div>
+            <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
+              <DialogTrigger asChild>
+                <Button size="lg" className="gap-2 bg-pink-600 rounded-2xl hover:bg-pink-700">
+                  <Plus className="h-4 w-4" />
+                  New Competition
+                </Button>
+              </DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>{"Create New Competition"}</DialogTitle>
@@ -367,34 +379,68 @@ export default function OrganizerDashboard() {
             </AlertDescription>
           </Alert>
         )}
-
-        {/* My Competitions */}
-        <div className="mb-8 flex flex-col gap-2">
-          <h2 className="text-3xl font-semibold">My Competitions</h2>
-          <span className="text-lg text-muted-foreground">
-            Manage your competitions and track their progress
-          </span>
-
         </div>
-        {competitions.length === 0 ? (
-          <Card className="text-center py-12">
-            <CardContent>
-              <Trophy className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <CardTitle className="mb-2">No competitions yet</CardTitle>
-              <CardDescription className="mb-4">Create your first competition to get started</CardDescription>
-              <Button onClick={() => setShowCreateForm(true)} className="gap-2">
-                <Plus className="h-4 w-4" />
-                Create Competition
-              </Button>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-            {competitions.map((competition) => (
-              <CompetitionCard competition={competition} key={competition.id} userType="organizer"/>
-            ))}
+      </div>
+
+      {/* My Competitions Section with Gray Background */}
+      <div className="min-h-screen bg-gray-50">
+        <div className="container mx-auto px-4 py-8">
+          {/* My Competitions */}
+          <div className="mb-8 flex flex-col gap-1">
+            <h2 className="text-2xl font-semibold mb-2 text-main">My Competitions</h2>
+            <span className="text-lg text-muted-foreground">
+              Manage your competitions and track their progress
+            </span>
           </div>
-        )}
+
+          {competitions.length === 0 ? (
+            <Card className="text-center py-12">
+              <CardContent>
+                <Trophy className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <CardTitle className="mb-2">No competitions yet</CardTitle>
+                <CardDescription className="mb-4">Create your first competition to get started</CardDescription>
+                <Button onClick={() => setShowCreateForm(true)} className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  Create Competition
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="relative">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+                {displayedCompetitions.map((competition) => (
+                  <CompetitionCard competition={competition} key={competition.id} userType="organizer"/>
+                ))}
+              </div>
+              
+              {!showAllCompetitions && hasMoreCompetitions && (
+                <div className="text-center -mt-8 mb-12">
+                  <Button 
+                    onClick={() => setShowAllCompetitions(true)}
+                    variant="outline" 
+                    size="lg"
+                    className="bg-background/80 backdrop-blur-sm border-2 hover:bg-primary hover:text-primary-foreground transition-all duration-300 rounded-2xl"
+                  >
+                    Show All Competitions ({competitions.length})
+                  </Button>
+                </div>
+              )}
+
+              {showAllCompetitions && hasMoreCompetitions && (
+                <div className="text-center -mt-8 mb-12">
+                  <Button 
+                    onClick={() => setShowAllCompetitions(false)}
+                    variant="outline" 
+                    size="lg"
+                    className="bg-background/80 backdrop-blur-sm border-2 hover:bg-primary hover:text-primary-foreground transition-all duration-300 rounded-2xl"
+                  >
+                    Show Less
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )

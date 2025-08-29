@@ -158,7 +158,7 @@ export default function ProfilePage() {
             </div>
 
             {!isEditing && (
-              <Button onClick={handleEdit} className="bg-blue-600 hover:bg-blue-700 text-white shadow-md">
+              <Button onClick={handleEdit} className="bg-blue-600 hover:bg-blue-700 text-white shadow-md rounded-2xl">
                 <Edit3 className="w-4 h-4 mr-2" />
                 Edit Profile
               </Button>
@@ -240,7 +240,7 @@ export default function ProfilePage() {
                       <Button
                         type="submit"
                         disabled={isSubmitting}
-                        className="bg-green-600 hover:bg-green-700 text-white shadow-md"
+                        className="bg-green-600 hover:bg-green-700 text-white shadow-md rounded-2xl"
                       >
                         <Save className="w-4 h-4 mr-2" />
                         {isSubmitting ? "Saving..." : "Save Changes"}
@@ -250,7 +250,7 @@ export default function ProfilePage() {
                         variant="outline"
                         onClick={handleCancel}
                         disabled={isSubmitting}
-                        className="border-gray-300 text-gray-700 hover:bg-gray-50"
+                        className="border-gray-300 text-gray-700 hover:bg-gray-50 rounded-2xl"
                       >
                         <X className="w-4 h-4 mr-2" />
                         Cancel
