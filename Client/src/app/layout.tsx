@@ -33,7 +33,7 @@ export default function RootLayout({
         <AuthProvider>
           {showSidebar ? (
             <SidebarProvider>
-              <AppSidebar />
+              <AppSidebar  />
               <main className="flex-1 pl-24">
                 {children}
                 <Footer />

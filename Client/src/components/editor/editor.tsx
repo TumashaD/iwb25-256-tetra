@@ -185,7 +185,7 @@ export default function PageEditor({competition,publishLandingPage, uploadAssets
         autosaveIntervalMs: 100000
       },
       plugins: [
-        rteTinyMce.init({ /* Plugin options: https://app.grapesjs.com/docs-sdk/plugins/rte/tinymce */ }),
+        // rteTinyMce.init({ /* Plugin options: https://app.grapesjs.com/docs-sdk/plugins/rte/tinymce */ }),
         canvasFullSize.init({ /* Plugin options: https://app.grapesjs.com/docs-sdk/plugins/canvas/full-size */ }),
         flexComponent.init({ /* Plugin options: https://app.grapesjs.com/docs-sdk/plugins/components/flex */ }),
         accordionComponent.init({ /* Plugin options: https://app.grapesjs.com/docs-sdk/plugins/components/accordion */ })

@@ -305,12 +305,12 @@ export default function CompetitorDashboard() {
       <div className="container mx-auto px-4 pt-24 pb-8">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Competitor Dashboard</h1>
+            <h1 className="text-3xl font-bold tracking-tight text-main">Competitor Dashboard</h1>
             <p className="text-muted-foreground mt-1">Manage your teams and track competition enrollments</p>
           </div>
           <Dialog open={showTeamForm} onOpenChange={setShowTeamForm}>
             <DialogTrigger asChild>
-              <Button className="gap-2">
+              <Button className="gap-2 bg-pink-600 rounded-2xl hover:bg-pink-700">
                 <Plus className="h-4 w-4" />
                 Create Team
               </Button>
@@ -384,7 +384,7 @@ export default function CompetitorDashboard() {
 
           <TabsContent value="enrollments" className="space-y-6">
             <div>
-              <h2 className="text-2xl font-semibold mb-2">Competition Enrollments</h2>
+              <h2 className="text-2xl font-semibold mb-2 text-main">Competition Enrollments</h2>
               <p className="text-muted-foreground mb-6">Track all competitions you've enrolled in with your teams</p>
 
               {enrollments.length === 0 ? (
@@ -503,10 +503,10 @@ export default function CompetitorDashboard() {
                         <CardContent className="p-4">
                           <div className="flex items-start justify-between mb-2">
                             <h3 className="font-semibold text-lg">{team.name}</h3>
-                            <Badge variant={team.created_by === user?.id ? "default" : "secondary"}>
+                            <Badge variant={team.created_by === user?.id ? "default" : "secondary"} className={team.created_by === user?.id ? "bg-amber-400 text-white" : ""}>
                               {team.created_by === user?.id ? (
                                 <>
-                                  <Crown className="h-3 w-3 mr-1" />
+                                  <Crown className="h-3 w-3 mr-1 " />
                                   Creator
                                 </>
                               ) : (
@@ -556,7 +556,6 @@ export default function CompetitorDashboard() {
                             disabled={loading}
                           >
                             <Trash2 className="h-4 w-4 mr-1" />
-                            Delete
                           </Button>
                         )}
                       </div>
@@ -669,7 +668,7 @@ export default function CompetitorDashboard() {
                                     <div>
                                       <div className="font-medium flex items-center gap-2">
                                         {teamCreatorProfile.name}
-                                        <Badge variant="default" className="text-xs">
+                                        <Badge variant="default" className="text-xs bg-amber-400">
                                           <Crown className="h-3 w-3 mr-1" />
                                           Creator
                                         </Badge>

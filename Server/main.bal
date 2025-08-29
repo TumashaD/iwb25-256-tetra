@@ -65,3 +65,4 @@ public function main() returns error? {
     log:printInfo("Competition service started on port " + serverPort.toString());
     return;
 }
+

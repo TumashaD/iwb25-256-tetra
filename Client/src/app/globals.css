@@ -11,6 +11,9 @@
   overflow: hidden;
 }
 
+html, body {
+  overflow-x: hidden;
+}
 
 @theme inline {
   --color-main: var(--main);
