@@ -12,7 +12,7 @@ import { CreateEnrollmentData, EnrollmentService } from '@/services/enrollmentSe
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from './ui/select';
 import {toast} from "sonner";
 
-const RegisterButton = ({ className, text, competitionId , variant = "default"}: { className?: string, text: string, competitionId: number, variant?: 'default' | 'sidebar' }) => {
+const RegisterButton = ({ className, text, competitionId , variant = "default",organizerId}: { className?: string, text: string, competitionId: number, variant?: 'default' | 'sidebar', organizerId?: string }) => {
     const [showRegistration, setShowRegistration] = useState(false);
     const { user, loading } = useAuth();
     const router = useRouter();
@@ -34,6 +34,10 @@ const RegisterButton = ({ className, text, competitionId , variant = "default"}:
     const handleRegistration = () => {
         if (!user && !loading) {
             router.push('/signup');
+        } else if(user?.id === organizerId){ 
+            setShowRegistration(false);
+            toast.error("Organizers cannot register as competitors in their own competitions.");
+            return;
         } else {
             fetchUserTeams();
             setShowRegistration(true);
@@ -64,7 +68,6 @@ const RegisterButton = ({ className, text, competitionId , variant = "default"}:
 
     return (
         <Dialog open={showRegistration} onOpenChange={setShowRegistration}>
-            <DialogTrigger asChild>
                 {variant == "default" ? (
                     <Button
                         className={`w-full bg-main hover:bg-cyan-800 text-white py-3 px-4 rounded-xl font-medium transition-colors duration-200 ${className}`}
@@ -80,7 +83,6 @@ const RegisterButton = ({ className, text, competitionId , variant = "default"}:
                         </Button>
                     </div>
                 )}
-            </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
                     <DialogTitle>Register for Competition</DialogTitle>
