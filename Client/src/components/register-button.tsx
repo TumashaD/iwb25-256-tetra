@@ -65,7 +65,7 @@ const RegisterButton = ({ className, text, competitionId , variant = "default"}:
             <DialogTrigger asChild>
                 {variant == "default" ? (
                     <Button
-                        className={`w-full bg-teal-700 hover:bg-teal-800 text-white py-3 px-4 rounded-xl font-medium transition-colors duration-200 ${className}`}
+                        className={`w-full bg-main hover:bg-cyan-800 text-white py-3 px-4 rounded-xl font-medium transition-colors duration-200 ${className}`}
                         onClick={handleRegistration}
                     >
                         {text}
