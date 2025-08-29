@@ -255,8 +255,8 @@ export default function TeamManagement() {
         {/* Header */}
         <div className="flex items-center gap-4 mb-6">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Team Management</h1>
-            <p className="text-muted-foreground">{competition.title}</p>
+            <h1 className="text-3xl font-bold tracking-tight text-main">Team Management</h1>
+            <p className="text-muted-foreground">Manage all your teams participating in the competition</p>
           </div>
         </div>
 
@@ -320,7 +320,7 @@ export default function TeamManagement() {
 
               <Dialog open={showEmailModal} onOpenChange={setShowEmailModal}>
                 <DialogTrigger asChild>
-                  <Button className="gap-2">
+                  <Button className="gap-2 rounded-2xl hover:bg-blue-900">
                     <Mail className="h-4 w-4" />
                     Send Email
                   </Button>
@@ -368,11 +368,11 @@ export default function TeamManagement() {
                     </div>
 
                     <div className="flex gap-3 pt-4">
-                      <Button onClick={sendEmail} disabled={!emailSubject || !emailMessage} className="flex-1">
+                      <Button onClick={sendEmail} disabled={!emailSubject || !emailMessage} className="flex-1 rounded-2xl">
                         <Send className="h-4 w-4 mr-2" />
                         Send Email
                       </Button>
-                      <Button variant="outline" onClick={() => setShowEmailModal(false)} className="flex-1">
+                      <Button variant="outline" onClick={() => setShowEmailModal(false)} className="flex-1 rounded-2xl">
                         Cancel
                       </Button>
                     </div>
@@ -388,7 +388,7 @@ export default function TeamManagement() {
             <AlertCircle className="h-4 w-4" />
             <AlertDescription className="flex items-center justify-between">
               <span>{error}</span>
-              <Button variant="ghost" size="sm" onClick={() => setError(null)}>
+              <Button variant="ghost" size="sm" onClick={() => setError(null)} className="rounded-2xl">
                 <X className="h-4 w-4" />
               </Button>
             </AlertDescription>
@@ -478,7 +478,7 @@ export default function TeamManagement() {
                             e.stopPropagation()
                             handleDeleteTeam(team.enrollment_id)
                           }}
-                          className="gap-1 cursor-pointer"
+                          className="gap-1 cursor-pointer rounded-2xl"
                         >
                           <Trash2 className="h-3 w-3" />
                           Delete
