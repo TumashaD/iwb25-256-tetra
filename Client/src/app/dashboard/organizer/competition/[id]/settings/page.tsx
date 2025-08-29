@@ -336,7 +336,7 @@ export default function CompetitionSettings() {
               )}
             </CardContent>
           </Card>
-                <Button type="submit" disabled={saving} className="gap-2">
+                <Button type="submit" disabled={saving} className="gap-2 rounded-2xl">
                   <Save className="h-4 w-4" />
                   {saving ? "Saving..." : "Save Changes"}
                 </Button>

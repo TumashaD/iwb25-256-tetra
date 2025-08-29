@@ -371,7 +371,7 @@ export default function TeamManagement() {
                     <div className="flex gap-3 pt-4">
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
-                          <Button disabled={!emailSubject || !emailMessage} className="flex-1 cursor-pointer">
+                          <Button disabled={!emailSubject || !emailMessage} className="flex-1 cursor-pointer rounded-2xl">
                             <Send className="h-4 w-4 mr-2" />
                             Send Email
                           </Button>
@@ -384,13 +384,13 @@ export default function TeamManagement() {
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={sendEmail}>Continue</AlertDialogAction>
+                            <AlertDialogCancel className="rounded-2xl">Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={sendEmail} className="rounded-2xl">Continue</AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>
                       </AlertDialog>
 
-                      <Button variant="outline" onClick={() => setShowEmailModal(false)} className="flex-1">
+                      <Button variant="outline" onClick={() => setShowEmailModal(false)} className="flex-1 rounded-2xl">
                         Cancel
                       </Button>
                     </div>
