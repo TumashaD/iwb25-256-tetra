@@ -39,6 +39,8 @@ import { EnrollmentService, EnrollmentWithDetails } from "@/services/enrollmentS
 import { ChatDialog } from "./chatbot"
 import { Dialog } from "@radix-ui/react-dialog"
 import { SearchBar } from "./search-bar"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "./ui/alert-dialog"
+import { toast } from "sonner"
 
 type NavigationItem = {
   icon?: React.ElementType
@@ -89,11 +91,19 @@ export function AppSidebar() {
         ),
         label: "Chat",
       }
+    ],
+    "/competition/enrolled": [
+      {
+        custom: (
+          <ChatDialog open={isChatOpen} competitionId={Number(id)} avatarUrl={user?.avatarUrl ? user.avatarUrl : ""} onOpenChange={setIsChatOpen} />
+        ),
+        label: "Chat",
+      }
     ]
   }
 
   useEffect(() => {
-    if (!user?.id) return; // Wait until user is hydrated
+     // Wait until user is hydrated
 
     const paths = pathname.split("/");
     const basePath = "/" + paths.slice(1, 4).join("/");
@@ -103,20 +113,21 @@ export function AppSidebar() {
         // Organizer / competition checks
         if (basePath.startsWith("/competitions/")) {
           const competition = await CompetitionsService.getCompetition(Number(id));
-          if (competition?.organizer_id === user.id) {
+          setShowSubNav(true);
+          if (!user?.id) {
+            setCurrentSubNav("/competition");
+            return;
+          } else if (competition?.organizer_id === user.id) {
             setCurrentSubNav("/dashboard/organizer/competition");
-            setShowSubNav(true);
             return;
           } else {
             const enrollments = await EnrollmentService.getUserEnrollments(user.id);
             const enrolledCompetitionIds = enrollments.map(e => e.competition_id);
             if (enrolledCompetitionIds.includes(Number(id))) {
-              setShowSubNav(false);
-              setCurrentSubNav("");
+              setCurrentSubNav("/competition/enrolled");
               return;
             } else {
               setCurrentSubNav("/competition");
-              setShowSubNav(true);
               return;
             }
           }
@@ -143,6 +154,7 @@ export function AppSidebar() {
   const handleLogout = async () => {
     try {
       await signOut();
+      toast.info("Successfully logged out");
       router.push("/");
     } catch (error) {
       console.error("Error signing out:", error);
@@ -274,17 +286,34 @@ export function AppSidebar() {
         {loading ? (
           <div className="animate-spin h-5 w-5 border-4 border-t-transparent border-gray-200 rounded-full"></div>
         ) : user?.isAuthenticated ? (
-          <button onClick={handleLogout} className="group relative transition-transform hover:scale-105 cursor-pointer">
-            <Avatar className="h-10 w-10">
-              <AvatarImage src={user?.avatarUrl || "/placeholder.svg"} />
-              <AvatarFallback className="bg-gray-300 text-gray-700">
-                {user?.email?.charAt(0).toUpperCase() || "U"}
-              </AvatarFallback>
-            </Avatar>
-            <div className="absolute inset-0 flex items-center justify-center opacity-0 bg-destructive rounded-full group-hover:opacity-100 transition-opacity">
-              <LogOut className="h-6 w-6 text-white" strokeWidth={2} />
-            </div>
-          </button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <button  className="group relative transition-transform hover:scale-105 cursor-pointer">
+                <Avatar className="h-10 w-10">
+                  <AvatarImage src={user?.avatarUrl || "/placeholder.svg"} />
+                  <AvatarFallback className="bg-gray-300 text-gray-700">
+                    {user?.email?.charAt(0).toUpperCase() || "U"}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="absolute inset-0 flex items-center justify-center opacity-0 bg-destructive rounded-full group-hover:opacity-100 transition-opacity">
+                  <LogOut className="h-6 w-6 text-white" strokeWidth={2} />
+                </div>
+              </button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to logout? You will need to enter your credentials again to log back in.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={() => handleLogout()}>Continue</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+
         ) : (
           <Link
             className="flex items-center justify-center bg-cyan-500 rounded-full p-3 hover:bg-cyan-600 hover:scale-105 transition-colors"

@@ -161,9 +161,11 @@ export default function Home() {
           
           {/* See More Button */}
           <div className="text-center">
+            <Link href={"/competitions"}>
             <Button className="bg-main hover:bg-cyan-800 text-white px-12 py-6 rounded-2xl text-lg font-medium cursor-pointer">
               View All Competitions
             </Button>
+            </Link>
           </div>
         </div>
       </section>
