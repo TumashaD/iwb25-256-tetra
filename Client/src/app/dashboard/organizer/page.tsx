@@ -38,6 +38,7 @@ export default function OrganizerDashboard() {
   const { user, loading } = useAuth()
   const [competitions, setCompetitions] = useState<Competition[]>([])
   const [showCreateForm, setShowCreateForm] = useState(false)
+  const [showAllCompetitions, setShowAllCompetitions] = useState(false)
   const [formData, setFormData] = useState<Partial<Competition>>({
     title: "",
     description: "",
@@ -129,7 +130,16 @@ export default function OrganizerDashboard() {
     }
   }
 
+  const getDisplayedCompetitions = () => {
+    if (showAllCompetitions || competitions.length <= 6) {
+      return competitions
+    }
+    return competitions.slice(0, 6)
+  }
+
   const stats = getStatistics()
+  const displayedCompetitions = getDisplayedCompetitions()
+  const hasMoreCompetitions = competitions.length > 6
 
   if (loading || pageLoading) {
     return (
@@ -390,10 +400,38 @@ export default function OrganizerDashboard() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-            {competitions.map((competition) => (
-              <CompetitionCard competition={competition} key={competition.id} userType="organizer"/>
-            ))}
+          <div className="relative">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+              {displayedCompetitions.map((competition) => (
+                <CompetitionCard competition={competition} key={competition.id} userType="organizer"/>
+              ))}
+            </div>
+            
+            {!showAllCompetitions && hasMoreCompetitions && (
+              <div className="text-center -mt-8 mb-12">
+                <Button 
+                  onClick={() => setShowAllCompetitions(true)}
+                  variant="outline" 
+                  size="lg"
+                  className="bg-background/80 backdrop-blur-sm border-2 hover:bg-primary hover:text-primary-foreground transition-all duration-300"
+                >
+                  Show All Competitions ({competitions.length})
+                </Button>
+              </div>
+            )}
+
+            {showAllCompetitions && hasMoreCompetitions && (
+              <div className="text-center -mt-8 mb-12">
+                <Button 
+                  onClick={() => setShowAllCompetitions(false)}
+                  variant="outline" 
+                  size="lg"
+                  className="bg-background/80 backdrop-blur-sm border-2 hover:bg-primary hover:text-primary-foreground transition-all duration-300"
+                >
+                  Show Less
+                </Button>
+              </div>
+            )}
           </div>
         )}
       </div>
