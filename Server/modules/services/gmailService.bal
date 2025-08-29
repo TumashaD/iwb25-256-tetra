@@ -1,9 +1,13 @@
 import ballerina/http;
 import ballerina/log;
 import ballerinax/googleapis.gmail;
+import vinnova.auth;
 
-public function createGmailService(gmail:Client gmail, http:CorsConfig corsConfig) returns http:Service {
+public function createGmailService(gmail:Client gmail, http:CorsConfig corsConfig, auth:AuthInterceptor authInterceptor) returns http:InterceptableService {
     return @http:ServiceConfig {cors: corsConfig} isolated service object {
+        public function createInterceptors() returns http:Interceptor {
+            return authInterceptor;
+        }
         isolated resource function post send(@http:Payload json msg) returns http:BadRequest & readonly|json & readonly|error{
             json|error recipients = msg.recipients;
             json|error sender = msg.sender;

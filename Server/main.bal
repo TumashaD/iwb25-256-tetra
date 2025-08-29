@@ -51,7 +51,7 @@ public function main() returns error? {
     http:Service teamService = services:createTeamService(db, CORS_CONFIG, authInterceptor);
     http:Service enrollmentService = services:createEnrollmentService(db, CORS_CONFIG, authInterceptor);
     http:Service aiService = services:createAIService(db, geminiApiKey, CORS_CONFIG);
-    http:Service gmailService = services:createGmailService(gmail, CORS_CONFIG);
+    http:Service gmailService = services:createGmailService(gmail, CORS_CONFIG, authInterceptor);
 
     check ln.attach(competitionService, "/competitions");
     check ln.attach(organizerService, "/organizer");
