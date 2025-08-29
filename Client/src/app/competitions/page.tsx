@@ -20,8 +20,7 @@ export default function CompetitionsPage() {
   const [competitions, setCompetitions] = useState<Competition[]>([]);
   const [loading, setLoading] = useState(true);
   const [availableCategories, setAvailableCategories] = useState<string[]>([]);
-  const router = useRouter();
-    
+
     // generates current and upcoming months
   const generateDateOptions = () => {
     const currentDate = new Date();
@@ -61,10 +60,6 @@ export default function CompetitionsPage() {
   useEffect(() => {
     fetchCompetitions();
   }, []);
-
-  const handleCompetitionClick = (competitionId: number) => {
-    router.push(`/competition/${competitionId}`);
-  };
 
   // Month and year-based date filtering
   const isDateInRange = (dateString: string, filterValue: string) => {
@@ -140,9 +135,9 @@ export default function CompetitionsPage() {
       {/* Header */}
       <div className="bg-white border-b">
         <div className="max-w-7xl mx-auto px-4 py-8">
-          <h1 className="text-4xl md:text-5xl font-bold text-teal-700 mb-4">All Competitions</h1>
+          <h1 className="text-4xl md:text-5xl font-bold text-main mb-4">All Competitions</h1>
           <p className="text-xl text-gray-600 max-w-3xl text-balance">
-            Discover and join the world's most prestigious esports tournaments. Filter by your preferences to find the
+            Discover and join the best competitions. Filter by your preferences to find the
             perfect competition.
           </p>
         </div>
@@ -167,7 +162,7 @@ export default function CompetitionsPage() {
           {/* Filter Controls */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-4">
             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-              <SelectTrigger className="h-12">
+              <SelectTrigger className="h-12 w-full">
                 <div className="flex items-center gap-2">
                   <Filter className="h-4 w-4" />
                   <SelectValue placeholder={loading ? "Loading categories..." : "Category"} />
@@ -188,7 +183,7 @@ export default function CompetitionsPage() {
             </Select>
 
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="h-12">
+              <SelectTrigger className="h-12 w-full">
                 <div className="flex items-center gap-2">
                   <Trophy className="h-4 w-4" />
                   <SelectValue placeholder="Status" />
@@ -203,7 +198,7 @@ export default function CompetitionsPage() {
             </Select>
 
             <Select value={prizePoolFilter} onValueChange={setPrizePoolFilter}>
-              <SelectTrigger className="h-12">
+              <SelectTrigger className="h-12 w-full">
                 <div className="flex items-center gap-2">
                   <DollarSign className="h-4 w-4" />
                   <SelectValue placeholder="Prize Pool" />
@@ -220,7 +215,7 @@ export default function CompetitionsPage() {
             </Select>
 
             <Select value={teamsFilter} onValueChange={setTeamsFilter}>
-              <SelectTrigger className="h-12">
+              <SelectTrigger className="h-12 w-full">
                 <div className="flex items-center gap-2">
                   <Users className="h-4 w-4" />
                   <SelectValue placeholder="Teams" />
@@ -235,7 +230,7 @@ export default function CompetitionsPage() {
             </Select>
 
             <Select value={startDateFilter} onValueChange={setStartDateFilter}>
-              <SelectTrigger className="h-12">
+              <SelectTrigger className="h-12 w-full">
                 <div className="flex items-center gap-2">
                   <Calendar className="h-4 w-4" />
                   <SelectValue placeholder="Start Date" />
@@ -252,7 +247,7 @@ export default function CompetitionsPage() {
             </Select>
 
             <Select value={endDateFilter} onValueChange={setEndDateFilter}>
-              <SelectTrigger className="h-12">
+              <SelectTrigger className="h-12 w-full">
                 <div className="flex items-center gap-2">
                   <Calendar className="h-4 w-4" />
                   <SelectValue placeholder="End Date" />

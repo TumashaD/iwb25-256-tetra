@@ -1,8 +1,8 @@
 import ballerina/http;
 import ballerina/log;
+import ballerina/sql;
 import ballerina/time;
 import ballerinax/postgresql;
-import ballerina/sql;
 
 public type AIRequest record {
     int? competitionId;
@@ -15,7 +15,7 @@ public type AIResponse record {
 };
 
 public function createAIService(postgresql:Client dbClient, string geminiApiKey, http:CorsConfig corsConfig) returns http:Service {
-    return @http:ServiceConfig{cors: corsConfig} isolated service object {
+    return @http:ServiceConfig {cors: corsConfig} isolated service object {
         private final postgresql:Client db = dbClient;
         private final string apiKey = geminiApiKey;
 
@@ -26,14 +26,14 @@ public function createAIService(postgresql:Client dbClient, string geminiApiKey,
                 return http:BAD_REQUEST;
             }
             string question = questionResult.toString();
-            
+
             // Validate input
             if question.trim() == "" {
                 return http:BAD_REQUEST;
             }
 
             string context = "";
-            
+
             // If competitionId is provided, fetch competition details for context
             json|error competitionIdResult = requestBody.competitionId;
             if competitionIdResult is json {
@@ -41,11 +41,11 @@ public function createAIService(postgresql:Client dbClient, string geminiApiKey,
                 if competitionIdResult is int {
                     // Valid integer ID provided
                     int competitionId = <int>competitionIdResult;
-                    sql:ParameterizedQuery query = `SELECT title, description, category, start_date, end_date, status FROM competitions WHERE id = ${competitionId}`;
+                    sql:ParameterizedQuery query = `SELECT title, description, category, start_date, end_date, status, landing_html FROM competitions WHERE id = ${competitionId}`;
                     stream<record {}, sql:Error?> competitionResult = self.db->query(query);
                     record {}[]|error competitionArr = from record {} competition in competitionResult
-                                                       select competition;
-                    
+                        select competition;
+
                     if competitionArr is error {
                         log:printError("Database error while fetching competition", competitionArr);
                         return http:INTERNAL_SERVER_ERROR;
@@ -62,21 +62,23 @@ public function createAIService(postgresql:Client dbClient, string geminiApiKey,
                                             Start Date: ${comp["start_date"].toString()}
                                             End Date: ${comp["end_date"].toString()}
                                             Status: ${comp["status"].toString()}
+                                            Web Site Data: ${extractTextFromHtml(comp["landing_html"].toString())}
                                             `;
+                        // log:printInfo(context);
                     }
                 } else {
                     // competitionId field exists but is not an integer (e.g., "abc")
-                    if(competitionIdResult is string && competitionIdResult.trim() != "") {
+                    if (competitionIdResult is string && competitionIdResult.trim() != "") {
                         log:printWarn(string `Invalid competitionId format: ${competitionIdResult.toString()}`);
                         return http:BAD_REQUEST;
                     }
                 }
             }
-            
+
             // Prepare the prompt for Gemini
-            string prompt = context + "User Question: " + question + 
-                           "\n\nPlease provide a helpful and informative answer based on the competition context provided above.";
-            
+            string prompt = context + "User Question: " + question +
+                            "\n\nPlease provide a helpful and informative answer based on the competition context provided above.";
+
             // Call Gemini API
             string|error aiResponse = self.callGeminiAPI(prompt);
             if aiResponse is error {
@@ -92,7 +94,7 @@ public function createAIService(postgresql:Client dbClient, string geminiApiKey,
 
         isolated function callGeminiAPI(string prompt) returns string|error {
             http:Client geminiClient = check new ("https://generativelanguage.googleapis.com");
-            
+
             json geminiRequest = {
                 "contents": [
                     {
@@ -109,10 +111,10 @@ public function createAIService(postgresql:Client dbClient, string geminiApiKey,
                 string `/v1beta/models/gemini-1.5-flash:generateContent?key=${self.apiKey}`,
                 geminiRequest,
                 {
-                    "Content-Type": "application/json"
-                }
+                "Content-Type": "application/json"
+            }
             );
-            
+
             if response is error {
                 return response;
             }
@@ -140,8 +142,14 @@ public function createAIService(postgresql:Client dbClient, string geminiApiKey,
                     return generatedText;
                 }
             }
-            
+
             return "I'm sorry, I couldn't generate a response at this time.";
         }
     };
+}
+
+isolated function extractTextFromHtml(string html) returns string {
+    string:RegExp htmlPattern = re `<[^>]+>`;
+    string text = htmlPattern.replaceAll(html, " ");
+    return text;
 }
