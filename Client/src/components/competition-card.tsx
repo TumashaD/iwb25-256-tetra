@@ -27,7 +27,7 @@ export function CompetitionCard({ competition, userType }: { competition: Compet
         {/* Competition Image */}
         <div className="relative h-48 overflow-hidden flex-shrink-0 w-full">
           <img
-            src={competition.banner_url || "/placeholder.svg"}
+            src={`${competition.banner_url}?t=${Date.now()}` || "/placeholder.svg"}
             alt={competition.title}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           />
@@ -80,7 +80,7 @@ export function CompetitionCard({ competition, userType }: { competition: Compet
       {/* Competitor Button - Outside Link */}
       {userType == "competitor" && 
         <div className="px-6 pb-6 flex-shrink-0 w-full">
-          <RegisterButton text={competition.status === "active" ? "Register Now" : competition.status === "upcoming" ? "Register Now" : "View Results"} competitionId={competition.id}/>
+          <RegisterButton text={competition.status === "active" ? "Register Now" : competition.status === "upcoming" ? "Register Now" : "View Results"} competitionId={competition.id} organizerId={competition.organizer_id} />
         </div>
       }
     </div>

@@ -1,13 +1,14 @@
 "use client"
 
 import { useState, useMemo, useEffect } from "react"
-import { Search, Filter, Calendar, DollarSign, Users, Trophy } from "lucide-react"
+import { Search, Filter, Calendar, DollarSign, Users, Trophy, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { CompetitionCard } from "@/components/competition-card"
 import { Competition, CompetitionsService } from "@/services/competitionService"
 import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 
 export default function CompetitionsPage() {
   const [searchQuery, setSearchQuery] = useState("")
@@ -128,6 +129,7 @@ export default function CompetitionsPage() {
     setTeamsFilter("all")
     setStartDateFilter("all")
     setEndDateFilter("all")
+    toast.success("All filters cleared")
   }
 
   return (
@@ -283,9 +285,9 @@ export default function CompetitionsPage() {
       {/* Competitions Grid */}
       <div className="max-w-7xl mx-auto px-4 py-12">
         {loading ? (
-          <div className="flex justify-center items-center py-20">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-700"></div>
-            <span className="ml-4 text-teal-700 text-xl">Loading competitions...</span>
+          <div className="flex flex-col justify-center items-center py-20">
+            <Loader2 className="animate-spin h-8 w-8 " />
+            <span className="mt-4 text-muted-foreground font-bold">Loading competitions..</span>
           </div>
         ) : filteredCompetitions.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">

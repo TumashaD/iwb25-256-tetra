@@ -4,20 +4,21 @@ import React, { useState } from 'react';
 import { Button } from './ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
 import { Label } from '@radix-ui/react-label';
-import { Input } from './ui/input';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { Team, TeamService } from '@/services/teamService';
 import { Loader2, LogIn } from 'lucide-react';
 import { CreateEnrollmentData, EnrollmentService } from '@/services/enrollmentService';
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from './ui/select';
+import {toast} from "sonner";
 
-const RegisterButton = ({ className, text, competitionId , variant = "default"}: { className?: string, text: string, competitionId: number, variant?: 'default' | 'sidebar' }) => {
+const RegisterButton = ({ className, text, competitionId , variant = "default",organizerId}: { className?: string, text: string, competitionId: number, variant?: 'default' | 'sidebar', organizerId?: string }) => {
     const [showRegistration, setShowRegistration] = useState(false);
     const { user, loading } = useAuth();
     const router = useRouter();
     const [userTeams, setUserTeams] = useState<Team[]>([]);
     const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
+    const [registering, setRegistering] = useState(false);
 
     const fetchUserTeams = async () => {
         try {
@@ -33,6 +34,10 @@ const RegisterButton = ({ className, text, competitionId , variant = "default"}:
     const handleRegistration = () => {
         if (!user && !loading) {
             router.push('/signup');
+        } else if(user?.id === organizerId){ 
+            setShowRegistration(false);
+            toast.error("Organizers cannot register as competitors in their own competitions.");
+            return;
         } else {
             fetchUserTeams();
             setShowRegistration(true);
@@ -42,6 +47,7 @@ const RegisterButton = ({ className, text, competitionId , variant = "default"}:
     const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (selectedTeam && user) {
+        setRegistering(true);
         try {
             const newEnrollment: CreateEnrollmentData = {
                 team_id: selectedTeam.id,
@@ -51,18 +57,17 @@ const RegisterButton = ({ className, text, competitionId , variant = "default"}:
             await EnrollmentService.createEnrollment(user.id, newEnrollment);
             setShowRegistration(false);
             console.log('Enrollment successful!');
-            alert('Enrollment successful!');
+            toast.success('Enrollment successful!');
             router.push("/dashboard/competitor");
         } catch (error) {
             console.error('Error creating enrollment:', error);
-            alert(error instanceof Error ? error.message : 'An unexpected error occurred');
+            toast.error(error instanceof Error ? error.message : 'An unexpected error occurred');
         }
     }
 }
 
     return (
         <Dialog open={showRegistration} onOpenChange={setShowRegistration}>
-            <DialogTrigger asChild>
                 {variant == "default" ? (
                     <Button
                         className={`w-full bg-main hover:bg-cyan-800 text-white py-3 px-4 rounded-xl font-medium transition-colors duration-200 ${className}`}
@@ -78,7 +83,6 @@ const RegisterButton = ({ className, text, competitionId , variant = "default"}:
                         </Button>
                     </div>
                 )}
-            </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
                     <DialogTitle>Register for Competition</DialogTitle>
@@ -112,10 +116,10 @@ const RegisterButton = ({ className, text, competitionId , variant = "default"}:
                     <div className="flex gap-2 pt-4">
                         <Button
                             type="submit"
-                            disabled={loading || !selectedTeam}
+                            disabled={registering || !selectedTeam}
                             className="flex-1"
                         >
-                            {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                            {registering ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
                             Register
                         </Button>
                         <Button

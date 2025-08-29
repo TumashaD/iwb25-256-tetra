@@ -13,8 +13,6 @@ public type LandingData record {|
 public type OrganizerCompetition record {|
     *Competition;
     string? landing_data?;
-    string? landing_html?;
-    string? landing_css?;
 |};
 
 public function createOrganizerService(postgresql:Client dbClient,supabase:StorageClient storageClient, http:CorsConfig corsConfig,http:Interceptor authInterceptor) returns http:InterceptableService {
@@ -383,7 +381,7 @@ public function createOrganizerService(postgresql:Client dbClient,supabase:Stora
     }
 
     isolated resource function post saveLandingPage/[int competitionId](http:Request req,@http:Payload json landingData) returns http:InternalServerError & readonly|map<json>|error {
-        sql:ParameterizedQuery query = `UPDATE competitions SET landing_data = ${landingData.toString()} WHERE id = ${competitionId}`;
+        sql:ParameterizedQuery query = `UPDATE competitions SET landing_data = ${landingData.toJsonString()} WHERE id = ${competitionId}`;
         // Execute the query and handle the result
         sql:ExecutionResult|error executionResult = check self.db->execute(query);
         if executionResult is error {
