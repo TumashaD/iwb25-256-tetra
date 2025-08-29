@@ -126,6 +126,9 @@ export function AppSidebar() {
             if (enrolledCompetitionIds.includes(Number(id))) {
               setCurrentSubNav("/competition/enrolled");
               return;
+            } else {
+              setCurrentSubNav("/competition");
+              return;
             }
           }
         }
