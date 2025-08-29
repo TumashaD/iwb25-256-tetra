@@ -1,6 +1,7 @@
 'use client'
 
-import { OrganizerService } from "@/services/organizerService";
+import { CompetitionsService } from "@/services/competitionService";
+import { Loader2 } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useState, useEffect } from "react";
 
@@ -10,7 +11,7 @@ export default function CompetitionPage() {
 
   useEffect(() => {
     const fetchCompetition = async () => {
-      const competitionData = await OrganizerService.getCompetition(Number(id));
+      const competitionData = await CompetitionsService.getCompetition(Number(id));
       let fullHTML = '';
       if (!competitionData.landing_html || !competitionData.landing_css) {
         fullHTML = `<!DOCTYPE html>
@@ -1027,7 +1028,12 @@ export default function CompetitionPage() {
   }, [id]);
 
   if (typeof window === 'undefined' || !competition) {
-    return <h1>Loading...</h1>;
+    return <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto" />
+          <p className="text-muted-foreground">Loading Competition...</p>
+        </div>
+      </div>;
   }
 
   return (

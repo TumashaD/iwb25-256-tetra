@@ -13,6 +13,8 @@ export interface Competition {
   created_at: string
   updated_at: string
   banner_url?: string
+  landing_html?: string
+  landing_css?: string
   teams: number
 }
 

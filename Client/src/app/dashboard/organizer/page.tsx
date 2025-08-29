@@ -31,6 +31,7 @@ import {
   AlertCircle,
   TrendingUp,
   Calendar,
+  Loader2,
 } from "lucide-react"
 import { CompetitionCard } from "@/components/competition-card"
 
@@ -134,12 +135,10 @@ export default function OrganizerDashboard() {
   if (loading || pageLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <Card className="w-96">
-          <CardContent className="flex flex-col items-center justify-center p-8">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
-            <p className="text-muted-foreground">Loading dashboard...</p>
-          </CardContent>
-        </Card>
+        <div className="text-center space-y-4">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto" />
+          <p className="text-muted-foreground">Loading dashboard...</p>
+        </div>
       </div>
     )
   }

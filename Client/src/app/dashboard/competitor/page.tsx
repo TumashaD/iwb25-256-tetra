@@ -28,11 +28,22 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
 import { CalendarDays, Crown, Users, Trophy, Plus, Search, Trash2, UserPlus, AlertCircle, Loader2 } from "lucide-react"
+import { toast } from "sonner"
 
 interface TeamMemberWithProfile {
   team_id: number
@@ -67,6 +78,9 @@ export default function CompetitorDashboard() {
   const [error, setError] = useState<string | null>(null)
   const [isCurrentUserLeader, setIsCurrentUserLeader] = useState(false)
   const [teamCreatorProfile, setTeamCreatorProfile] = useState<Profile | null>(null)
+  const [creatingTeam, setCreatingTeam] = useState(false)
+  const [deletingTeam, setDeletingTeam] = useState(false)
+  const [tab, setTab] = useState("enrollments")
 
   // Set user ID when user is loaded
   useEffect(() => {
@@ -77,8 +91,8 @@ export default function CompetitorDashboard() {
 
   // Fetch competitor's teams and enrollments
   useEffect(() => {
-      fetchMyTeams()
-      fetchMyEnrollments()
+    fetchMyTeams()
+    fetchMyEnrollments()
   }, [user])
 
   const fetchMyTeams = async () => {
@@ -184,19 +198,22 @@ export default function CompetitorDashboard() {
   const handleTeamSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
-      setPageLoading(true)
       setError(null)
+      setCreatingTeam(true)
 
       await TeamService.createTeam(teamFormData)
 
       // Reset form and refresh teams
+      toast.success("Team created successfully!")
       resetTeamForm()
       fetchMyTeams()
+      setTab("teams")
     } catch (error) {
       console.error("Failed to create team:", error)
+      toast.error("Failed to create team. Please try again.")
       setError("Failed to create team. Please try again.")
     } finally {
-      setPageLoading(false)
+      setCreatingTeam(false)
     }
   }
 
@@ -205,7 +222,6 @@ export default function CompetitorDashboard() {
     if (!selectedTeam) return
 
     try {
-      setPageLoading(true)
       setError(null)
 
       await TeamService.addTeamMember(selectedTeam.id, memberFormData)
@@ -217,12 +233,10 @@ export default function CompetitorDashboard() {
       console.error("Failed to add team member:", error)
       setError("Failed to add team member. Please try again.")
     } finally {
-      setPageLoading(false)
     }
   }
 
   const handleRemoveMember = async (teamId: number, memberId: string) => {
-    if (confirm("Are you sure you want to remove this team member?")) {
       try {
         await TeamService.removeTeamMember(teamId, memberId)
         fetchTeamDetails(teamId)
@@ -230,32 +244,27 @@ export default function CompetitorDashboard() {
         console.error("Failed to remove team member:", error)
         setError("Failed to remove team member. Please try again.")
       }
-    }
+    
   }
 
   const handleDeleteTeam = async (teamId: number) => {
-    if (
-      confirm(
-        "Are you sure you want to delete this team? This action cannot be undone and will remove all team members.",
-      )
-    ) {
-      try {
-        setPageLoading(true)
-        setError(null)
+    setDeletingTeam(true)
+    try {
+      setError(null)
 
         await TeamService.deleteTeam(teamId)
 
         // Reset team selection and refresh teams list
         resetTeamSelection()
         fetchMyTeams()
+        setTab("teams")
       } catch (error) {
         console.error("Failed to delete team:", error)
         setError("Failed to delete team. Please try again.")
       } finally {
-        setPageLoading(false)
+        setDeletingTeam(false)
       }
     }
-  }
 
   const resetTeamForm = () => {
     setTeamFormData({
@@ -345,8 +354,8 @@ export default function CompetitorDashboard() {
                   />
                 </div>
                 <div className="flex gap-2 pt-4">
-                  <Button type="submit" disabled={loading} className="flex-1">
-                    {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                  <Button type="submit" disabled={creatingTeam} className="flex-1">
+                    {creatingTeam ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
                     Create Team
                   </Button>
                   <Button type="button" variant="outline" onClick={resetTeamForm} className="flex-1 bg-transparent">
@@ -358,19 +367,7 @@ export default function CompetitorDashboard() {
           </Dialog>
         </div>
 
-        {error && (
-          <Alert variant="destructive" className="mb-6">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription className="flex items-center justify-between">
-              <span>{error}</span>
-              <Button variant="ghost" size="sm" onClick={() => setError(null)}>
-                ×
-              </Button>
-            </AlertDescription>
-          </Alert>
-        )}
-
-        <Tabs defaultValue="enrollments" className="space-y-6">
+        <Tabs defaultValue={tab} className="space-y-6">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="enrollments" className="gap-2">
               <Trophy className="h-4 w-4" />
@@ -429,13 +426,12 @@ export default function CompetitorDashboard() {
                         <div className="flex items-center gap-2">
                           <div className="flex items-center gap-1">
                             <div
-                              className={`w-2 h-2 rounded-full ${
-                                enrollment.status === "enrolled"
+                              className={`w-2 h-2 rounded-full ${enrollment.status === "enrolled"
                                   ? "bg-green-500"
                                   : enrollment.status === "pending"
                                     ? "bg-yellow-500"
                                     : "bg-red-500"
-                              }`}
+                                }`}
                             />
                             <span className="text-sm font-medium">
                               {enrollment.status.charAt(0).toUpperCase() + enrollment.status.slice(1)}
@@ -495,9 +491,8 @@ export default function CompetitorDashboard() {
                     {teams.map((team) => (
                       <Card
                         key={team.id}
-                        className={`cursor-pointer transition-all hover:shadow-md ${
-                          selectedTeam?.id === team.id ? "ring-2 ring-primary" : ""
-                        }`}
+                        className={`cursor-pointer transition-all hover:shadow-md ${selectedTeam?.id === team.id ? "ring-2 ring-primary" : ""
+                          }`}
                         onClick={() => fetchTeamDetails(team.id)}
                       >
                         <CardContent className="p-4">
@@ -549,14 +544,30 @@ export default function CompetitorDashboard() {
                           </CardDescription>
                         </div>
                         {isCurrentUserLeader && (
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => handleDeleteTeam(selectedTeam.id)}
-                            disabled={loading}
-                          >
-                            <Trash2 className="h-4 w-4 mr-1" />
-                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                disabled={deletingTeam}
+                              >
+                                <Trash2 className="h-4 w-4 mr-1" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This action cannot be undone. This will permanently delete your
+                                  team and remove your data from our servers.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleDeleteTeam(selectedTeam.id)}>Continue</AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         )}
                       </div>
                     </CardHeader>
@@ -704,13 +715,30 @@ export default function CompetitorDashboard() {
                                       </div>
                                     </div>
                                     {isCurrentUserLeader && (
-                                      <Button
+                                      <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
                                         variant="destructive"
                                         size="sm"
-                                        onClick={() => handleRemoveMember(selectedTeam.id, member.member_id)}
                                       >
                                         Remove
                                       </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This action cannot be undone. This will permanently delete your
+                                  team and remove your data from our servers.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleRemoveMember(selectedTeam.id, member.member_id)}>Continue</AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                                      
                                     )}
                                   </div>
                                 </CardContent>

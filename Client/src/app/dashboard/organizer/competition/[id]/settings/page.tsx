@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
-import { ArrowLeft, Save, Trash2, AlertTriangle, CheckCircle, XCircle, Trophy, ImageIcon } from "lucide-react"
+import { ArrowLeft, Save, Trash2, AlertTriangle, CheckCircle, XCircle, Trophy, ImageIcon, Loader2 } from "lucide-react"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,6 +25,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import { toast } from "sonner"
 
 export default function CompetitionSettings() {
   const { user, loading } = useAuth()
@@ -116,10 +117,12 @@ export default function CompetitionSettings() {
       }
 
       setSuccess("Competition updated successfully!")
+      toast.success("Competition updated successfully!")
       fetchCompetition()
     } catch (error) {
       console.error("Failed to update competition:", error)
       setError("Failed to update competition. Please try again.")
+      toast.error("Failed to update competition. Please try again.")
     } finally {
       setSaving(false)
     }
@@ -150,12 +153,10 @@ export default function CompetitionSettings() {
   if (loading || pageLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <Card className="w-96">
-          <CardContent className="flex flex-col items-center justify-center p-8">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
-            <p className="text-muted-foreground">Loading competition settings...</p>
-          </CardContent>
-        </Card>
+        <div className="text-center space-y-4">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto" />
+          <p className="text-muted-foreground">Loading Settings...</p>
+        </div>
       </div>
     )
   }
@@ -293,15 +294,7 @@ export default function CompetitionSettings() {
                   </div>
                 </div>
 
-                <Button type="submit" disabled={saving} className="gap-2">
-                  <Save className="h-4 w-4" />
-                  {saving ? "Saving..." : "Save Changes"}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
-
-          <Card>
+              <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <ImageIcon className="h-5 w-5" />
@@ -343,6 +336,16 @@ export default function CompetitionSettings() {
               )}
             </CardContent>
           </Card>
+                <Button type="submit" disabled={saving} className="gap-2">
+                  <Save className="h-4 w-4" />
+                  {saving ? "Saving..." : "Save Changes"}
+                </Button>
+              </form>
+            </CardContent>
+            
+          </Card>
+
+          
 
           <Card className="border-destructive">
             <CardHeader>
