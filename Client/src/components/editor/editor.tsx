@@ -7,7 +7,7 @@ import '@grapesjs/studio-sdk/style';
 type EditorProps = {
   competition: OrganizerCompetition;
   publishLandingPage: (editor: Editor) => void;
-  uploadAssets: (files: File[]) => Promise<InputAssetProps[]>;
+uploadAssets: (files: File[]) => Promise<InputAssetProps[]>;
   deleteAssets: (assets: Asset[]) => void;
   getAssets: () => Promise<InputAssetProps[]>;
   saveLandingPage: (project: ProjectData) => void;
