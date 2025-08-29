@@ -178,7 +178,7 @@ export default function CompetitionSettings() {
       <div className="container mx-auto px-4 pt-24 pb-8 max-w-4xl">
         <div className="flex items-center gap-4 mb-8">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Competition Settings</h1>
+            <h1 className="text-3xl font-bold tracking-tight text-main">Competition Settings</h1>
             <p className="text-muted-foreground">Edit competition details and manage settings</p>
           </div>
         </div>
