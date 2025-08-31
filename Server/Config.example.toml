@@ -1,0 +1,20 @@
+# Supabase Configuration
+supabaseJwtSecret = "<SUPABASE_JWT_SECRET>"
+supabaseUrl = "<SUPABASE_AUTH_URL>"
+serverPort = 8080
+
+dbHost = "<DB_HOST>"
+dbPort = 5432
+dbName = "<DB_NAME>"
+dbUser = "<DB_USER>"
+dbPassword = "<DB_PASSWORD>"
+
+supabaseStorageUrl = "<SUPABASE_STORAGE_URL>"
+supabaseAnonKey = "<SUPABASE_ANON_KEY>"
+
+geminiApiKey = "<GEMINI_API_KEY>"
+
+# Gmail
+refreshToken = "<GMAIL_REFRESH_TOKEN>"
+clientId = "<GMAIL_CLIENT_ID>"
+clientSecret = "<GMAIL_CLIENT_SECRET>"

@@ -148,13 +148,12 @@ public isolated class StorageClient {
 
                 log:printInfo("Uploading file to Supabase Storage", 'fileName = fileName, 'bucketName = bucketName, 'fileContentLength = fileContent.length(), 'uploadUrl = uploadUrl);
 
-                http:Response uploadRes = check self.storageClient->post(uploadUrl, uploadReq);
-                if uploadRes is http:Response {
-                    string fileUrl = self.supabaseStorageUrl + "/object/public/" + bucketName + "/" + fileName;
-                    results.push({
-                        "src": fileUrl
-                    });
-                }
+                http:Response _ = check self.storageClient->post(uploadUrl, uploadReq);
+                string fileUrl = self.supabaseStorageUrl + "/object/public/" + bucketName + "/" + fileName;
+                results.push({
+                    "src": fileUrl
+                });
+
             }
         }
 
@@ -203,51 +202,51 @@ public isolated class StorageClient {
     public isolated function getAssets(http:Request req, string bucketName, string competitionId)
         returns json[]|http:Unauthorized & readonly|error|http:Response {
 
-    json[] results = [];
+        json[] results = [];
 
-    // Supabase list objects endpoint
-    string listUrl = string `/object/list/${bucketName}`;
+        // Supabase list objects endpoint
+        string listUrl = string `/object/list/${bucketName}`;
 
-    // Check Authorization header
-    string|http:HeaderNotFoundError authHeader = req.getHeader("Authorization");
-    if authHeader is http:HeaderNotFoundError || !authHeader.startsWith("Bearer ") {
-        return http:UNAUTHORIZED;
-    }
-
-    string token = authHeader.substring(7);
-
-    // Create request with prefix in body
-    http:Request listReq = new;
-    listReq.setPayload({
-        "prefix": string `${competitionId}/assets/`
-    });
-    listReq.setHeader("Authorization", "Bearer " + token);
-    listReq.setHeader("apikey", self.supabaseAnonKey);
-
-    // Call Supabase
-    http:Response listRes = check self.storageClient->post(listUrl, listReq);
-
-    // Parse response
-    json|http:ClientError listJson = listRes.getJsonPayload();
-    if listJson is http:ClientError {
-        log:printError("Failed to parse Supabase response", listJson);
-        return listRes;
-    }
-
-    json[] files = <json[]>listJson;
-
-    foreach json file in files {
-        string fileName = check file.name;
-        if fileName == ".emptyFolderPlaceholder" {
-            continue;
+        // Check Authorization header
+        string|http:HeaderNotFoundError authHeader = req.getHeader("Authorization");
+        if authHeader is http:HeaderNotFoundError || !authHeader.startsWith("Bearer ") {
+            return http:UNAUTHORIZED;
         }
-        string fileUrl = string `${self.supabaseStorageUrl}/object/public/${bucketName}/${competitionId}/assets/${fileName}`;
-        results.push({
-            "src": fileUrl
+
+        string token = authHeader.substring(7);
+
+        // Create request with prefix in body
+        http:Request listReq = new;
+        listReq.setPayload({
+            "prefix": string `${competitionId}/assets/`
         });
+        listReq.setHeader("Authorization", "Bearer " + token);
+        listReq.setHeader("apikey", self.supabaseAnonKey);
+
+        // Call Supabase
+        http:Response listRes = check self.storageClient->post(listUrl, listReq);
+
+        // Parse response
+        json|http:ClientError listJson = listRes.getJsonPayload();
+        if listJson is http:ClientError {
+            log:printError("Failed to parse Supabase response", listJson);
+            return listRes;
+        }
+
+        json[] files = <json[]>listJson;
+
+        foreach json file in files {
+            string fileName = check file.name;
+            if fileName == ".emptyFolderPlaceholder" {
+                continue;
+            }
+            string fileUrl = string `${self.supabaseStorageUrl}/object/public/${bucketName}/${competitionId}/assets/${fileName}`;
+            results.push({
+                "src": fileUrl
+            });
+        }
+        return results;
     }
-    return results;
-}
 
     public isolated function downloadFile(string bucketName, string fileName) returns http:BadRequest & readonly|error|http:Response {
         log:printInfo("Download request received", 'bucketName = bucketName, 'fileName = fileName);

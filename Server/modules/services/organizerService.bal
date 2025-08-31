@@ -347,7 +347,7 @@ public function createOrganizerService(postgresql:Client dbClient,supabase:Stora
             } else if deleteResult is error {
                 log:printError("Unexpected error during asset deletion", deleteResult);
                 return deleteResult;
-            } else if deleteResult is http:Response {
+            } else  {
                 log:printInfo("Asset deleted successfully", 'assetUrl = assetUrl);
             }
         }

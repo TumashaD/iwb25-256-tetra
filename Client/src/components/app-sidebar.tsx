@@ -41,6 +41,7 @@ import { Dialog } from "@radix-ui/react-dialog"
 import { SearchBar } from "./search-bar"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "./ui/alert-dialog"
 import { toast } from "sonner"
+import Image from "next/image"
 
 type NavigationItem = {
   icon?: React.ElementType
@@ -184,7 +185,8 @@ export function AppSidebar() {
   return (
     <Sidebar className=" w-24 h-screen shadow-slate-300 shadow-lg fixed z-50 overflow-hidden" collapsible="none">
       <SidebarHeader className="p-4 flex items-center justify-center">
-        <h1 className="text-lg font-semibold pt-4">V</h1>
+        {/* Logo Image */}
+        <Image src="/logo.png" alt="Logo" width={40} height={40} />
       </SidebarHeader>
 
       <SidebarContent className="justify-center relative">
