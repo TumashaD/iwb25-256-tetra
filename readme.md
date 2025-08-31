@@ -20,6 +20,7 @@ Welcome to the **Vinnova Competition Platform**! This is a comprehensive solutio
 * [Configuration](#configuration)
   * [Environment Variables](#environment-variables)
   * [Supabase Database](#supabase-database)
+  * [Database Structure](#database-structure)
   * [Google Services](#google-services)
   * [AI Integration](#ai-integration)
 * [Project Structure](#project-structure)
@@ -172,18 +173,26 @@ The frontend configuration is managed through environment variables. Create a `.
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
-NEXT_PUBLIC_API_BASE_URL=http://localhost:8080
+SUPABASE_JWT_SECRET = your-supabase-jwt-secret
 ```
 
 ### Supabase Database
 1. Create a Supabase project at [supabase.com](https://supabase.com)
-2. Set up the required database tables for:
-   - Users and profiles
-   - Competitions
-   - Teams and team members
-   - Enrollments
-3. Configure Row Level Security (RLS) policies
-4. Get your project URL and anon key from the Supabase dashboard
+2. Set up the required database tables (see Database Structure below)
+3. Configure Row Level Security (RLS) policies for secure data access
+4. Enable realtime subscriptions for live updates
+5. Get your project URL and anon key from the Supabase dashboard
+6. Configure authentication providers (Email, OAuth)
+
+### Database Structure
+
+Our platform uses a PostgreSQL database hosted on Supabase with the following schema:
+
+<div align="center">
+  <img src="./assets/supabse.png" alt="Database Schema" width="100%" style="border-radius: 10px; max-width: 1000px; border: 2px solid #e2e8f0;">
+  
+  <p><em>📊 Complete database schema showing all tables and relationships</em></p>
+</div>
 
 ### Google Services
 
@@ -279,86 +288,6 @@ npm run dev
 The frontend application will be available at `http://localhost:3000`
 
 
-## API Endpoints
-
-### Competition Management
-- `GET /competitions` - List all competitions
-- `GET /competitions/{id}` - Get competition details
-- `POST /competitions` - Create new competition (Organizers only)
-- `PUT /competitions/{id}` - Update competition (Organizers only)
-- `DELETE /competitions/{id}` - Delete competition (Organizers only)
-
-### Team Management
-- `GET /teams` - List teams
-- `GET /teams/{id}` - Get team details with members
-- `POST /teams` - Create new team
-- `POST /teams/{id}/members` - Add team member
-- `DELETE /teams/{id}/members/{memberId}` - Remove team member
-- `DELETE /teams/{id}` - Delete team
-
-### Enrollment Management
-- `GET /enrollments` - List enrollments
-- `POST /enrollments` - Register team for competition
-- `PUT /enrollments/{id}` - Update enrollment status
-- `DELETE /enrollments/{id}` - Cancel enrollment
-
-### User Management
-- `GET /users/{id}` - Get user profile
-- `PUT /users/{id}` - Update user profile
-- `GET /users/search` - Search users by email
-
-### AI Services
-- `POST /ai/chat` - Send message to AI chatbot
-- `GET /ai/conversation/{id}` - Get conversation history
-
-### Organizer Services
-- `POST /organizer/saveLandingPage/{id}` - Save landing page project data
-- `POST /organizer/publishLandingPage/{id}` - Publish custom landing page
-- `POST /organizer/uploadAssets/{id}` - Upload assets for competition
-- `DELETE /organizer/deleteAssets/{id}` - Delete competition assets
-- `GET /organizer/getAssets/{id}` - Get competition assets
-
-### Email Services
-- `POST /gmail/send` - Send email notifications
-- `POST /gmail/bulk` - Send bulk emails to teams
-
-## Custom Landing Page Builder
-
-The platform features a powerful **visual webpage builder** that allows organizers to create professional, custom landing pages for their competitions using **GrapesJS Studio**.
-
-### Key Features
-
-#### Visual Editor
-- **Drag-and-Drop Interface**: Intuitive visual editor with real-time preview
-- **Professional Components**: Pre-built sections for competition details, timelines, and contact information
-- **Responsive Design**: Automatically optimized for desktop, tablet, and mobile devices
-- **WYSIWYG Editing**: See exactly how your page will look while editing
-
-#### Dynamic Content Integration
-- **Auto-Population**: Competition details (title, dates, category, prizes) are automatically integrated
-- **Template Variables**: Use dynamic placeholders that update with competition data
-- **Live Data Binding**: Changes to competition settings reflect immediately on the landing page
-
-#### Asset Management
-- **Media Upload**: Upload and manage images, icons, and other assets
-- **Asset Library**: Organized storage for competition-specific media files
-- **Optimized Delivery**: Assets served via Supabase Storage for fast loading
-
-#### Advanced Customization
-- **Custom CSS**: Full styling control with CSS editor
-- **Component Library**: Flex layouts, accordions, and specialized competition components
-- **Template System**: Start with professional templates or build from scratch
-
-### How It Works
-
-1. **Create Competition**: Organizers create a new competition with basic details
-2. **Access Editor**: Navigate to the competition edit page to open the visual editor
-3. **Design Page**: Use drag-and-drop tools to design the perfect landing page
-4. **Add Content**: Competition data is automatically populated into the design
-5. **Upload Assets**: Add custom images, logos, and media files
-6. **Preview & Test**: Real-time preview shows how the page will appear
-7. **Publish**: One-click deployment makes the page live for participants
-
 ## Key Features Walkthrough
 
 ### For Competitors
@@ -390,6 +319,9 @@ The platform features a powerful **visual webpage builder** that allows organize
    - **Drag-and-Drop Editor**: Professional visual editor with real-time preview
    - **Pre-built Templates**: Competition-focused layouts and components
    - **Asset Management**: Upload and organize images, icons, and media files
+   - **Dynamic Content Integration**:Use dynamic placeholders that update with competition data
+   - **Advanced Customization**: Full styling control with CSS editor, and component layouts
+   - **Publish**: One-click deployment and real-time preview
 
 2. **Competition Management**
    - Create detailed competition descriptions
