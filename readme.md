@@ -1,17 +1,14 @@
 <div align="center">
-  <div style="position: relative; width: 100%; max-width: 1200px; margin: 0 auto;">
-    <img src="./assets/vinnova.png" alt="Vinnova Competition Platform" style="width: 100%; height: auto; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
-    <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(135deg, rgba(102, 126, 234, 0.8) 0%, rgba(118, 75, 162, 0.8) 100%); border-radius: 15px; display: flex; align-items: center; justify-content: center;">
-      <h1 style="color: white; font-size: 4rem; font-weight: 900; text-align: center; margin: 0; text-shadow: 2px 2px 8px rgba(0,0,0,0.7); font-family: 'Segoe UI', Arial, sans-serif;">
-        Vinnova Competition Platform
-      </h1>
-    </div>
-  </div>
+  <img src="./assets/vinnova.png" alt="Vinnova Competition Platform" width="100%" style="border-radius: 10px; max-width: 1000px;">
+  
+  <h1>🏆 Vinnova Competition Platform 🏆</h1>
+  
+  <p>
+    <em>Empowering competitive collaboration through modern technology</em>
+  </p>
 </div>
 
-<br/>
-
-# Vinnova Competition Platform
+---
 
 Welcome to the **Vinnova Competition Platform**! This is a comprehensive solution for managing competitive events, team formations, and participant enrollments. Built with modern technologies, it provides features for both competitors and organizers to create, manage, and participate in various competitions.
 
@@ -69,7 +66,6 @@ Welcome to the **Vinnova Competition Platform**! This is a comprehensive solutio
 - **Intelligent Chatbot**
   - Google Gemini AI integration
   - Competition guidance and support
-  - Real-time assistance for users
 
 ### Communication & Notifications
 - **Email Integration**
@@ -79,9 +75,8 @@ Welcome to the **Vinnova Competition Platform**! This is a comprehensive solutio
 ### Dashboard & Analytics
 - **Comprehensive Dashboards**
   - Role-specific dashboard views
-  - Competition analytics and insights
-  - Team performance tracking
-  - User activity monitoring
+  - Enrollmets and Competition
+  - User and team activity monitoring
 
 ## Tech Stack
 
@@ -363,20 +358,6 @@ The platform features a powerful **visual webpage builder** that allows organize
 5. **Upload Assets**: Add custom images, logos, and media files
 6. **Preview & Test**: Real-time preview shows how the page will appear
 7. **Publish**: One-click deployment makes the page live for participants
-
-### Technical Implementation
-
-- **Frontend**: React-based GrapesJS Studio SDK integration
-- **Backend**: Ballerina services for saving, loading, and publishing pages
-- **Storage**: Supabase for HTML/CSS storage and asset management
-- **Rendering**: Server-side HTML generation for optimal performance
-
-### Example Use Cases
-
-- **Hackathon Landing Pages**: Showcase event details, schedules, and prizes
-- **Competition Portals**: Dedicated pages for specific competitions
-- **Event Promotion**: Marketing-focused pages to attract participants
-- **Information Hubs**: Comprehensive competition guides and resources
 
 ## Key Features Walkthrough
 
