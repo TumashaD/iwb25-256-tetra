@@ -25,6 +25,12 @@ Welcome to the **Vinnova Competition Platform**! This is a comprehensive solutio
   - Track competition progress and status
   - Support for multiple competition types
 
+- **Custom Landing Page Builder**
+  - **GrapesJS Studio Integration**: Drag-and-drop visual editor
+  - **Dynamic Content**: Auto-populate competition details
+  - **Asset Management**: Upload and manage images, icons, and media
+  - **Publishing System**: One-click page deployment
+
 ### Team Collaboration
 - **Team Formation & Management**
   - Create and join teams
@@ -73,6 +79,7 @@ Welcome to the **Vinnova Competition Platform**! This is a comprehensive solutio
 - **Radix UI** components
 - **Framer Motion** for animations
 - **Editor.js** for rich content editing
+- **GrapesJS Studio** for visual page building
 
 ### Backend
 - **Ballerina** runtime and services
@@ -263,12 +270,6 @@ npm run dev
 
 The frontend application will be available at `http://localhost:3000`
 
-For production builds:
-
-```bash
-npm run build
-npm start
-```
 
 ## API Endpoints
 
@@ -302,9 +303,67 @@ npm start
 - `POST /ai/chat` - Send message to AI chatbot
 - `GET /ai/conversation/{id}` - Get conversation history
 
+### Organizer Services
+- `POST /organizer/saveLandingPage/{id}` - Save landing page project data
+- `POST /organizer/publishLandingPage/{id}` - Publish custom landing page
+- `POST /organizer/uploadAssets/{id}` - Upload assets for competition
+- `DELETE /organizer/deleteAssets/{id}` - Delete competition assets
+- `GET /organizer/getAssets/{id}` - Get competition assets
+
 ### Email Services
 - `POST /gmail/send` - Send email notifications
 - `POST /gmail/bulk` - Send bulk emails to teams
+
+## Custom Landing Page Builder
+
+The platform features a powerful **visual webpage builder** that allows organizers to create professional, custom landing pages for their competitions using **GrapesJS Studio**.
+
+### Key Features
+
+#### Visual Editor
+- **Drag-and-Drop Interface**: Intuitive visual editor with real-time preview
+- **Professional Components**: Pre-built sections for competition details, timelines, and contact information
+- **Responsive Design**: Automatically optimized for desktop, tablet, and mobile devices
+- **WYSIWYG Editing**: See exactly how your page will look while editing
+
+#### Dynamic Content Integration
+- **Auto-Population**: Competition details (title, dates, category, prizes) are automatically integrated
+- **Template Variables**: Use dynamic placeholders that update with competition data
+- **Live Data Binding**: Changes to competition settings reflect immediately on the landing page
+
+#### Asset Management
+- **Media Upload**: Upload and manage images, icons, and other assets
+- **Asset Library**: Organized storage for competition-specific media files
+- **Optimized Delivery**: Assets served via Supabase Storage for fast loading
+
+#### Advanced Customization
+- **Custom CSS**: Full styling control with CSS editor
+- **Component Library**: Flex layouts, accordions, and specialized competition components
+- **Template System**: Start with professional templates or build from scratch
+
+### How It Works
+
+1. **Create Competition**: Organizers create a new competition with basic details
+2. **Access Editor**: Navigate to the competition edit page to open the visual editor
+3. **Design Page**: Use drag-and-drop tools to design the perfect landing page
+4. **Add Content**: Competition data is automatically populated into the design
+5. **Upload Assets**: Add custom images, logos, and media files
+6. **Preview & Test**: Real-time preview shows how the page will appear
+7. **Publish**: One-click deployment makes the page live for participants
+
+### Technical Implementation
+
+- **Frontend**: React-based GrapesJS Studio SDK integration
+- **Backend**: Ballerina services for saving, loading, and publishing pages
+- **Storage**: Supabase for HTML/CSS storage and asset management
+- **Rendering**: Server-side HTML generation for optimal performance
+
+### Example Use Cases
+
+- **Hackathon Landing Pages**: Showcase event details, schedules, and prizes
+- **Competition Portals**: Dedicated pages for specific competitions
+- **Event Promotion**: Marketing-focused pages to attract participants
+- **Information Hubs**: Comprehensive competition guides and resources
 
 ## Key Features Walkthrough
 
@@ -332,19 +391,25 @@ npm start
    - Upcoming competition schedules
 
 ### For Organizers
-1. **Competition Creation**
+1. **Competition Creation & Landing Pages**
+   - **Visual Page Builder**: Create stunning custom competition webpages using GrapesJS Studio
+   - **Drag-and-Drop Editor**: Professional visual editor with real-time preview
+   - **Pre-built Templates**: Competition-focused layouts and components
+   - **Asset Management**: Upload and organize images, icons, and media files
+
+2. **Competition Management**
    - Create detailed competition descriptions
    - Set rules, deadlines, and requirements
    - Configure registration parameters
-   - Manage competition lifecycle
+   - Manage competition lifecycle and status
 
-2. **Team Management**
+3. **Team Management**
    - View all registered teams
-   - Approve or reject registrations
+   - Approve, reject and manage registrations
    - Send bulk communications
    - Track participation metrics
 
-3. **Communication Tools**
+4. **Communication Tools**
    - Send targeted emails to participants
    - Broadcast announcements
    - Individual team communication
@@ -352,40 +417,22 @@ npm start
 ## Technology Highlights
 
 - **Modern Frontend Stack**: Next.js 15 with React 19 and TypeScript
+- **Visual Page Builder**: GrapesJS Studio for professional webpage creation
 - **Robust Backend**: Ballerina with PostgreSQL and REST APIs
 - **Real-time Features**: Live updates and notifications
 - **AI Integration**: Google Gemini for intelligent assistance
 - **Responsive Design**: Mobile-first approach with Tailwind CSS
 - **Security**: JWT authentication with role-based access control
+- **Cloud Storage**: Supabase for database, authentication, and file storage
 
 ## Development Roadmap
 
+- [ ] Advanecd submission management
 - [ ] Real-time chat system
 - [ ] Competition analytics dashboard
 - [ ] Mobile application
-- [ ] Integration with external competition platforms
 - [ ] Advanced AI features for competition recommendations
-- [ ] Payment integration for premium competitions
+- [ ] Payment integration for premium competitions and rewards
 
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Support
-
-For support and questions:
-- Create an issue in the GitHub repository
-- Contact the development team
-- Check the documentation wiki
-
----
 
 **Vinnova Competition Platform** - Empowering competitive collaboration through modern technology.
