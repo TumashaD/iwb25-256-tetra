@@ -1,3 +1,16 @@
+<div align="center">
+  <div style="position: relative; width: 100%; max-width: 1200px; margin: 0 auto;">
+    <img src="./assets/vinnova.png" alt="Vinnova Competition Platform" style="width: 100%; height: auto; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+    <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(135deg, rgba(102, 126, 234, 0.8) 0%, rgba(118, 75, 162, 0.8) 100%); border-radius: 15px; display: flex; align-items: center; justify-content: center;">
+      <h1 style="color: white; font-size: 4rem; font-weight: 900; text-align: center; margin: 0; text-shadow: 2px 2px 8px rgba(0,0,0,0.7); font-family: 'Segoe UI', Arial, sans-serif;">
+        Vinnova Competition Platform
+      </h1>
+    </div>
+  </div>
+</div>
+
+<br/>
+
 # Vinnova Competition Platform
 
 Welcome to the **Vinnova Competition Platform**! This is a comprehensive solution for managing competitive events, team formations, and participant enrollments. Built with modern technologies, it provides features for both competitors and organizers to create, manage, and participate in various competitions.
