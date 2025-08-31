@@ -1,5 +1,8 @@
 <div align="center">
-  <img src="./assets/vinnova.png" alt="Vinnova Competition Platform" width="100%" style="border-radius: 10px; max-width: 1000px;">
+  <video width="100%" autoplay loop muted playsinline style="border-radius: 10px; max-width: 1000px;">
+    <source src="./assets/vinnova.mp4" type="video/mp4">
+    <img src="./assets/vinnova.png" alt="Vinnova Competition Platform" width="100%" style="border-radius: 10px; max-width: 1000px;">
+  </video>
   
   <h1>🏆 Vinnova Competition Platform 🏆</h1>
   
