@@ -214,6 +214,7 @@ export default function CompetitorDashboardEventsPage() {
         <FormDisplay
           eventId={selectedEvent.id}
           eventData={selectedEvent}
+          competitionId={competitionId}
           enrollmentId={enrollmentId || undefined}
           onSubmit={handleSubmitForm}
           existingSubmission={getUserSubmission(selectedEvent.id)}

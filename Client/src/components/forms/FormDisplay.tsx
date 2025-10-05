@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Loader2, Send, FileText, CheckCircle, User, Calendar, Upload, Download, Eye } from "lucide-react"
 import { toast } from "sonner"
+import { apiCall } from "@/lib/api"
 
 // Import SurveyJS CSS
 import "survey-core/survey-core.css"
@@ -99,6 +100,20 @@ export default function FormDisplay({
       if (cleanedData) {
         surveyModel.data = cleanedData
         
+        // For custom forms with file fields, also initialize formData and uploadedFiles
+        if (hasFileFields && cleanedData) {
+          setFormData(cleanedData)
+          
+          // Extract file fields and populate uploadedFiles state for UI display
+          const fileFieldData: Record<string, any[]> = {}
+          eventData.form_schema.elements?.forEach((element: any) => {
+            if (element.type === 'file' && cleanedData[element.name]) {
+              fileFieldData[element.name] = cleanedData[element.name]
+            }
+          })
+          setUploadedFiles(fileFieldData)
+        }
+        
         // Only set to display mode if editMode is false (view-only)
         if (!editMode) {
           surveyModel.mode = "display" // Read-only mode for viewing submissions
@@ -116,7 +131,7 @@ export default function FormDisplay({
         surveyModel.dispose()
       }
     }
-  }, [eventData, existingSubmission, editMode])
+  }, [eventData, existingSubmission, editMode, hasFileFields])
 
   // Handle file uploads for form submission
   const handleFileUpload = async (files: FileList, fieldName: string, competitionId: number) => {
@@ -133,19 +148,10 @@ export default function FormDisplay({
         formData.append('files', files[i])
       }
 
-      const response = await fetch(`/api/events/competitions/${competitionId}/events/${eventId}/submissions/${enrollmentId}/upload`, {
+      const result = await apiCall(`/events/competitions/${competitionId}/events/${eventId}/submissions/${enrollmentId}/upload`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token') || ''}`,
-        },
         body: formData
       })
-
-      if (!response.ok) {
-        throw new Error(`Upload failed: ${response.statusText}`)
-      }
-
-      const result = await response.json()
       
       if (result.files && Array.isArray(result.files)) {
         return result.files.map((file: any) => ({
@@ -207,11 +213,11 @@ export default function FormDisplay({
     setIsSubmitting(true)
 
     try {
-      // Combine regular form data with uploaded files
+      // Form data already includes uploaded file URLs, so just use that
       const submissionData = {
         event_id: eventId,
         enrollment_id: enrollmentId,
-        submission: { ...formData, ...uploadedFiles }
+        submission: formData  // formData now includes both regular fields and file URLs
       }
 
       if (onSubmit) {
@@ -228,7 +234,7 @@ export default function FormDisplay({
     } finally {
       setIsSubmitting(false)
     }
-  }, [eventId, enrollmentId, onSubmit, formData, uploadedFiles])
+  }, [eventId, enrollmentId, onSubmit, formData])
 
   // Handle file input changes
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, fieldName: string) => {
@@ -239,10 +245,19 @@ export default function FormDisplay({
 
     try {
       const uploadedFileInfo = await handleFileUpload(files, fieldName, competitionId)
+      
+      // Store uploaded files in both uploadedFiles state (for UI) and formData (for submission)
       setUploadedFiles(prev => ({
         ...prev,
         [fieldName]: uploadedFileInfo
       }))
+      
+      // Store file info in form data so it gets included in submission
+      setFormData(prev => ({
+        ...prev,
+        [fieldName]: uploadedFileInfo
+      }))
+      
       toast.dismiss()
       toast.success(`Successfully uploaded ${uploadedFileInfo.length} file(s)`)
     } catch (error) {
@@ -301,22 +316,41 @@ export default function FormDisplay({
                   </p>
                 )}
 
-                {uploadedFiles[element.name] && uploadedFiles[element.name].length > 0 && (
+                {(uploadedFiles[element.name] || formData[element.name]) && (
                   <div className="mt-2 space-y-1">
-                    <p className="text-sm font-medium text-green-600">Uploaded files:</p>
-                    {uploadedFiles[element.name].map((file: any, fileIndex: number) => (
+                    <p className="text-sm font-medium text-green-600">
+                      {uploadedFiles[element.name] ? 'Uploaded files:' : 'Existing files:'}
+                    </p>
+                    {(uploadedFiles[element.name] || formData[element.name] || []).map((file: any, fileIndex: number) => (
                       <div key={fileIndex} className="flex items-center gap-2 text-sm text-gray-600">
                         <CheckCircle className="h-4 w-4 text-green-500" />
                         <span>{file.name}</span>
                         {file.url && (
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => window.open(file.url, '_blank')}
-                          >
-                            <Eye className="h-3 w-3" />
-                          </Button>
+                          <div className="flex gap-1">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => window.open(file.url, '_blank')}
+                              className="h-6 w-6 p-0"
+                            >
+                              <Eye className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                const link = document.createElement('a')
+                                link.href = file.url
+                                link.download = file.name || 'download'
+                                link.click()
+                              }}
+                              className="h-6 w-6 p-0"
+                            >
+                              <Download className="h-3 w-3" />
+                            </Button>
+                          </div>
                         )}
                       </div>
                     ))}
