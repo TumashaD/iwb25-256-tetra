@@ -108,7 +108,7 @@ public function createAIService(postgresql:Client dbClient, string geminiApiKey,
             };
 
             http:Response|error response = geminiClient->post(
-                string `/v1beta/models/gemini-1.5-flash:generateContent?key=${self.apiKey}`,
+                string `/v1beta/models/gemini-2.5-flash:generateContent?key=${self.apiKey}`,
                 geminiRequest,
                 {
                 "Content-Type": "application/json"
@@ -116,33 +116,61 @@ public function createAIService(postgresql:Client dbClient, string geminiApiKey,
             );
 
             if response is error {
+                log:printError("HTTP error calling Gemini API", response);
                 return response;
             }
 
             if response.statusCode != 200 {
                 string errorMsg = string `Gemini API error: ${response.statusCode}`;
+                // Try to get response body for more details
+                json|error responseBody = response.getJsonPayload();
+                if responseBody is json {
+                    log:printError(string `Gemini API error details: ${responseBody.toString()}`);
+                }
                 log:printError(errorMsg);
                 return error(errorMsg);
             }
 
             json|error responseBody = response.getJsonPayload();
             if responseBody is error {
+                log:printError("Error parsing Gemini API response", responseBody);
                 return responseBody;
             }
 
             // Extract the generated text from Gemini response
-            json candidates = check responseBody.candidates;
+            json|error candidates = responseBody.candidates;
+            if candidates is error {
+                log:printError("No candidates found in Gemini response");
+                return error("Invalid response format from Gemini API");
+            }
+            
             if candidates is json[] && candidates.length() > 0 {
                 json firstCandidate = candidates[0];
-                json content = check firstCandidate.content;
-                json parts = check content.parts;
+                json|error content = firstCandidate.content;
+                if content is error {
+                    log:printError("No content found in candidate");
+                    return error("Invalid response format from Gemini API");
+                }
+                
+                json|error parts = content.parts;
+                if parts is error {
+                    log:printError("No parts found in content");
+                    return error("Invalid response format from Gemini API");
+                }
+                
                 if parts is json[] && parts.length() > 0 {
                     json firstPart = parts[0];
-                    string generatedText = check firstPart.text;
+                    json|error textField = firstPart.text;
+                    if textField is error {
+                        log:printError("No text found in part");
+                        return error("Invalid response format from Gemini API");
+                    }
+                    string generatedText = textField.toString();
                     return generatedText;
                 }
             }
 
+            log:printError("Empty or invalid response from Gemini API");
             return "I'm sorry, I couldn't generate a response at this time.";
         }
     };
