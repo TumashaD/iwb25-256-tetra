@@ -16,12 +16,12 @@ import { ErrorBoundary } from '@/components/auth/ErrorBoundary'
 import { useSingleCall } from '@/hooks/useCallProtection'
 
 export default function SignUpPage() {
-  const { 
-    user, 
+  const {
+    user,
     loading,
-    signUpWithGoogle, 
-    createUserProfile, 
-    error: userError 
+    signUpWithGoogle,
+    createUserProfile,
+    error: userError
   } = useAuth()
   const router = useRouter()
   const [step, setStep] = React.useState<'login' | 'role' | 'details' | 'success'>('login')
@@ -55,7 +55,7 @@ export default function SignUpPage() {
       handleRedirectToHome()
       return
     }
-    
+
     // If user is authenticated but no profile, move to role selection
     if (user?.isAuthenticated && !user.profile && step === 'login') {
       setStep('role')
@@ -75,17 +75,17 @@ export default function SignUpPage() {
 
   const handleProfileSubmission = async (userData: any) => {
     if (!role) return
-    
+
     setError(null)
-    
+
     try {
       // Validate required fields
       if (!userData.name?.trim()) {
         throw new Error("Name is required")
       }
-      
+
       if (!userData.email?.trim()) {
-        throw new Error("Email is required") 
+        throw new Error("Email is required")
       }
 
       // Use the createUserProfile from useUser context
@@ -120,7 +120,7 @@ export default function SignUpPage() {
     if (loading) {
       return <LoadingStep />
     }
-    
+
     // If user is authenticated and has profile, they shouldn't be here
     if (user?.isAuthenticated && user.profile) {
       return <LoadingStep />
@@ -134,7 +134,7 @@ export default function SignUpPage() {
             <h3 className="text-red-800 font-medium">Error</h3>
             <p className="text-red-600 text-sm mt-1">{error}</p>
           </div>
-          <button 
+          <button
             onClick={retryOperation}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
@@ -143,27 +143,27 @@ export default function SignUpPage() {
         </div>
       )
     }
-    
+
     switch (step) {
       case 'login':
         return (
-          <LoginStep 
-            onGoogleSignUp={protectedGoogleSignUp} 
+          <LoginStep
+            onGoogleSignUp={protectedGoogleSignUp}
             isSubmitting={isSigningUp}
           />
         )
-      
+
       case 'role':
         return (
-          <RoleStep 
+          <RoleStep
             onRoleSelect={handleRoleSelection}
           />
         )
-      
+
       case 'details':
         if (!user) return <LoadingStep />
         return (
-          <DetailsStep 
+          <DetailsStep
             user={user}
             role={role || ''}
             onSubmit={protectedProfileSubmission}
@@ -171,14 +171,14 @@ export default function SignUpPage() {
             isSubmitting={isSubmittingProfile}
           />
         )
-      
+
       case 'success':
         return (
-          <SuccessStep 
+          <SuccessStep
             onContinue={handleRedirectToHome}
           />
         )
-      
+
       default:
         return <LoadingStep />
     }
@@ -208,7 +208,7 @@ export default function SignUpPage() {
           {/* Overlay for better text readability */}
           <div className="absolute inset-0 bg-black/20" />
         </div>
-        
+
         {/* Content Layer */}
         <div className="relative z-10 flex flex-col flex-1">
           <div className="flex flex-1 flex-col lg:flex-row">

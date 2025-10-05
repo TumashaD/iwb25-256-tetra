@@ -432,7 +432,7 @@ export default function CompetitorDashboard() {
                       {/* Card content */}
                       <div className="relative z-10">
                         <CardHeader className="pb-3 text-center">
-                          <CardTitle className="text-2xl font-bold leading-tight text-gray-900">{enrollment.competition_title}</CardTitle>
+                          <CardTitle className="text-2xl font-bold leading-tight text-white">{enrollment.competition_title}</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-3">
                           {/* Transparent box for middle data */}
@@ -508,52 +508,52 @@ export default function CompetitorDashboard() {
                     </CardContent>
                   </Card>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {teams.map((team) => (
                       <Card
-                        key={team.id}
-                        className={`cursor-pointer transition-all hover:shadow-md aspect-square flex flex-col overflow-hidden p-0 ${selectedTeam?.id === team.id ? "ring-2 ring-primary" : ""
-                          }`}
-                        onClick={() => fetchTeamDetails(team.id)}
+                      key={team.id}
+                      className={`cursor-pointer transition-all hover:shadow-md flex flex-col overflow-hidden p-0 min-h-[280px] sm:min-h-[320px] lg:min-h-[280px] ${selectedTeam?.id === team.id ? "ring-2 ring-primary" : ""
+                        }`}
+                      onClick={() => fetchTeamDetails(team.id)}
                       >
-                        {/* Top Section - Team Name */}
-                        <div className="h-1/3 p-3 text-center border-b flex items-center justify-center bg-main/10">
-                          <h3 className="font-bold text-xl text-center text-main">{team.name}</h3>
+                      {/* Top Section - Team Name */}
+                      <div className="flex-shrink-0 text-center border-b flex items-center justify-center bg-main/10 min-h-[80px] sm:min-h-[100px]">
+                        <h3 className="font-bold text-lg sm:text-xl text-center text-main break-words hyphens-auto">{team.name}</h3>
+                      </div>
+                      
+                      {/* Middle Section - Participant Data and Date */}
+                      <div className="flex-1 bg-white text-center flex flex-col justify-center space-y-2 sm:space-y-3">
+                        <div className="flex items-center justify-center gap-2 text-xs sm:text-sm text-gray-600">
+                        <Users className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                        <span className="break-words">Max {team.no_participants} participants</span>
                         </div>
-                        
-                        {/* Middle Section - Participant Data and Date */}
-                        <div className="h-1/3 p-4 bg-white text-center flex flex-col justify-center space-y-3">
-                          <div className="flex items-center justify-center gap-2 text-sm text-gray-600">
-                            <Users className="h-4 w-4" />
-                            <span>Max {team.no_participants} participants</span>
-                          </div>
-                          <div className="flex items-center justify-center gap-2 text-sm text-gray-600">
-                            <CalendarDays className="h-4 w-4" />
-                            <span>
-                              Created {team.created_at ? new Date(team.created_at).toLocaleDateString() : "N/A"}
-                            </span>
-                          </div>
+                        <div className="flex items-center justify-center gap-2 text-xs sm:text-sm text-gray-600">
+                        <CalendarDays className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                        <span className="break-words">
+                          Created {team.created_at ? new Date(team.created_at).toLocaleDateString() : "N/A"}
+                        </span>
                         </div>
-                        
-                        {/* Bottom Section - Role Badge */}
-                        <div className={`h-1/3 p-3 text-center flex items-center justify-center rounded-b-lg ${team.created_by === user?.id ? "bg-amber-400" : "bg-gray-400"}`}>
-                          <div className="flex items-center justify-center gap-2 text-white font-semibold text-base">
-                            {team.created_by === user?.id ? (
-                              <>
-                                <Crown className="h-5 w-5" />
-                                <span>Creator</span>
-                              </>
-                            ) : (
-                              <>
-                                <Users className="h-5 w-5" />
-                                <span>Member</span>
-                              </>
-                            )}
-                          </div>
+                      </div>
+                      
+                      {/* Bottom Section - Role Badge */}
+                      <div className={`flex-shrink-0 p-0 text-center flex items-center justify-center rounded-b-lg min-h-[40px] sm:min-h-[50px] ${team.created_by === user?.id ? "bg-amber-400" : "bg-gray-400"}`}>
+                        <div className="flex items-center justify-center gap-1 sm:gap-2 text-white font-semibold text-sm sm:text-base">
+                        {team.created_by === user?.id ? (
+                          <>
+                          <Crown className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+                          <span>Creator</span>
+                          </>
+                        ) : (
+                          <>
+                          <Users className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+                          <span>Member</span>
+                          </>
+                        )}
                         </div>
+                      </div>
                       </Card>
                     ))}
-                  </div>
+                    </div>
                 )}
               </div>
 

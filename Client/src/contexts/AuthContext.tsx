@@ -11,6 +11,7 @@ type AuthContextType = {
   user: User | null
   loading: boolean
   error: string | null
+  isAuthenticated: boolean
   signOut: () => Promise<void>
   signUpWithGoogle: () => Promise<{ provider: string; url: string }>
   createUserProfile: (userData: Omit<Profile, 'id' | 'createdAt'>) => Promise<void>
@@ -192,7 +193,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   // Merge authUser and user profile into a single currentUser
   let currentUser: User | null = null
-  if (authUser && userProfile) {
+  if (authUser) {
     currentUser = {
       id: authUser.id,
       email: authUser.email ?? '',
@@ -203,15 +204,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }
 
   // Fixed loading logic
-  const loading = !isHydrated || 
-                  authLoading || 
-                  userLoading || 
-                  (authUser !== null && userProfile === null && !userLoading)
+  const loading = !isHydrated ||
+    authLoading ||
+    userLoading
 
   const value: AuthContextType = {
     user: currentUser,
     loading,
     error,
+    isAuthenticated: !!authUser,
     signOut,
     signUpWithGoogle,
     createUserProfile,
