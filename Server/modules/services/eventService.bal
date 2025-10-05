@@ -485,8 +485,6 @@ public function createEventService(postgresql:Client dbClient, http:CorsConfig c
                 return http:NOT_FOUND;
             }
 
-            Submission existingSubmission = submissionArr[0];
-
             // Extract and validate required fields from JSON
             json|error submissionJson = submissionData.submission;
 
