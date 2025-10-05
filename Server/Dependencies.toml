@@ -5,7 +5,7 @@
 
 [ballerina]
 dependencies-toml-version = "2"
-distribution-version = "2201.13.0-m3"
+distribution-version = "2201.12.7"
 
 [[package]]
 org = "ballerina"
@@ -41,7 +41,7 @@ dependencies = [
 [[package]]
 org = "ballerina"
 name = "crypto"
-version = "2.9.0"
+version = "2.9.1"
 dependencies = [
 	{org = "ballerina", name = "jballerina.java"},
 	{org = "ballerina", name = "time"}
@@ -50,7 +50,7 @@ dependencies = [
 [[package]]
 org = "ballerina"
 name = "data.jsondata"
-version = "1.1.1"
+version = "1.1.2"
 dependencies = [
 	{org = "ballerina", name = "jballerina.java"},
 	{org = "ballerina", name = "lang.object"}
@@ -70,7 +70,7 @@ dependencies = [
 [[package]]
 org = "ballerina"
 name = "http"
-version = "2.14.4"
+version = "2.14.6"
 dependencies = [
 	{org = "ballerina", name = "auth"},
 	{org = "ballerina", name = "cache"},
@@ -120,7 +120,7 @@ version = "0.0.0"
 [[package]]
 org = "ballerina"
 name = "jwt"
-version = "2.15.0"
+version = "2.15.1"
 dependencies = [
 	{org = "ballerina", name = "cache"},
 	{org = "ballerina", name = "crypto"},
@@ -261,7 +261,7 @@ dependencies = [
 [[package]]
 org = "ballerina"
 name = "os"
-version = "1.10.0"
+version = "1.10.1"
 dependencies = [
 	{org = "ballerina", name = "io"},
 	{org = "ballerina", name = "jballerina.java"}
@@ -401,7 +401,6 @@ modules = [
 	{org = "tetra", packageName = "vinnova", moduleName = "vinnova"},
 	{org = "tetra", packageName = "vinnova", moduleName = "vinnova.auth"},
 	{org = "tetra", packageName = "vinnova", moduleName = "vinnova.services"},
-	{org = "tetra", packageName = "vinnova", moduleName = "vinnova.supabase"},
-	{org = "tetra", packageName = "vinnova", moduleName = "vinnova.supbase"}
+	{org = "tetra", packageName = "vinnova", moduleName = "vinnova.supabase"}
 ]
 

@@ -5,37 +5,28 @@ import type React from "react"
 import { useAuth } from "@/contexts/AuthContext"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { User, Mail, Calendar, Edit3, Save, X, ArrowLeft, Camera, MapPin, Globe, Star, Heart, Award } from "lucide-react"
+import { Mail, Calendar, Camera, Edit2 } from "lucide-react"
+import { ReadmeEditor } from "@/components/readme-editor"
 
 export default function ProfilePage() {
   const { user, loading, updateUserProfile } = useAuth()
   const router = useRouter()
-  const [isEditing, setIsEditing] = useState(false)
-  const [formData, setFormData] = useState({
-    name: "",
-    about: "",
-  })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
-
-  // Initialize form data when user data is available
-  useEffect(() => {
-    if (user?.profile) {
-      setFormData({
-        name: user.profile.name || "",
-        about: user.profile.about || "",
-      })
-    }
-  }, [user?.profile])
+  const [isEditing, setIsEditing] = useState(false)
+  const [editedProfile, setEditedProfile] = useState<{
+    name: string
+    role: 'competitor' | 'organizer' | ''
+  }>({
+    name: "",
+    role: "" as 'competitor' | 'organizer' | ''
+  })
 
   useEffect(() => {
     if (!loading && !user) {
@@ -43,48 +34,43 @@ export default function ProfilePage() {
     }
   }, [user, loading, router])
 
-  const handleEdit = () => {
-    setIsEditing(true)
-    setError(null)
-  }
-
-  const handleCancel = () => {
-    setIsEditing(false)
-    setError(null)
-    // Reset form data to original values
+  useEffect(() => {
     if (user?.profile) {
-      setFormData({
+      setEditedProfile({
         name: user.profile.name || "",
-        about: user.profile.about || "",
+        role: (user.profile.role || "") as 'competitor' | 'organizer' | ''
       })
     }
-  }
+  }, [user])
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleReadmeSave = async (content: string) => {
     setIsSubmitting(true)
     setError(null)
 
     try {
-      // Only send changed data
-      const updatedData: Partial<{ name: string; about: string; location: string; website: string }> = {}
+      await updateUserProfile({ readme: content })
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update README")
+      throw err
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
 
-      const trimmedName = formData.name.trim()
-      const trimmedAbout = formData.about.trim()
+  const handleProfileSave = async () => {
+    setIsSubmitting(true)
+    setError(null)
 
-      if (trimmedName !== (user?.profile?.name || "")) {
-        updatedData.name = trimmedName
+    try {
+      const profileUpdate: any = {
+        name: editedProfile.name
       }
 
-      if (trimmedAbout !== (user?.profile?.about || "")) {
-        updatedData.about = trimmedAbout
+      if (editedProfile.role) {
+        profileUpdate.role = editedProfile.role
       }
 
-      // Only update if there are changes
-      if (Object.keys(updatedData).length > 0) {
-        await updateUserProfile(updatedData)
-      }
-
+      await updateUserProfile(profileUpdate)
       setIsEditing(false)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to update profile")
@@ -93,12 +79,14 @@ export default function ProfilePage() {
     }
   }
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }))
+  const handleCancelEdit = () => {
+    if (user?.profile) {
+      setEditedProfile({
+        name: user.profile.name || "",
+        role: (user.profile.role || "") as 'competitor' | 'organizer' | ''
+      })
+    }
+    setIsEditing(false)
   }
 
   const getUserInitials = (name: string) => {
@@ -144,7 +132,48 @@ export default function ProfilePage() {
             </div>
 
             <div className="flex-1">
-              <h1 className="text-4xl font-bold text-gray-900 mb-2">{user.profile?.name || "Welcome"}</h1>
+              <div className="flex items-center gap-3 mb-2">
+                {isEditing ? (
+                  <Input
+                    value={editedProfile.name}
+                    onChange={(e) => setEditedProfile(prev => ({ ...prev, name: e.target.value }))}
+                    placeholder="Enter your full name"
+                    className="text-4xl font-bold border-2 border-blue-300 focus:border-blue-500 bg-white/90 p-2 h-auto"
+                  />
+                ) : (
+                  <h1 className="text-4xl font-bold text-gray-900">{user.profile?.name || "Welcome"}</h1>
+                )}
+                {!isEditing ? (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setIsEditing(true)}
+                    className="rounded-full w-8 h-8 p-0 hover:bg-white/80"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                  </Button>
+                ) : (
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={handleCancelEdit}
+                      className="text-xs"
+                      disabled={isSubmitting}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={handleProfileSave}
+                      className="text-xs"
+                      disabled={isSubmitting}
+                    >
+                      Save
+                    </Button>
+                  </div>
+                )}
+              </div>
               <p className="text-gray-600 mb-4 flex items-center gap-2">
                 <Mail className="w-4 h-4" />
                 {user.email}
@@ -154,15 +183,26 @@ export default function ProfilePage() {
                   <Calendar className="w-3 h-3 mr-1" />
                   Member since 2024
                 </Badge>
+                {isEditing ? (
+                  <Select
+                    value={editedProfile.role}
+                    onValueChange={(value) => setEditedProfile(prev => ({ ...prev, role: value as 'competitor' | 'organizer' | '' }))}
+                  >
+                    <SelectTrigger className="w-32 h-8 text-xs">
+                      <SelectValue placeholder="Select role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="competitor">Competitor</SelectItem>
+                      <SelectItem value="organizer">Organizer</SelectItem>
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <Badge variant="secondary" className="bg-green-100 text-green-700 border-green-200 px-3 py-1 capitalize">
+                    {user.profile?.role || 'Member'}
+                  </Badge>
+                )}
               </div>
             </div>
-
-            {!isEditing && (
-              <Button onClick={handleEdit} className="bg-blue-600 hover:bg-blue-700 text-white shadow-md rounded-2xl">
-                <Edit3 className="w-4 h-4 mr-2" />
-                Edit Profile
-              </Button>
-            )}
           </div>
         </div>
       </div>
@@ -175,124 +215,18 @@ export default function ProfilePage() {
           </Alert>
         )}
 
-        <div className="grid grid-cols-1  gap-8">
-          {/* Profile Information Card */}
-          <div className="lg:col-span-2">
-            <Card className="bg-white border-gray-200 shadow-md">
-              <CardHeader className="pb-6">
-                <CardTitle className="text-gray-900 flex items-center gap-2 text-xl">
-                  <User className="w-5 h-5 text-blue-600" />
-                  Profile Information
-                </CardTitle>
-                <CardDescription className="text-gray-600">
-                  Manage your personal information and preferences
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {isEditing ? (
-                  <form onSubmit={handleSubmit} className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <Label htmlFor="email" className="text-gray-700 font-medium">
-                          Email Address
-                        </Label>
-                        <Input
-                          id="email"
-                          type="email"
-                          value={user.email}
-                          disabled
-                          className="bg-gray-50 border-gray-300 text-gray-500 cursor-not-allowed"
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="name" className="text-gray-700 font-medium">
-                          Full Name
-                        </Label>
-                        <Input
-                          id="name"
-                          name="name"
-                          value={formData.name}
-                          onChange={handleInputChange}
-                          required
-                          className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                          placeholder="Enter your full name"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="about" className="text-gray-700 font-medium">
-                        About
-                      </Label>
-                      <Textarea
-                        id="about"
-                        name="about"
-                        value={formData.about}
-                        onChange={handleInputChange}
-                        rows={5}
-                        className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 resize-none"
-                        placeholder="Tell us about yourself, your interests, achievements, and what makes you unique..."
-                      />
-                    </div>
-
-                    <div className="flex gap-3 pt-6 border-t border-gray-200">
-                      <Button
-                        type="submit"
-                        disabled={isSubmitting}
-                        className="bg-green-600 hover:bg-green-700 text-white shadow-md rounded-2xl"
-                      >
-                        <Save className="w-4 h-4 mr-2" />
-                        {isSubmitting ? "Saving..." : "Save Changes"}
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={handleCancel}
-                        disabled={isSubmitting}
-                        className="border-gray-300 text-gray-700 hover:bg-gray-50 rounded-2xl"
-                      >
-                        <X className="w-4 h-4 mr-2" />
-                        Cancel
-                      </Button>
-                    </div>
-                  </form>
-                ) : (
-                  <div className="space-y-8">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                      <div>
-                        <Label className="text-gray-500 text-sm font-medium">Email Address</Label>
-                        <p className="text-gray-900 text-lg mt-1 flex items-center gap-2">
-                          <Mail className="w-4 h-4 text-gray-400" />
-                          {user.email}
-                        </p>
-                      </div>
-
-                      <div>
-                        <Label className="text-gray-500 text-sm font-medium">Full Name</Label>
-                        <p className="text-gray-900 text-lg mt-1">{user.profile?.name || "Not provided"}</p>
-                      </div>
-                    </div>
-
-                    <Separator className="bg-gray-200" />
-
-                    <div>
-                      <Label className="text-gray-500 text-sm font-medium">About</Label>
-                      <div className="mt-3 text-gray-900 leading-relaxed">
-                        {user.profile?.about ? (
-                          <p className="whitespace-pre-wrap">{user.profile.about}</p>
-                        ) : (
-                          <p className="text-gray-500 italic">
-                            No information provided yet. Click "Edit Profile" to add your bio and let others know more about you.
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
+        <div className="grid grid-cols-1 gap-8">
+          {/* README Editor */}
+          <ReadmeEditor
+            initialContent={user.profile?.readme || ""}
+            onSave={handleReadmeSave}
+            isSubmitting={isSubmitting}
+            profile={{
+              name: user.profile?.name,
+              email: user.email,
+              role: user.profile?.role,
+            }}
+          />
         </div>
       </div>
     </div>

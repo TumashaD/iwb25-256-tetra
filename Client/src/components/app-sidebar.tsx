@@ -38,7 +38,7 @@ import RegisterButton from "./register-button"
 import { EnrollmentService, EnrollmentWithDetails } from "@/services/enrollmentService"
 import { ChatDialog } from "./chatbot"
 import { Dialog } from "@radix-ui/react-dialog"
-import { SearchBar } from "./search-bar"
+import { UnifiedSearch } from "./search"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "./ui/alert-dialog"
 import { toast } from "sonner"
 import Image from "next/image"
@@ -104,7 +104,7 @@ export function AppSidebar() {
   }
 
   useEffect(() => {
-     // Wait until user is hydrated
+    // Wait until user is hydrated
 
     const paths = pathname.split("/");
     const basePath = "/" + paths.slice(1, 4).join("/");
@@ -290,7 +290,7 @@ export function AppSidebar() {
         ) : user?.isAuthenticated ? (
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <button  className="group relative transition-transform hover:scale-105 cursor-pointer">
+              <button className="group relative transition-transform hover:scale-105 cursor-pointer">
                 <Avatar className="h-10 w-10">
                   <AvatarImage src={user?.avatarUrl || "/placeholder.svg"} />
                   <AvatarFallback className="bg-gray-300 text-gray-700">
@@ -330,8 +330,14 @@ export function AppSidebar() {
           className="fixed inset-0 flex items-start justify-center pt-20 z-50 bg-black/30"
           onClick={() => setShowSearch(false)} // click outside to close
         >
-          <div onClick={(e) => e.stopPropagation()}> {/* prevent overlay click from closing */}
-            <SearchBar placeholder="Search Competitions.." />
+          <div onClick={(e) => e.stopPropagation()} className="space-y-4"> {/* prevent overlay click from closing */}
+            <div className="text-center mb-4">
+              <h2 className="text-xl font-bold text-white mb-2">Search</h2>
+              <p className="text-white/80 text-sm">Find competitions or users</p>
+            </div>
+            <div className="space-y-3">
+              <UnifiedSearch placeholder="Search competitions and users..." />
+            </div>
           </div>
         </div>
       )}
