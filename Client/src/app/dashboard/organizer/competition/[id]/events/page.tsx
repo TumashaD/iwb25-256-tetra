@@ -139,9 +139,9 @@ export default function OrganizerEventsPage() {
         <Button 
           onClick={() => setShowFormBuilder(true)}
           size="lg"
-          className="flex items-center gap-2"
+          className="gap-2 bg-pink-600 rounded-2xl hover:bg-pink-700"
         >
-          <Plus className="h-5 w-5" />
+          <Plus className="h-4 w-4" />
           New Event
         </Button>
       </div>
@@ -167,9 +167,9 @@ export default function OrganizerEventsPage() {
       ) : (
         <div className="flex flex-col gap-4">
           {events.map((event, index) => (
-            <Card key={event.id} className="hover:shadow-md transition-all duration-300 flex flex-col overflow-hidden relative w-3/4 ml-0 mr-auto">
+            <Card key={event.id} className="hover:shadow-md transition-all duration-300 flex flex-col overflow-hidden relative w-3/4 ml-0 mr-auto p-0">
               {/* Top Section - Event Name and Last Modified */}
-              <div className="p-2 text-center border-b">
+              <CardHeader className="text-center border-b bg-main/10 p-4 pb-2">
                 <CardTitle className="text-2xl font-bold text-black flex items-center justify-center gap-2 mb-2">
                   <FileText className="h-6 w-6" />
                   {event.title}
@@ -179,7 +179,7 @@ export default function OrganizerEventsPage() {
                     Last modified: {new Date(event.modified_at).toLocaleDateString()}
                   </Badge>
                 </div>
-              </div>
+              </CardHeader>
               
               {/* Middle Section - Description */}
               <div className="flex-1 p-2">
