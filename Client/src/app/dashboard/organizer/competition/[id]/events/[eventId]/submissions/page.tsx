@@ -20,6 +20,7 @@ export default function EventSubmissionsPage() {
 
   const [event, setEvent] = useState<Event | null>(null)
   const [submissions, setSubmissions] = useState<Submission[]>([])
+  const [selectedSubmissions, setSelectedSubmissions] = useState<Set<number>>(new Set())
   const [loading, setLoading] = useState(true)
   const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null)
   const [showSubmissionDetails, setShowSubmissionDetails] = useState(false)
@@ -98,6 +99,18 @@ export default function EventSubmissionsPage() {
     setShowSubmissionDetails(true)
   }
 
+  const handleSelectSubmission = (submissionId: number) => {
+    setSelectedSubmissions(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(submissionId)) {
+        newSet.delete(submissionId)
+      } else {
+        newSet.add(submissionId)
+      }
+      return newSet
+    })
+  }
+
   const handleDownloadSubmissions = () => {
     // Create a JSON file with all submissions
     const dataStr = JSON.stringify(submissions, null, 2)
@@ -145,12 +158,6 @@ export default function EventSubmissionsPage() {
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Submissions
           </Button>
-          <div>
-            <h1 className="text-2xl font-bold">Submission Details</h1>
-            <p className="text-muted-foreground">
-              Submitted on {new Date(selectedSubmission.created_at).toLocaleString()}
-            </p>
-          </div>
         </div>
 
         {event && selectedSubmission && (
@@ -178,60 +185,63 @@ export default function EventSubmissionsPage() {
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button
-            variant="outline"
-            onClick={() => router.push(`/dashboard/organizer/competition/${competitionId}/events`)}
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Events
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold">{event?.title} - Submissions</h1>
-            <p className="text-muted-foreground">
-              View and manage all submissions for this event
-            </p>
-          </div>
+        <div>
+          <h1 className="text-3xl font-bold text-main">Submissions</h1>
+          <p className="text-muted-foreground">
+            View and manage all submissions for this event
+          </p>
         </div>
-
-        {submissions.length > 0 && (
-          <Button 
-            onClick={handleDownloadSubmissions}
-            className="flex items-center gap-2"
-          >
-            <Download className="h-4 w-4" />
-            Download All
-          </Button>
-        )}
       </div>
 
+      {/* Event Details and Statistics Row */}
       {event && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5" />
-              Event Details
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <p className="text-sm text-muted-foreground">Title</p>
-                <p className="font-medium">{event.title}</p>
-              </div>
-              {event.description && (
-                <div>
-                  <p className="text-sm text-muted-foreground">Description</p>
-                  <p className="font-medium">{event.description}</p>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Event Information - 2/3 width */}
+          <div className="lg:col-span-2">
+            <Card className="h-full">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-main">
+                  <FileText className="h-6 w-6" />
+                  Event Information
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-2xl font-bold text-black mb-2">{event.title}</h3>
+                    {event.description && (
+                      <p className="text-gray-700">{event.description}</p>
+                    )}
+                  </div>
                 </div>
-              )}
-              <div>
-                <p className="text-sm text-muted-foreground">Created</p>
-                <p className="font-medium">{new Date(event.created_at).toLocaleDateString()}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Event Statistics - 1/3 width */}
+          <div className="lg:col-span-1">
+            <Card className="h-full">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2 text-main">
+                  <User className="h-5 w-5" />
+                  Statistics
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Total Submissions</p>
+                    <p className="text-2xl font-bold text-black">{submissions.length}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Selected Submissions</p>
+                    <p className="text-2xl font-bold text-green-600">{selectedSubmissions.size}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       )}
 
       {submissions.length === 0 ? (
@@ -250,41 +260,39 @@ export default function EventSubmissionsPage() {
             <h2 className="text-xl font-semibold">
               Submissions ({submissions.length})
             </h2>
+            {submissions.length > 0 && (
+              <Button 
+                onClick={handleDownloadSubmissions}
+                className="gap-2 bg-pink-600 rounded-2xl hover:bg-pink-700"
+              >
+                <Download className="h-4 w-4" />
+                Download All
+              </Button>
+            )}
           </div>
           
           <div className="grid gap-4">
-            {submissions.map((submission) => (
+            {submissions.map((submission, index) => (
               <Card key={submission.id} className="hover:shadow-md transition-shadow">
-                <CardHeader>
+                <CardContent className="p-4">
                   <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <CardTitle className="flex items-center gap-2">
-                        <User className="h-5 w-5" />
-                        Submission #{submission.id}
-                        <Badge variant="outline">
+                    <div className="flex items-center gap-3">
+                      <div>
+                        <h3 className="font-semibold text-lg">Submission {index + 1}</h3>
+                        <p className="text-sm text-muted-foreground">
                           Enrollment #{submission.enrollment_id}
-                        </Badge>
-                      </CardTitle>
+                        </p>
+                      </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Badge variant="secondary">
-                        <Calendar className="h-3 w-3 mr-1" />
-                        {new Date(submission.created_at).toLocaleDateString()}
-                      </Badge>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <div className="flex items-center justify-between">
-                    <div className="text-sm text-muted-foreground">
-                      Submitted: {new Date(submission.created_at).toLocaleString()}
-                      {submission.modified_at !== submission.created_at && (
-                        <span className="ml-2">
-                          • Last modified: {new Date(submission.modified_at).toLocaleString()}
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2">
+                      <Button 
+                        variant={selectedSubmissions.has(submission.id) ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => handleSelectSubmission(submission.id)}
+                        className={`flex items-center gap-1 min-w-[80px] ${selectedSubmissions.has(submission.id) ? 'bg-green-600 hover:bg-green-700' : ''}`}
+                      >
+                        {selectedSubmissions.has(submission.id) ? 'Selected' : 'Select'}
+                      </Button>
                       <Button 
                         variant="outline" 
                         size="sm"

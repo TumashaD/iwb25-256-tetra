@@ -14,6 +14,7 @@ import {
   GlobeIcon,
   Edit3Icon,
   OrigamiIcon,
+  CheckSquare,
 } from "lucide-react"
 import type React from "react"
 
@@ -76,7 +77,7 @@ export function AppSidebar() {
     "/dashboard/organizer/competition": [
       { icon: GlobeIcon, label: "Webpage", href: `/dashboard/organizer/competition/${id}` },
       { icon: Edit3Icon, label: "Edit Page", href: `/dashboard/organizer/competition/${id}/edit` },
-      { icon: ViewIcon, label: "Events", href: `/dashboard/organizer/competition/${id}/events` },
+      { icon: CheckSquare, label: "Events", href: `/dashboard/organizer/competition/${id}/events` },
       { icon: Users, label: "Teams", href: `/dashboard/organizer/competition/${id}/teams` },
       { icon: Settings, label: "Settings", href: `/dashboard/organizer/competition/${id}/settings` },
     ],
@@ -95,7 +96,7 @@ export function AppSidebar() {
       }
     ],
     "/competition/enrolled": [
-      { icon: ViewIcon, label: "Events", href: `/dashboard/competitor/competition/${id}/events` },
+      { icon: CheckSquare, label: "Events", href: `/dashboard/competitor/competition/${id}/events` },
       {
         custom: (
           <ChatDialog open={isChatOpen} competitionId={Number(id)} avatarUrl={user?.avatarUrl ? user.avatarUrl : ""} onOpenChange={setIsChatOpen} />

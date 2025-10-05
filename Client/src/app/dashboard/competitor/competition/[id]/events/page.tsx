@@ -228,7 +228,7 @@ export default function CompetitorDashboardEventsPage() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">My Events</h1>
+          <h1 className="text-3xl font-bold text-main">My Events</h1>
           <p className="text-muted-foreground">
             Participate in competition events and submit your work
           </p>
@@ -261,90 +261,86 @@ export default function CompetitorDashboardEventsPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4">
-          {events.map((event) => {
+        <div className="flex flex-col gap-4">
+          {events.map((event, index) => {
             const userSubmission = getUserSubmission(event.id)
 
             return (
-              <Card key={event.id} className="hover:shadow-md transition-shadow">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <CardTitle className="flex items-center gap-2">
-                        <FileText className="h-5 w-5" />
-                        {event.title}
-                        {userSubmission && (
-                          <Badge className="bg-green-100 text-green-800 ml-2">
-                            <CheckCircle className="h-3 w-3 mr-1" />
-                            Submitted
-                          </Badge>
-                        )}
-                      </CardTitle>
-                      {event.description && (
-                        <p className="text-muted-foreground mt-1">{event.description}</p>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="secondary">
-                        <Calendar className="h-3 w-3 mr-1" />
-                        {new Date(event.created_at).toLocaleDateString()}
-                      </Badge>
-                    </div>
+              <Card key={event.id} className="hover:shadow-md transition-all duration-300 flex flex-col overflow-hidden relative w-3/4 ml-0 mr-auto p-0">
+                {/* Top Section - Event Name, Submitted Tag, and Last Updated */}
+                <CardHeader className="text-center border-b bg-main/10 p-4 pb-2">
+                  <CardTitle className="text-2xl font-bold text-black flex items-center justify-center gap-2 mb-2">
+                    <FileText className="h-6 w-6" />
+                    {event.title}
+                  </CardTitle>
+                  <div className="flex items-center justify-center gap-4">
+                    {userSubmission && (
+                      <>
+                        <Badge className="bg-green-100 text-green-800">
+                          <CheckCircle className="h-3 w-3 mr-1" />
+                          Submitted
+                        </Badge>
+                        <Badge variant="secondary" className="text-xs">
+                          Last updated: {new Date(userSubmission.modified_at).toLocaleDateString()}
+                        </Badge>
+                      </>
+                    )}
                   </div>
                 </CardHeader>
-                <CardContent className="pt-0">
-                  <div className="flex items-center justify-between">
-                    <div className="text-sm text-muted-foreground">
-                      {userSubmission ? (
-                        <>Last updated: {new Date(userSubmission.modified_at).toLocaleDateString()}</>
-                      ) : (
-                        <>Available since: {new Date(event.created_at).toLocaleDateString()}</>
-                      )}
+                
+                {/* Middle Section - Description */}
+                <div className="flex-1 p-2">
+                  {event.description ? (
+                    <p className="text-gray-700 text-center text-sm">{event.description}</p>
+                  ) : (
+                    <p className="text-muted-foreground text-center italic text-sm">No description available</p>
+                  )}
+                </div>
+                
+                {/* Bottom Section - Action Buttons */}
+                <div className="p-2">
+                  {userSubmission ? (
+                    <div className="flex">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleViewSubmission(event)}
+                        className="flex-1 items-center justify-center gap-1 rounded-r-none border-r-0"
+                      >
+                        <Eye className="h-4 w-4" />
+                        View
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleEditSubmission(event)}
+                        className="flex-1 items-center justify-center gap-1 rounded-none border-r-0"
+                      >
+                        <Edit className="h-4 w-4" />
+                        Edit
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleDeleteSubmission(event.id)}
+                        className="flex-1 items-center justify-center gap-1 bg-red-500 hover:bg-red-600 text-white border-red-500 hover:border-red-600 rounded-l-none"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        Delete
+                      </Button>
                     </div>
-                    <div className="flex items-center gap-2">
-                      {userSubmission ? (
-                        <>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => handleViewSubmission(event)}
-                            className="flex items-center gap-1"
-                          >
-                            <Eye className="h-4 w-4" />
-                            View Submission
-                          </Button>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => handleEditSubmission(event)}
-                            className="flex items-center gap-1"
-                          >
-                            <Edit className="h-4 w-4" />
-                            Edit
-                          </Button>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => handleDeleteSubmission(event.id)}
-                            className="flex items-center gap-1 text-red-600 hover:text-red-700 hover:bg-red-50"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                            Delete
-                          </Button>
-                        </>
-                      ) : (
-                        <Button 
-                          onClick={() => handleEditSubmission(event)}
-                          size="sm"
-                          className="flex items-center gap-1"
-                        >
-                          <Edit className="h-4 w-4" />
-                          Submit
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
+                  ) : (
+                    <Button 
+                      onClick={() => handleEditSubmission(event)}
+                      size="sm"
+                      variant="outline"
+                      className="w-full flex items-center justify-center gap-1"
+                    >
+                      <Edit className="h-4 w-4" />
+                      Submit
+                    </Button>
+                  )}
+                </div>
               </Card>
             )
           })}

@@ -237,7 +237,7 @@ export default function SimpleFormBuilder({
               <div key={index} className="space-y-2">
                 <Label className="flex items-center gap-2">
                   {element.title}
-                  {element.isRequired && <Badge variant="destructive" className="text-xs">Required</Badge>}
+                  {element.isRequired && <span className="text-red-500">*</span>}
                 </Label>
                 
                 {element.type === 'text' && (
@@ -304,9 +304,9 @@ export default function SimpleFormBuilder({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 bg-main/10 p-6 rounded-lg">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">
+        <h2 className="text-2xl font-bold text-main">
           {initialEventData ? 'Edit Event' : 'Create New Event'}
         </h2>
         <div className="flex gap-2">
@@ -314,7 +314,7 @@ export default function SimpleFormBuilder({
             <Eye className="h-4 w-4 mr-2" />
             Preview
           </Button>
-          <Button onClick={handleSave}>
+          <Button onClick={handleSave} className="gap-2 bg-pink-600 rounded-2xl hover:bg-pink-700">
             {initialEventData ? 'Update Event' : 'Create Event'}
           </Button>
           <Button variant="outline" onClick={onCancel}>
@@ -326,26 +326,32 @@ export default function SimpleFormBuilder({
       {/* Event Details */}
       <Card>
         <CardHeader>
-          <CardTitle>Event Details</CardTitle>
+          <CardTitle className="text-xl">Event Details</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <Label htmlFor="title">Event Title *</Label>
+        <CardContent className="space-y-6">
+          <div className="space-y-2">
+            <Label htmlFor="title" className="text-base font-medium flex items-center gap-1">
+              Event Title 
+              <span className="text-red-500">*</span>
+            </Label>
             <Input
               id="title"
               value={eventTitle}
               onChange={(e) => setEventTitle(e.target.value)}
               placeholder="Enter event title"
+              className="text-base"
             />
           </div>
-          <div>
-            <Label htmlFor="description">Event Description</Label>
+          <div className="space-y-2">
+            <Label htmlFor="description" className="text-base font-medium">Event Description</Label>
             <Textarea
               id="description"
               value={eventDescription}
               onChange={(e) => setEventDescription(e.target.value)}
               placeholder="Enter event description (optional)"
+              className="text-base min-h-[100px]"
             />
+            <p className="text-sm text-gray-600">Provide a clear description of what this event is about and what participants should expect.</p>
           </div>
         </CardContent>
       </Card>
@@ -354,19 +360,19 @@ export default function SimpleFormBuilder({
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle>Form Fields</CardTitle>
-            <Button onClick={addField} size="sm">
-              <Plus className="h-4 w-4 mr-2" />
+            <CardTitle className="text-xl">Form Builder - Building Blocks</CardTitle>
+            <Button onClick={addField} size="sm" className="gap-2 bg-pink-600 rounded-2xl hover:bg-pink-700">
+              <Plus className="h-4 w-4" />
               Add Field
             </Button>
           </div>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-6">
           {fields.map((field, index) => (
-            <Card key={index} className="p-4">
+            <Card key={index} className="p-6 border-2 border-gray-100 hover:border-gray-200 transition-colors">
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <Badge variant="outline">{getFieldTypeDisplay(field.type)}</Badge>
+                  <Badge className="text-sm px-3 py-1 bg-black hover:bg-gray-800 text-white">{getFieldTypeDisplay(field.type)}</Badge>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -377,28 +383,30 @@ export default function SimpleFormBuilder({
                   </Button>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label>Field Name</Label>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label className="text-base font-medium">Field Name</Label>
                     <Input
                       value={field.name}
                       onChange={(e) => updateField(index, { name: e.target.value })}
                       placeholder="field_name"
                     />
+                    <p className="text-sm text-gray-600">Internal identifier for this field (used in data processing). Use lowercase letters, numbers, and underscores only.</p>
                   </div>
-                  <div>
-                    <Label>Field Title</Label>
+                  <div className="space-y-2">
+                    <Label className="text-base font-medium">Field Title</Label>
                     <Input
                       value={field.title}
                       onChange={(e) => updateField(index, { title: e.target.value })}
                       placeholder="Field Title"
                     />
+                    <p className="text-sm text-gray-600">Display label that users will see on the form. This should be descriptive and user-friendly.</p>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label>Field Type</Label>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label className="text-base font-medium">Field Type</Label>
                     <Select
                       value={field.type}
                       onValueChange={(value) => updateField(index, { 
@@ -420,13 +428,17 @@ export default function SimpleFormBuilder({
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="flex items-center space-x-2 pt-6">
+                  <div className="flex items-center space-x-3 pt-8">
                     <input
                       type="checkbox"
                       checked={field.isRequired}
                       onChange={(e) => updateField(index, { isRequired: e.target.checked })}
+                      className="w-4 h-4"
                     />
-                    <Label>Required</Label>
+                    <Label className="text-base font-medium flex items-center gap-1">
+                      Required Field
+                      {field.isRequired && <span className="text-red-500">*</span>}
+                    </Label>
                   </div>
                 </div>
 

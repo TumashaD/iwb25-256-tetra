@@ -130,7 +130,7 @@ export default function OrganizerEventsPage() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Events</h1>
+          <h1 className="text-3xl font-bold text-main">Events</h1>
           <p className="text-muted-foreground">
             Manage competition events and forms
           </p>
@@ -139,9 +139,9 @@ export default function OrganizerEventsPage() {
         <Button 
           onClick={() => setShowFormBuilder(true)}
           size="lg"
-          className="flex items-center gap-2"
+          className="gap-2 bg-pink-600 rounded-2xl hover:bg-pink-700"
         >
-          <Plus className="h-5 w-5" />
+          <Plus className="h-4 w-4" />
           New Event
         </Button>
       </div>
@@ -165,64 +165,63 @@ export default function OrganizerEventsPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4">
-          {events.map((event) => (
-            <Card key={event.id} className="hover:shadow-md transition-shadow">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <CardTitle className="flex items-center gap-2">
-                      <FileText className="h-5 w-5" />
-                      {event.title}
-                    </CardTitle>
-                    {event.description && (
-                      <p className="text-muted-foreground mt-1">{event.description}</p>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="secondary">
-                      <Calendar className="h-3 w-3 mr-1" />
-                      {new Date(event.created_at).toLocaleDateString()}
-                    </Badge>
-                  </div>
+        <div className="flex flex-col gap-4">
+          {events.map((event, index) => (
+            <Card key={event.id} className="hover:shadow-md transition-all duration-300 flex flex-col overflow-hidden relative w-3/4 ml-0 mr-auto p-0">
+              {/* Top Section - Event Name and Last Modified */}
+              <CardHeader className="text-center border-b bg-main/10 p-4 pb-2">
+                <CardTitle className="text-2xl font-bold text-black flex items-center justify-center gap-2 mb-2">
+                  <FileText className="h-6 w-6" />
+                  {event.title}
+                </CardTitle>
+                <div className="flex items-center justify-center">
+                  <Badge variant="secondary" className="text-xs">
+                    Last modified: {new Date(event.modified_at).toLocaleDateString()}
+                  </Badge>
                 </div>
               </CardHeader>
-              <CardContent className="pt-0">
-                <div className="flex items-center justify-between">
-                  <div className="text-sm text-muted-foreground">
-                    Last modified: {new Date(event.modified_at).toLocaleDateString()}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => router.push(`/dashboard/organizer/competition/${competitionId}/events/${event.id}/submissions`)}
-                      className="flex items-center gap-1"
-                    >
-                      <Users className="h-4 w-4" />
-                      View Submissions
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => handleEditEvent(event)}
-                      className="flex items-center gap-1"
-                    >
-                      <Edit className="h-4 w-4" />
-                      Edit
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => handleDeleteEvent(event.id)}
-                      className="flex items-center gap-1 text-red-600 hover:text-red-700 hover:bg-red-50"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                      Delete
-                    </Button>
-                  </div>
+              
+              {/* Middle Section - Description */}
+              <div className="flex-1 p-2">
+                {event.description ? (
+                  <p className="text-gray-700 text-center text-sm">{event.description}</p>
+                ) : (
+                  <p className="text-muted-foreground text-center italic text-sm">No description available</p>
+                )}
+              </div>
+              
+              {/* Bottom Section - Action Buttons */}
+              <div className="p-2">
+                <div className="flex">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => router.push(`/dashboard/organizer/competition/${competitionId}/events/${event.id}/submissions`)}
+                    className="flex-1 items-center justify-center gap-1 rounded-r-none border-r-0"
+                  >
+                    <Users className="h-4 w-4" />
+                    View
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => handleEditEvent(event)}
+                    className="flex-1 items-center justify-center gap-1 rounded-none border-r-0"
+                  >
+                    <Edit className="h-4 w-4" />
+                    Edit
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => handleDeleteEvent(event.id)}
+                    className="flex-1 items-center justify-center gap-1 bg-red-500 hover:bg-red-600 text-white border-red-500 hover:border-red-600 rounded-l-none"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Delete
+                  </Button>
                 </div>
-              </CardContent>
+              </div>
             </Card>
           ))}
         </div>
