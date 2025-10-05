@@ -260,4 +260,83 @@ public isolated class StorageClient {
         string publicUrl = string `${self.supabaseStorageUrl}/object/public/${bucketName}/${fileName}`;
         return publicUrl;
     }
+
+    public isolated function uploadSubmissionFiles(http:Request req, string bucketName, int competitionId, int eventId, int enrollmentId, boolean overwrite = false)
+        returns json[]|http:Unauthorized & readonly|http:BadRequest & readonly|error {
+        mime:Entity entity = check req.getEntity();
+        string contentType = entity.getContentType();
+
+        if (!contentType.startsWith(mime:MULTIPART_FORM_DATA)) {
+            return http:BAD_REQUEST;
+        }
+
+        mime:Entity[] parts = check entity.getBodyParts();
+
+        // Get authorization header
+        string|http:HeaderNotFoundError authHeader = req.getHeader("Authorization");
+        if authHeader is http:HeaderNotFoundError {
+            return http:UNAUTHORIZED;
+        }
+        if !authHeader.startsWith("Bearer ") {
+            return http:UNAUTHORIZED;
+        }
+        string token = authHeader.substring(7);
+
+        json[] results = [];
+
+        foreach var part in parts {
+            mime:ContentDisposition cd = part.getContentDisposition();
+            if (cd.name == "files") {
+                string fileName = cd.fileName != "" ? cd.fileName : "file_" + part.getContentId();
+                string submissionPath = string `${competitionId}/events/${eventId}/${enrollmentId}/${fileName}`;
+                byte[] fileContent = check part.getByteArray();
+                string fileContentType = part.getContentType();
+
+                if (fileContent.length() == 0 || fileName == "" || bucketName == "") {
+                    results.push({"error": "Invalid file data", "fileName": fileName});
+                    continue;
+                }
+
+                string uploadUrl = string `/object/${bucketName}/${submissionPath}`;
+                http:Request uploadReq = new;
+                uploadReq.setPayload(fileContent);
+                uploadReq.setHeader("Content-Type", fileContentType);
+                uploadReq.setHeader("apikey", self.supabaseAnonKey);
+                uploadReq.setHeader("Authorization", "Bearer " + token);
+                if overwrite {
+                    uploadReq.setHeader("x-upsert", "true");
+                }
+
+                log:printInfo("Uploading submission file to Supabase Storage", 
+                    'fileName = fileName, 
+                    'bucketName = bucketName, 
+                    'submissionPath = submissionPath,
+                    'fileContentLength = fileContent.length(), 
+                    'uploadUrl = uploadUrl);
+
+                http:Response uploadResponse = check self.storageClient->post(uploadUrl, uploadReq);
+                string fileUrl = self.supabaseStorageUrl + "/object/public/" + bucketName + "/" + submissionPath;
+                
+                json|error responsePayload = uploadResponse.getJsonPayload();
+                if responsePayload is error {
+                    log:printError("Failed to parse upload response", responsePayload);
+                    results.push({
+                        "fileName": fileName,
+                        "url": fileUrl,
+                        "status": "uploaded",
+                        "error": "Response parse error"
+                    });
+                } else {
+                    results.push({
+                        "fileName": fileName,
+                        "url": fileUrl,
+                        "status": "uploaded",
+                        "response": responsePayload
+                    });
+                }
+            }
+        }
+
+        return results;
+    }
 }

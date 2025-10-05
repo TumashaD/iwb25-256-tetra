@@ -9,6 +9,7 @@ import { Loader2, ArrowLeft, FileText, Calendar, User, Eye, Download } from "luc
 import { toast } from "sonner"
 import { useAuth } from "@/contexts/AuthContext"
 import { EventService, type Event, type Submission } from "@/services/eventService"
+import { SubmissionView } from "@/components/forms/FormDisplay"
 
 export default function EventSubmissionsPage() {
   const params = useParams()
@@ -23,6 +24,47 @@ export default function EventSubmissionsPage() {
   const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null)
   const [showSubmissionDetails, setShowSubmissionDetails] = useState(false)
 
+  // Helper function to extract clean form data from submission
+  const getCleanSubmissionData = (submission: any) => {
+    if (!submission) return null
+
+    let submissionData = submission
+    
+    // If submission is a string, parse it
+    if (typeof submissionData === 'string') {
+      try {
+        submissionData = JSON.parse(submissionData)
+      } catch (error) {
+        console.error('Failed to parse submission data:', error)
+        return null
+      }
+    }
+    
+    // Check if the submission data has a nested 'submission' field that contains the actual form data
+    if (submissionData && typeof submissionData === 'object' && submissionData.submission) {
+      // If it's a nested structure like {event_id: 7, enrollment_id: 31, submission: {actual_form_data}}
+      if (typeof submissionData.submission === 'object') {
+        submissionData = submissionData.submission
+      } else if (typeof submissionData.submission === 'string') {
+        try {
+          submissionData = JSON.parse(submissionData.submission)
+        } catch (error) {
+          console.error('Failed to parse nested submission string:', error)
+        }
+      }
+    }
+    
+    // Remove metadata fields if they exist
+    if (submissionData && typeof submissionData === 'object') {
+      const { event_id, enrollment_id, submission, ...formData } = submissionData
+      if (Object.keys(formData).length > 0) {
+        submissionData = formData
+      }
+    }
+    
+    return submissionData
+  }
+
   // Load event and submissions from backend
   useEffect(() => {
     const loadEventAndSubmissions = async () => {
@@ -35,6 +77,7 @@ export default function EventSubmissionsPage() {
         
         // Load submissions for this event
         const submissionsData = await EventService.getEventSubmissions(eventId)
+        console.log('Organizer submissions data:', submissionsData)
         setSubmissions(submissionsData)
         
       } catch (error) {
@@ -110,29 +153,24 @@ export default function EventSubmissionsPage() {
           </div>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Submission Data</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {typeof selectedSubmission.submission === 'object' && selectedSubmission.submission !== null ? (
-              Object.entries(selectedSubmission.submission as Record<string, any>).map(([key, value]) => (
-                <div key={key} className="border-b pb-2">
-                  <div className="text-sm font-medium text-muted-foreground mb-1">
-                    {key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1')}
-                  </div>
-                  <div className="text-sm whitespace-pre-wrap">
-                    {renderSubmissionValue(value)}
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div className="text-sm">
-                {renderSubmissionValue(selectedSubmission.submission)}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        {event && selectedSubmission && (
+          <>
+            {(() => {
+              const cleanedData = getCleanSubmissionData(selectedSubmission.submission)
+              console.log('Cleaned submission data for organizer:', cleanedData)
+              
+              return (
+                <SubmissionView
+                  formSchema={event.form_schema}
+                  submissionData={cleanedData}
+                  eventData={event}
+                  existingSubmission={selectedSubmission}
+                  title={`${event.title} - Submission Details`}
+                />
+              )
+            })()}
+          </>
+        )}
       </div>
     )
   }

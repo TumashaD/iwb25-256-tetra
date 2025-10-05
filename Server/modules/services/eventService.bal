@@ -3,6 +3,7 @@ import ballerina/http;
 import ballerina/log;
 import ballerina/sql;
 import ballerina/time;
+import vinnova.supabase;
 
 public type Event record {|
     int id;
@@ -23,7 +24,7 @@ public type Submission record {|
     string modified_at;
 |};
 
-public function createEventService(postgresql:Client dbClient, http:CorsConfig corsConfig, http:Interceptor authInterceptor) returns http:InterceptableService {
+public function createEventService(postgresql:Client dbClient, supabase:StorageClient storageClient, http:CorsConfig corsConfig, http:Interceptor authInterceptor) returns http:InterceptableService {
     return @http:ServiceConfig{cors: corsConfig} isolated service object {
 
         public function createInterceptors() returns http:Interceptor {
@@ -31,6 +32,8 @@ public function createEventService(postgresql:Client dbClient, http:CorsConfig c
         }
 
         private final postgresql:Client db = dbClient;
+        private final supabase:StorageClient storage = storageClient;
+        private final string bucketName = "competitions";
 
         // Get all events for a competition
         isolated resource function get competitions/[int competitionId]/events(http:RequestContext ctx) returns json|http:InternalServerError|http:NotFound|error {
@@ -545,6 +548,49 @@ public function createEventService(postgresql:Client dbClient, http:CorsConfig c
                 "message": "Submission deleted successfully",
                 "timestamp": time:utcNow()
             }.toJson();
+        }
+
+        // Upload files for a submission
+        isolated resource function post competitions/[int competitionId]/events/[int eventId]/submissions/[int enrollmentId]/upload(http:Request req) returns json|http:InternalServerError|http:BadRequest|http:Unauthorized|error {
+            // Upload files using supabase storage
+            json[]|http:Unauthorized|http:BadRequest|error uploadResult = self.storage.uploadSubmissionFiles(req, self.bucketName, competitionId, eventId, enrollmentId, true);
+            
+            if uploadResult is http:Unauthorized {
+                return http:UNAUTHORIZED;
+            } else if uploadResult is http:BadRequest {
+                return http:BAD_REQUEST;
+            } else if uploadResult is error {
+                log:printError("Failed to upload submission files", uploadResult);
+                return http:INTERNAL_SERVER_ERROR;
+            } else {
+                json response = {
+                    "message": "Files uploaded successfully",
+                    "files": <json>uploadResult,
+                    "timestamp": time:utcNow()
+                };
+                return response;
+            }
+        }
+
+        // Get uploaded files for a submission - simplified version
+        isolated resource function get competitions/[int competitionId]/events/[int eventId]/submissions/[int enrollmentId]/files(http:Request req) returns json|http:Unauthorized|http:InternalServerError|error {
+            // Check Authorization header
+            string|http:HeaderNotFoundError authHeader = req.getHeader("Authorization");
+            if authHeader is http:HeaderNotFoundError || !authHeader.startsWith("Bearer ") {
+                return http:UNAUTHORIZED;
+            }
+
+            // For now, return a simple response indicating the file path structure
+            // This can be enhanced later to actually list files from Supabase
+            string submissionPath = string `${competitionId}/events/${eventId}/${enrollmentId}/`;
+            
+            json response = {
+                "message": "File listing endpoint",
+                "submissionPath": submissionPath,
+                "timestamp": time:utcNow()
+            };
+            
+            return response;
         }
     };
 }

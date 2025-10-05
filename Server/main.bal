@@ -50,7 +50,7 @@ public function main() returns error? {
     http:Service userService = services:createUserService(db, CORS_CONFIG, authInterceptor);
     http:Service teamService = services:createTeamService(db, CORS_CONFIG, authInterceptor);
     http:Service enrollmentService = services:createEnrollmentService(db, CORS_CONFIG, authInterceptor);
-    http:Service eventService = services:createEventService(db, CORS_CONFIG, authInterceptor);
+    http:Service eventService = services:createEventService(db, storageClient, CORS_CONFIG, authInterceptor);
     http:Service aiService = services:createAIService(db, geminiApiKey, CORS_CONFIG);
     http:Service gmailService = services:createGmailService(gmail, CORS_CONFIG, authInterceptor);
 

@@ -14,9 +14,10 @@ import { toast } from "sonner"
 interface FormField {
   name: string
   title: string
-  type: 'text' | 'comment' | 'radiogroup' | 'checkbox' | 'dropdown'
+  type: 'text' | 'comment' | 'radiogroup' | 'checkbox' | 'dropdown' | 'file'
   isRequired: boolean
   choices?: string[]
+  acceptedFileTypes?: string[]
 }
 
 interface SimpleFormBuilderProps {
@@ -47,7 +48,8 @@ export default function SimpleFormBuilder({
         title: element.title || '',
         type: element.type || 'text',
         isRequired: element.isRequired || false,
-        choices: element.choices || []
+        choices: element.choices || [],
+        acceptedFileTypes: element.acceptedFileTypes || []
       }))
     }
     
@@ -58,14 +60,16 @@ export default function SimpleFormBuilder({
         title: "Team Name",
         type: "text" as const,
         isRequired: true,
-        choices: []
+        choices: [],
+        acceptedFileTypes: []
       },
       {
         name: "submission_details",
         title: "Submission Details",
         type: "comment" as const,
         isRequired: true,
-        choices: []
+        choices: [],
+        acceptedFileTypes: []
       }
     ]
   })
@@ -78,7 +82,8 @@ export default function SimpleFormBuilder({
       title: "New Field",
       type: "text",
       isRequired: false,
-      choices: []
+      choices: [],
+      acceptedFileTypes: []
     }
     setFields([...fields, newField])
   }
@@ -122,6 +127,31 @@ export default function SimpleFormBuilder({
     }
   }
 
+  const addFileType = (fieldIndex: number) => {
+    const newFields = [...fields]
+    if (!newFields[fieldIndex].acceptedFileTypes) {
+      newFields[fieldIndex].acceptedFileTypes = []
+    }
+    newFields[fieldIndex].acceptedFileTypes!.push('.pdf')
+    setFields(newFields)
+  }
+
+  const updateFileType = (fieldIndex: number, typeIndex: number, value: string) => {
+    const newFields = [...fields]
+    if (newFields[fieldIndex].acceptedFileTypes) {
+      newFields[fieldIndex].acceptedFileTypes![typeIndex] = value
+      setFields(newFields)
+    }
+  }
+
+  const removeFileType = (fieldIndex: number, typeIndex: number) => {
+    const newFields = [...fields]
+    if (newFields[fieldIndex].acceptedFileTypes && newFields[fieldIndex].acceptedFileTypes!.length > 1) {
+      newFields[fieldIndex].acceptedFileTypes!.splice(typeIndex, 1)
+      setFields(newFields)
+    }
+  }
+
   const generateFormSchema = () => {
     return {
       title: eventTitle,
@@ -136,6 +166,10 @@ export default function SimpleFormBuilder({
 
         if (field.type === 'radiogroup' || field.type === 'checkbox' || field.type === 'dropdown') {
           element.choices = field.choices || []
+        }
+
+        if (field.type === 'file') {
+          element.acceptedFileTypes = field.acceptedFileTypes || []
         }
 
         return element
@@ -177,6 +211,7 @@ export default function SimpleFormBuilder({
       case 'radiogroup': return 'Radio Buttons'
       case 'checkbox': return 'Checkboxes'
       case 'dropdown': return 'Dropdown'
+      case 'file': return 'File Upload'
       default: return type
     }
   }
@@ -248,6 +283,17 @@ export default function SimpleFormBuilder({
                       ))}
                     </SelectContent>
                   </Select>
+                )}
+
+                {element.type === 'file' && (
+                  <div className="space-y-2">
+                    <Input type="file" disabled />
+                    {element.acceptedFileTypes && element.acceptedFileTypes.length > 0 && (
+                      <p className="text-sm text-muted-foreground">
+                        Accepted types: {element.acceptedFileTypes.join(', ')}
+                      </p>
+                    )}
+                  </div>
                 )}
               </div>
             ))}
@@ -357,7 +403,8 @@ export default function SimpleFormBuilder({
                       value={field.type}
                       onValueChange={(value) => updateField(index, { 
                         type: value as FormField['type'],
-                        choices: ['radiogroup', 'checkbox', 'dropdown'].includes(value) ? ['Option 1'] : []
+                        choices: ['radiogroup', 'checkbox', 'dropdown'].includes(value) ? ['Option 1'] : [],
+                        acceptedFileTypes: value === 'file' ? ['.pdf', '.jpg', '.jpeg', '.png', '.ppt', '.pptx', '.zip'] : []
                       })}
                     >
                       <SelectTrigger>
@@ -369,6 +416,7 @@ export default function SimpleFormBuilder({
                         <SelectItem value="radiogroup">Radio Buttons</SelectItem>
                         <SelectItem value="checkbox">Checkboxes</SelectItem>
                         <SelectItem value="dropdown">Dropdown</SelectItem>
+                        <SelectItem value="file">File Upload</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -415,6 +463,45 @@ export default function SimpleFormBuilder({
                         </div>
                       ))}
                     </div>
+                  </div>
+                )}
+
+                {/* File types for file upload */}
+                {field.type === 'file' && (
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <Label>Accepted File Types</Label>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => addFileType(index)}
+                      >
+                        <Plus className="h-3 w-3 mr-1" />
+                        Add Type
+                      </Button>
+                    </div>
+                    <div className="space-y-2">
+                      {field.acceptedFileTypes?.map((fileType, typeIndex) => (
+                        <div key={typeIndex} className="flex items-center gap-2">
+                          <Input
+                            value={fileType}
+                            onChange={(e) => updateFileType(index, typeIndex, e.target.value)}
+                            placeholder=".pdf, .jpg, etc."
+                          />
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeFileType(index, typeIndex)}
+                            disabled={field.acceptedFileTypes!.length === 1}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Common types: .pdf, .jpg, .jpeg, .png, .gif, .ppt, .pptx, .doc, .docx, .zip, .rar
+                    </p>
                   </div>
                 )}
               </div>
