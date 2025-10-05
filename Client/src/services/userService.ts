@@ -6,7 +6,7 @@ export interface Profile {
   email: string
   name: string
   role: 'competitor' | 'organizer'
-  about?: string
+  avatar_url: string
   readme?: string
   createdAt?: string
 }
@@ -17,7 +17,6 @@ interface User {
   name: string
   email: string
   role: string
-  about: string
   readme?: string
   created_at?: string
 }
@@ -115,7 +114,7 @@ export const UserService = {
 
       const result = await apiCall(`/users/search?query=${encodeURIComponent(query)}`, {
         method: 'GET',
-      }) as User[]
+      }) as Profile[]
 
       // Convert User to Profile format
       return result.map(user => ({
@@ -123,9 +122,9 @@ export const UserService = {
         email: user.email,
         name: user.name,
         role: user.role as 'competitor' | 'organizer',
-        about: user.about || '',
+        avatar_url: user.avatar_url || '',
         readme: user.readme,
-        createdAt: user.created_at
+        createdAt: user.createdAt
       }))
     } catch (error) {
       console.error('Failed to search users:', error)

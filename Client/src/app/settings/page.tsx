@@ -225,7 +225,6 @@ export default function ProfilePage() {
               name: user.profile?.name,
               email: user.email,
               role: user.profile?.role,
-              about: user.profile?.about
             }}
           />
         </div>

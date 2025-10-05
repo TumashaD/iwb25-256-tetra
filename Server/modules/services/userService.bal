@@ -8,7 +8,6 @@ public type User record {
     string name;
     string email;
     string role;
-    string about;
     string? readme?;
     string? created_at?;
 };
@@ -31,8 +30,8 @@ public function createUserService(postgresql:Client dbClient, http:CorsConfig co
 
             // Insert new user with the provided auth ID
             sql:ExecutionResult|error result = self.db->execute(`
-            INSERT INTO users (id, name, email, role, about, readme, created_at) 
-            VALUES (${newUser.id}::uuid, ${newUser.name}, ${newUser.email}, ${newUser.role}, ${newUser.about}, ${newUser?.readme}, NOW())
+            INSERT INTO users (id, name, email, role, readme, created_at) 
+            VALUES (${newUser.id}::uuid, ${newUser.name}, ${newUser.email}, ${newUser.role}, ${newUser?.readme}, NOW())
         `);
 
             if result is error {
@@ -96,19 +95,17 @@ public function createUserService(postgresql:Client dbClient, http:CorsConfig co
             json|error nameField = updateData.name;
             json|error emailField = updateData.email;
             json|error roleField = updateData.role;
-            json|error aboutField = updateData.about;
             json|error readmeField = updateData.readme;
 
             string name = nameField is string ? nameField : existingUser.name;
             string email = emailField is string ? emailField : existingUser.email;
             string role = roleField is string ? roleField : existingUser.role;
-            string about = aboutField is string ? aboutField : existingUser.about;
             string? readme = readmeField is string ? readmeField : existingUser?.readme;
 
             // Update user
             sql:ExecutionResult|error result = self.db->execute(`
             UPDATE users 
-            SET name = ${name}, email = ${email}, role = ${role}, about = ${about}, readme = ${readme}
+            SET name = ${name}, email = ${email}, role = ${role}, readme = ${readme}
             WHERE id = ${id}::uuid
         `);
 
@@ -116,7 +113,6 @@ public function createUserService(postgresql:Client dbClient, http:CorsConfig co
                     name = name,
                     email = email,
                     role = role,
-                    about = about,
                     readme = readme);
 
             if result is error {
@@ -145,7 +141,7 @@ public function createUserService(postgresql:Client dbClient, http:CorsConfig co
             // Search users by name or email (partial match)
             string searchPattern = "%" + query + "%";
             sql:ParameterizedQuery searchQuery = `
-                SELECT id, name, email, role, about, readme, created_at
+                SELECT id, name, email, role, readme, created_at, avatar_url
                 FROM users 
                 WHERE name ILIKE ${searchPattern} OR email ILIKE ${searchPattern}
                 ORDER BY name

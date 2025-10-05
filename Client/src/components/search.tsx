@@ -474,7 +474,7 @@ export const UnifiedSearch = ({
                                                     className="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 group"
                                                 >
                                                     <Avatar className="w-10 h-10 border-2 border-white shadow-sm">
-                                                        <AvatarImage src="/placeholder.svg" alt={user.name} />
+                                                        <AvatarImage src={user.avatar_url} alt={user.name} />
                                                         <AvatarFallback className="bg-gradient-to-br from-emerald-500 to-cyan-600 text-white text-sm font-bold">
                                                             {getUserInitials(user.name)}
                                                         </AvatarFallback>

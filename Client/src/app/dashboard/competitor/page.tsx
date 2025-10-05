@@ -44,6 +44,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
 import { CalendarDays, Crown, Users, Trophy, Plus, Search, Trash2, UserPlus, AlertCircle, Loader2 } from "lucide-react"
 import { toast } from "sonner"
+import { AvatarImage } from "@radix-ui/react-avatar"
 
 interface TeamMemberWithProfile {
   team_id: number
@@ -673,8 +674,7 @@ export default function CompetitorDashboard() {
                                 <div className="flex items-center justify-between">
                                   <div className="flex items-center gap-3">
                                     <Avatar>
-                                      {/* <AvatarInitials>{teamCreatorProfile.name?.charAt(0) || "U"}</AvatarInitials> */}
-                                      <AvatarFallback>U</AvatarFallback>
+                                      <AvatarImage src={teamCreatorProfile.avatar_url || "/placeholder.svg"} alt={teamCreatorProfile.name} />
                                     </Avatar>
                                     <div>
                                       <div className="font-medium flex items-center gap-2">
@@ -701,7 +701,7 @@ export default function CompetitorDashboard() {
                                   <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-3">
                                       <Avatar>
-                                        {/* <AvatarInitials>{member.profile?.name?.charAt(0) || "U"}</AvatarInitials> */}
+                                        <AvatarImage src={member.profile?.avatar_url || "/placeholder.svg"} alt={member.profile?.name || "User Avatar"} />
                                         <AvatarFallback>U</AvatarFallback>
                                       </Avatar>
                                       <div>

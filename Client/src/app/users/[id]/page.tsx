@@ -106,11 +106,10 @@ export default function UserProfilePage() {
     const profileViewUser = {
         id: user.id,
         email: user.email,
-        avatarUrl: undefined, // We can add avatar support later
+        avatarUrl: user.avatar_url || "/placeholder.svg",
         profile: {
             name: user.name,
             role: user.role,
-            about: user.about,
             readme: user.readme,
             createdAt: user.createdAt
         }
