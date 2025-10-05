@@ -44,7 +44,6 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
 import { CalendarDays, Crown, Users, Trophy, Plus, Search, Trash2, UserPlus, AlertCircle, Loader2 } from "lucide-react"
 import { toast } from "sonner"
-import { AvatarImage } from "@radix-ui/react-avatar"
 
 interface TeamMemberWithProfile {
   team_id: number
@@ -399,70 +398,90 @@ export default function CompetitorDashboard() {
               ) : (
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {enrollments.map((enrollment) => (
-                    <Card key={enrollment.enrollment_id} className="hover:shadow-md transition-shadow">
-                      <CardHeader className="pb-3">
-                        <div className="flex items-start justify-between">
-                          <CardTitle className="text-lg leading-tight">{enrollment.competition_title}</CardTitle>
-                          <Badge
-                            variant={
-                              enrollment.competition_status === "active"
-                                ? "default"
-                                : enrollment.competition_status === "upcoming"
-                                  ? "secondary"
-                                  : enrollment.competition_status === "completed"
-                                    ? "outline"
-                                    : "destructive"
-                            }
-                          >
-                            {enrollment.competition_status?.toUpperCase()}
-                          </Badge>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="space-y-3">
-                        <div className="flex items-center gap-2">
-                          <Users className="h-4 w-4 text-muted-foreground" />
-                          <span className="font-medium">{enrollment.team_name}</span>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          <div className="flex items-center gap-1">
-                            <div
-                              className={`w-2 h-2 rounded-full ${enrollment.status === "enrolled"
-                                  ? "bg-green-500"
-                                  : enrollment.status === "pending"
-                                    ? "bg-yellow-500"
-                                    : "bg-red-500"
-                                }`}
-                            />
-                            <span className="text-sm font-medium">
-                              {enrollment.status.charAt(0).toUpperCase() + enrollment.status.slice(1)}
-                            </span>
-                          </div>
-                        </div>
-
-                        {enrollment.competition_start_date && (
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <CalendarDays className="h-4 w-4" />
-                            <span>
-                              {new Date(enrollment.competition_start_date).toLocaleDateString()} -{" "}
-                              {enrollment.competition_end_date
-                                ? new Date(enrollment.competition_end_date).toLocaleDateString()
-                                : "TBD"}
-                            </span>
-                          </div>
-                        )}
-
-                        <Separator />
-
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="w-full bg-transparent"
-                          onClick={() => router.push(`/competitions/${enrollment.competition_id}`)}
+                    <Card 
+                      key={enrollment.enrollment_id} 
+                      className="hover:shadow-md transition-shadow overflow-hidden relative"
+                      style={{
+                        backgroundImage: `url(https://icxxglazqizgjnscmdqj.supabase.co/storage/v1/object/public/competitions/${enrollment.competition_id}/banner)`,
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
+                        backgroundRepeat: 'no-repeat'
+                      }}
+                    >
+                      {/* Blur overlay */}
+                      <div className="absolute inset-0 backdrop-blur-md bg-white/35"></div>
+                      
+                      {/* Status badge in corner */}
+                      <div className="absolute top-3 right-3 z-20">
+                        <Badge
+                          variant={
+                            enrollment.competition_status === "active"
+                              ? "default"
+                              : enrollment.competition_status === "upcoming"
+                                ? "secondary"
+                                : enrollment.competition_status === "completed"
+                                  ? "outline"
+                                  : "destructive"
+                          }
                         >
-                          View Competition
-                        </Button>
-                      </CardContent>
+                          {enrollment.competition_status?.toUpperCase()}
+                        </Badge>
+                      </div>
+                      
+                      {/* Card content */}
+                      <div className="relative z-10">
+                        <CardHeader className="pb-3 text-center">
+                          <CardTitle className="text-2xl font-bold leading-tight text-gray-900">{enrollment.competition_title}</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                          {/* Transparent box for middle data */}
+                          <div className="bg-white/60 backdrop-blur-sm rounded-lg p-4 space-y-3 border border-white/30">
+                            <div className="flex items-center gap-2">
+                              <Users className="h-5 w-5 text-gray-700" />
+                              <span className="font-medium text-base text-gray-900">{enrollment.team_name}</span>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-1">
+                                <div
+                                  className={`w-3 h-3 rounded-full ${enrollment.status === "enrolled"
+                                      ? "bg-green-500"
+                                      : enrollment.status === "pending"
+                                        ? "bg-yellow-500"
+                                        : "bg-red-500"
+                                    }`}
+                                />
+                                <span className="text-base font-medium text-gray-900">
+                                  {enrollment.status.charAt(0).toUpperCase() + enrollment.status.slice(1)}
+                                </span>
+                              </div>
+                            </div>
+
+                            {enrollment.competition_start_date && (
+                              <div className="flex items-center gap-2 text-base text-gray-700">
+                                <CalendarDays className="h-5 w-5" />
+                                <span>
+                                  {new Date(enrollment.competition_start_date).toLocaleDateString()} -{" "}
+                                  {enrollment.competition_end_date
+                                    ? new Date(enrollment.competition_end_date).toLocaleDateString()
+                                    : "TBD"}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+
+                          <Separator />
+
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-full bg-white/50 backdrop-blur-sm border-gray-300 text-gray-900 hover:bg-white/70"
+                            onClick={() => router.push(`/competitions/${enrollment.competition_id}`)}
+                          >
+                            View Competition
+                          </Button>
+                        </CardContent>
+                      </div>
                     </Card>
                   ))}
                 </div>
@@ -488,41 +507,49 @@ export default function CompetitorDashboard() {
                     </CardContent>
                   </Card>
                 ) : (
-                  <div className="space-y-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {teams.map((team) => (
                       <Card
                         key={team.id}
-                        className={`cursor-pointer transition-all hover:shadow-md ${selectedTeam?.id === team.id ? "ring-2 ring-primary" : ""
+                        className={`cursor-pointer transition-all hover:shadow-md aspect-square flex flex-col overflow-hidden p-0 ${selectedTeam?.id === team.id ? "ring-2 ring-primary" : ""
                           }`}
                         onClick={() => fetchTeamDetails(team.id)}
                       >
-                        <CardContent className="p-4">
-                          <div className="flex items-start justify-between mb-2">
-                            <h3 className="font-semibold text-lg">{team.name}</h3>
-                            <Badge variant={team.created_by === user?.id ? "default" : "secondary"} className={team.created_by === user?.id ? "bg-amber-400 text-white" : ""}>
-                              {team.created_by === user?.id ? (
-                                <>
-                                  <Crown className="h-3 w-3 mr-1 " />
-                                  Creator
-                                </>
-                              ) : (
-                                "Member"
-                              )}
-                            </Badge>
+                        {/* Top Section - Team Name */}
+                        <div className="h-1/3 p-3 text-center border-b flex items-center justify-center bg-main/10">
+                          <h3 className="font-bold text-xl text-center text-main">{team.name}</h3>
+                        </div>
+                        
+                        {/* Middle Section - Participant Data and Date */}
+                        <div className="h-1/3 p-4 bg-white text-center flex flex-col justify-center space-y-3">
+                          <div className="flex items-center justify-center gap-2 text-sm text-gray-600">
+                            <Users className="h-4 w-4" />
+                            <span>Max {team.no_participants} participants</span>
                           </div>
-                          <div className="space-y-1 text-sm text-muted-foreground">
-                            <div className="flex items-center gap-2">
-                              <Users className="h-4 w-4" />
-                              <span>Max {team.no_participants} participants</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <CalendarDays className="h-4 w-4" />
-                              <span>
-                                Created {team.created_at ? new Date(team.created_at).toLocaleDateString() : "N/A"}
-                              </span>
-                            </div>
+                          <div className="flex items-center justify-center gap-2 text-sm text-gray-600">
+                            <CalendarDays className="h-4 w-4" />
+                            <span>
+                              Created {team.created_at ? new Date(team.created_at).toLocaleDateString() : "N/A"}
+                            </span>
                           </div>
-                        </CardContent>
+                        </div>
+                        
+                        {/* Bottom Section - Role Badge */}
+                        <div className={`h-1/3 p-3 text-center flex items-center justify-center rounded-b-lg ${team.created_by === user?.id ? "bg-amber-400" : "bg-gray-400"}`}>
+                          <div className="flex items-center justify-center gap-2 text-white font-semibold text-base">
+                            {team.created_by === user?.id ? (
+                              <>
+                                <Crown className="h-5 w-5" />
+                                <span>Creator</span>
+                              </>
+                            ) : (
+                              <>
+                                <Users className="h-5 w-5" />
+                                <span>Member</span>
+                              </>
+                            )}
+                          </div>
+                        </div>
                       </Card>
                     ))}
                   </div>
@@ -674,7 +701,8 @@ export default function CompetitorDashboard() {
                                 <div className="flex items-center justify-between">
                                   <div className="flex items-center gap-3">
                                     <Avatar>
-                                      <AvatarImage src={teamCreatorProfile.avatar_url || "/placeholder.svg"} alt={teamCreatorProfile.name} />
+                                      {/* <AvatarInitials>{teamCreatorProfile.name?.charAt(0) || "U"}</AvatarInitials> */}
+                                      <AvatarFallback>U</AvatarFallback>
                                     </Avatar>
                                     <div>
                                       <div className="font-medium flex items-center gap-2">
@@ -701,7 +729,7 @@ export default function CompetitorDashboard() {
                                   <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-3">
                                       <Avatar>
-                                        <AvatarImage src={member.profile?.avatar_url || "/placeholder.svg"} alt={member.profile?.name || "User Avatar"} />
+                                        {/* <AvatarInitials>{member.profile?.name?.charAt(0) || "U"}</AvatarInitials> */}
                                         <AvatarFallback>U</AvatarFallback>
                                       </Avatar>
                                       <div>
