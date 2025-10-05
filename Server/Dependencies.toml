@@ -5,7 +5,7 @@
 
 [ballerina]
 dependencies-toml-version = "2"
-distribution-version = "2201.13.0-m3"
+distribution-version = "2201.12.7"
 
 [[package]]
 org = "ballerina"
@@ -401,7 +401,6 @@ modules = [
 	{org = "tetra", packageName = "vinnova", moduleName = "vinnova"},
 	{org = "tetra", packageName = "vinnova", moduleName = "vinnova.auth"},
 	{org = "tetra", packageName = "vinnova", moduleName = "vinnova.services"},
-	{org = "tetra", packageName = "vinnova", moduleName = "vinnova.supabase"},
-	{org = "tetra", packageName = "vinnova", moduleName = "vinnova.supbase"}
+	{org = "tetra", packageName = "vinnova", moduleName = "vinnova.supabase"}
 ]
 
