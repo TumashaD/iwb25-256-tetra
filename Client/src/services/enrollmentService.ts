@@ -198,5 +198,28 @@ export const EnrollmentService = {
       console.error('Failed to get enrollment team members:', error)
       throw new Error('Failed to fetch enrollment team members. Please try again later.')
     }
+  },
+
+  // Helper method to check if user is enrolled in a specific competition
+  async isUserEnrolledInCompetition(userId: string, competitionId: number): Promise<{ isEnrolled: boolean; enrollmentId?: number }> {
+    try {
+      const enrollments = await this.getUserEnrollments(userId)
+      
+      // First try to find with accepted status
+      let enrollment = enrollments.find(e => e.competition_id === competitionId && e.status === 'accepted')
+      
+      // If not found with accepted status, try any enrollment for this competition
+      if (!enrollment) {
+        enrollment = enrollments.find(e => e.competition_id === competitionId)
+      }
+      
+      return {
+        isEnrolled: !!enrollment,
+        enrollmentId: enrollment?.enrollment_id
+      }
+    } catch (error) {
+      console.error('Failed to check enrollment status:', error)
+      return { isEnrolled: false }
+    }
   }
 }

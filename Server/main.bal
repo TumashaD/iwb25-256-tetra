@@ -50,6 +50,7 @@ public function main() returns error? {
     http:Service userService = services:createUserService(db, CORS_CONFIG, authInterceptor);
     http:Service teamService = services:createTeamService(db, CORS_CONFIG, authInterceptor);
     http:Service enrollmentService = services:createEnrollmentService(db, CORS_CONFIG, authInterceptor);
+    http:Service eventService = services:createEventService(db, storageClient, CORS_CONFIG, authInterceptor);
     http:Service aiService = services:createAIService(db, geminiApiKey, CORS_CONFIG);
     http:Service gmailService = services:createGmailService(gmail, CORS_CONFIG, authInterceptor);
 
@@ -58,6 +59,7 @@ public function main() returns error? {
     check ln.attach(userService, "/users");
     check ln.attach(teamService, "/teams");
     check ln.attach(enrollmentService, "/enrollments");
+    check ln.attach(eventService, "/events");
     check ln.attach(aiService, "/ai");
     check ln.attach(gmailService, "/gmail");
 
