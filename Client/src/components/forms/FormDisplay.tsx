@@ -358,6 +358,84 @@ export default function FormDisplay({
                 )}
               </div>
             )}
+
+            {element.type === 'radiogroup' && (
+              <div className="space-y-2">
+                {element.choices?.map((choice: string, choiceIndex: number) => (
+                  <div key={choiceIndex} className="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      id={`${element.name}_${choiceIndex}`}
+                      name={element.name}
+                      value={choice}
+                      checked={formData[element.name] === choice}
+                      onChange={(e) => setFormData(prev => ({ ...prev, [element.name]: e.target.value }))}
+                      required={element.isRequired}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                    />
+                    <label 
+                      htmlFor={`${element.name}_${choiceIndex}`}
+                      className="text-sm text-gray-700"
+                    >
+                      {choice}
+                    </label>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {element.type === 'checkbox' && (
+              <div className="space-y-2">
+                {element.choices?.map((choice: string, choiceIndex: number) => (
+                  <div key={choiceIndex} className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id={`${element.name}_${choiceIndex}`}
+                      value={choice}
+                      checked={Array.isArray(formData[element.name]) ? formData[element.name].includes(choice) : false}
+                      onChange={(e) => {
+                        const currentValues = Array.isArray(formData[element.name]) ? formData[element.name] : []
+                        if (e.target.checked) {
+                          setFormData(prev => ({ 
+                            ...prev, 
+                            [element.name]: [...currentValues, choice] 
+                          }))
+                        } else {
+                          setFormData(prev => ({ 
+                            ...prev, 
+                            [element.name]: currentValues.filter((v: string) => v !== choice)
+                          }))
+                        }
+                      }}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                    <label 
+                      htmlFor={`${element.name}_${choiceIndex}`}
+                      className="text-sm text-gray-700"
+                    >
+                      {choice}
+                    </label>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {element.type === 'dropdown' && (
+              <select
+                name={element.name}
+                value={formData[element.name] || ''}
+                onChange={(e) => setFormData(prev => ({ ...prev, [element.name]: e.target.value }))}
+                required={element.isRequired}
+                className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">Select {element.title.toLowerCase()}</option>
+                {element.choices?.map((choice: string, choiceIndex: number) => (
+                  <option key={choiceIndex} value={choice}>
+                    {choice}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
         ))}
 
